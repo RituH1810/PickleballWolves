@@ -120,11 +120,16 @@ export default function RoundRobinPage() {
   const [roundRobinId, setRoundRobinId] = useState("");
   const [rounds, setRounds] = useState<Round[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
-  const [notice, setNotice] = useState("");
+  const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const justGeneratedRef = useRef(false);
   const liveMatchesRef = useRef<HTMLDivElement>(null);
 
   const activeGameFormat = gameFormats.find((format) => format.id === form.gameFormat) ?? gameFormats[0];
+
+  function showNotice(text: string, type: "success" | "error") {
+    setNotice({ text, type });
+    if (type === "error") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   useEffect(() => { fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, []);
 
@@ -136,15 +141,15 @@ export default function RoundRobinPage() {
   }, [rounds]);
 
   async function createAndGenerate() {
-    if (selected.length < 4) { setNotice("Select at least four players."); return; }
+    if (selected.length < 4) { showNotice("Select at least four players.", "error"); return; }
     const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: `${form.partnerFormat}_${form.gameFormat}`, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced }) });
     const createdData = await created.json();
-    if (!created.ok) { setNotice(createdData.error ?? "Unable to create round robin."); return; }
+    if (!created.ok) { showNotice(createdData.error ?? "Unable to create round robin.", "error"); return; }
     setRoundRobinId(createdData.roundRobin.id);
     const generated = await fetch(`/api/round-robin/${createdData.roundRobin.id}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ playerIds: selected }) });
-    if (!generated.ok) { setNotice((await generated.json()).error ?? "Unable to generate schedule."); return; }
+    if (!generated.ok) { showNotice((await generated.json()).error ?? "Unable to generate schedule.", "error"); return; }
     await loadRoom(createdData.roundRobin.id);
-    setNotice("Matches generated. Courts are ready.");
+    showNotice("Matches generated. Courts are ready.", "success");
     justGeneratedRef.current = true;
   }
 
@@ -158,8 +163,8 @@ export default function RoundRobinPage() {
 
   async function saveScore(matchId: string, sideAScore: string, sideBScore: string) {
     const response = await fetch(`/api/matches/${matchId}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sideAScore: Number(sideAScore), sideBScore: Number(sideBScore), gameNumber: 1 }) });
-    setNotice(response.ok ? "Score saved and standings updated." : (await response.json()).error ?? "Unable to save score.");
-    if (response.ok) loadRoom();
+    if (response.ok) { showNotice("Score saved and standings updated.", "success"); loadRoom(); }
+    else showNotice((await response.json()).error ?? "Unable to save score.", "error");
   }
 
   return (
@@ -174,7 +179,12 @@ export default function RoundRobinPage() {
           </div>
           {rounds.length > 0 && <span className="flex items-center gap-2 rounded-full bg-[#e4f3a8] px-4 py-2 text-xs font-bold text-[#5c7b1a]"><Check size={15} />Live schedule</span>}
         </div>
-        {notice && <p role="status" className="mt-5 rounded-xl bg-[#e4f3a8] px-4 py-3 text-xs font-bold text-[#5c7b1a]">{notice}</p>}
+        {notice && (
+          <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#fde3dd] text-[#a94f3d]" : "bg-[#e4f3a8] text-[#5c7b1a]"}`}>
+            {notice.text}
+            {notice.type === "error" && notice.text.toLowerCase().includes("sign in") && <Link href="/login" className="ml-2 underline">Sign in</Link>}
+          </p>
+        )}
 
         <section className="mt-8 rounded-[24px] border border-[#e2e7e2] bg-white p-6 sm:p-8">
           <h2 className="font-extrabold">1. Choose your format</h2>
