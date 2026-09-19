@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
+
+# accidental credential files
+711789382464-cki9rk2mt593v8k43tkm2p.txt
