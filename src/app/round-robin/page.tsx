@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Trophy, Users, Waves } from "lucide-react";
 
 type Player = { id: string; name: string; skillRating: string };
@@ -121,10 +121,19 @@ export default function RoundRobinPage() {
   const [rounds, setRounds] = useState<Round[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [notice, setNotice] = useState("");
+  const justGeneratedRef = useRef(false);
+  const liveMatchesRef = useRef<HTMLDivElement>(null);
 
   const activeGameFormat = gameFormats.find((format) => format.id === form.gameFormat) ?? gameFormats[0];
 
   useEffect(() => { fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, []);
+
+  useEffect(() => {
+    if (justGeneratedRef.current && rounds.length > 0) {
+      liveMatchesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      justGeneratedRef.current = false;
+    }
+  }, [rounds]);
 
   async function createAndGenerate() {
     if (selected.length < 4) { setNotice("Select at least four players."); return; }
@@ -135,7 +144,8 @@ export default function RoundRobinPage() {
     const generated = await fetch(`/api/round-robin/${createdData.roundRobin.id}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ playerIds: selected }) });
     if (!generated.ok) { setNotice((await generated.json()).error ?? "Unable to generate schedule."); return; }
     await loadRoom(createdData.roundRobin.id);
-    setNotice("Schedule generated. Courts are ready.");
+    setNotice("Matches generated. Courts are ready.");
+    justGeneratedRef.current = true;
   }
 
   async function loadRoom(id = roundRobinId) {
@@ -255,14 +265,14 @@ export default function RoundRobinPage() {
               </button>
             ))}
           </div>
-          <button onClick={createAndGenerate} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1b211e] text-sm font-bold text-white">Generate courts <ArrowRight size={16} /></button>
+          <button onClick={createAndGenerate} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1b211e] text-sm font-bold text-white">Generate matches <ArrowRight size={16} /></button>
         </section>
 
         {rounds.length > 0 && (
-          <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
+          <div ref={liveMatchesRef} className="mt-6 grid gap-6 scroll-mt-8 lg:grid-cols-[1fr_.35fr]">
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black tracking-tight">Live courts</h2>
+                <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
                 <button onClick={() => loadRoom()} className="text-xs font-bold text-[#6b8f21]">Refresh standings</button>
               </div>
               {rounds.map((round) => (
