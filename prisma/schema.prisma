@@ -1,0 +1,399 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PLAYER
+  ORGANIZER
+  ADMIN
+}
+
+enum Hand {
+  LEFT
+  RIGHT
+  AMBIDEXTROUS
+}
+
+enum GroupVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum MembershipRole {
+  MEMBER
+  ORGANIZER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  PENDING
+  INVITED
+  DECLINED
+}
+
+enum EventFormat {
+  SINGLES
+  DOUBLES
+  MIXED
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CANCELLED
+  COMPLETED
+}
+
+enum RsvpStatus {
+  GOING
+  WAITLISTED
+  CANCELLED
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  FORFEIT
+  DISPUTED
+}
+
+enum Side {
+  A
+  B
+}
+
+model User {
+  id              String       @id @default(cuid())
+  email           String       @unique
+  name            String
+  photoUrl        String?
+  role            UserRole     @default(PLAYER)
+  skillRating     Decimal      @db.Decimal(3, 1)
+  preferredHand   Hand         @default(RIGHT)
+  homeCourt       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  memberships     Membership[]
+  createdGroups   Group[]      @relation("GroupCreator")
+  createdEvents   Event[]      @relation("EventCreator")
+  rsvps           RSVP[]
+  enteredMatches  Match[]      @relation("MatchEnteredBy")
+  confirmedMatches Match[]     @relation("MatchConfirmedBy")
+  matchPlayers    MatchPlayer[]
+  auditLogs       AuditLog[]
+}
+
+model Group {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  description String
+  location    String
+  logoUrl     String?
+  visibility  GroupVisibility @default(PUBLIC)
+  createdById String
+  createdBy   User            @relation("GroupCreator", fields: [createdById], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  memberships Membership[]
+  events      Event[]
+  invites     GroupInvite[]
+  announcements Announcement[]
+}
+
+model Membership {
+  id        String           @id @default(cuid())
+  groupId   String
+  userId    String
+  role      MembershipRole   @default(MEMBER)
+  status    MembershipStatus @default(PENDING)
+  joinedAt  DateTime?
+  group     Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([groupId, userId])
+}
+
+model GroupInvite {
+  id            String    @id @default(cuid())
+  groupId       String
+  invitedEmail  String
+  invitedUserId  String?
+  token         String    @unique
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  createdById   String
+  group         Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdAt     DateTime  @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  groupId   String
+  authorId  String
+  title     String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id             String      @id @default(cuid())
+  groupId        String?
+  createdById    String
+  title          String
+  description    String?
+  startsAt       DateTime
+  endsAt         DateTime?
+  location       String
+  courtCount     Int         @default(1)
+  playerCap      Int
+  minSkillRating Decimal?    @db.Decimal(3, 1)
+  maxSkillRating Decimal?    @db.Decimal(3, 1)
+  format         EventFormat @default(DOUBLES)
+  costCents      Int         @default(0)
+  recurrenceRule String?
+  status         EventStatus @default(DRAFT)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  group          Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  createdBy      User        @relation("EventCreator", fields: [createdById], references: [id])
+  rsvps          RSVP[]
+  matches        Match[]
+}
+
+model RSVP {
+  id              String     @id @default(cuid())
+  eventId         String
+  userId          String
+  status          RsvpStatus @default(WAITLISTED)
+  waitlistPosition Int?
+  respondedAt     DateTime   @default(now())
+  event           Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([eventId, userId])
+}
+
+model RoundRobin {
+  id            String   @id @default(cuid())
+  eventId       String?
+  createdById   String
+  name          String
+  format        String
+  courtCount    Int
+  roundCount    Int
+  pointsToWin   Int
+  winBy         Int
+  skillBalanced Boolean  @default(false)
+  status        String   @default("SETUP")
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
+  rounds        Round[]
+  matches       Match[]
+}
+
+model Round {
+  id           String     @id @default(cuid())
+  roundRobinId String
+  roundNumber  Int
+  status       String     @default("PENDING")
+  roundRobin   RoundRobin @relation(fields: [roundRobinId], references: [id], onDelete: Cascade)
+  matches      Match[]
+  @@unique([roundRobinId, roundNumber])
+}
+
+model Match {
+  id             String      @id @default(cuid())
+  eventId        String?
+  roundRobinId   String?
+  roundId        String?
+  courtNumber    Int?
+  scheduledAt    DateTime?
+  status         MatchStatus @default(SCHEDULED)
+  winnerSide     Side?
+  enteredById    String?
+  confirmedById  String?
+  deletedAt      DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  event          Event?      @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  roundRobin     RoundRobin? @relation(fields: [roundRobinId], references: [id], onDelete: SetNull)
+  round          Round?      @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  enteredBy      User?       @relation("MatchEnteredBy", fields: [enteredById], references: [id])
+  confirmedBy    User?       @relation("MatchConfirmedBy", fields: [confirmedById], references: [id])
+  players        MatchPlayer[]
+  scores         GameScore[]
+  auditLogs      AuditLog[]
+}
+
+model MatchPlayer {
+  id       String @id @default(cuid())
+  matchId  String
+  userId   String
+  side     Side
+  position Int?
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([matchId, userId])
+}
+
+model GameScore {
+  id          String   @id @default(cuid())
+  matchId     String
+  gameNumber  Int
+  sideAScore  Int
+  sideBScore  Int
+  enteredById String
+  confirmedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  match       Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  @@unique([matchId, gameNumber])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  entityType String
+  entityId   String
+  action     String
+  beforeData Json?
+  afterData  Json?
+  matchId    String?
+  createdAt  DateTime @default(now())
+  actor      User     @relation(fields: [actorId], references: [id])
+  match      Match?   @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  @@index([entityType, entityId])
+}
+
+model ScoreDispute {
+  id             String   @id @default(cuid())
+  matchId        String
+  openedById     String
+  reason         String
+  proposedScores Json?
+  status         String   @default("OPEN")
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime @default(now())
+}
+
+model League {
+  id          String   @id @default(cuid())
+  groupId     String?
+  name        String
+  description String?
+  format      String
+  createdById String
+  createdAt   DateTime @default(now())
+}
+
+model Season {
+  id                   String   @id @default(cuid())
+  leagueId             String
+  name                 String
+  startDate            DateTime
+  endDate              DateTime
+  registrationOpensAt  DateTime
+  registrationClosesAt DateTime
+  status               String   @default("UPCOMING")
+  playoffsEnabled      Boolean  @default(false)
+}
+
+model Division {
+  id             String   @id @default(cuid())
+  seasonId       String
+  name           String
+  minSkillRating Decimal? @db.Decimal(3, 1)
+  maxSkillRating Decimal? @db.Decimal(3, 1)
+}
+
+model LeagueRegistration {
+  id         String @id @default(cuid())
+  divisionId String
+  userId     String
+  status     String @default("REGISTERED")
+  createdAt  DateTime @default(now())
+}
+
+model LeagueMatch {
+  id         String   @id @default(cuid())
+  seasonId   String
+  divisionId String
+  matchId    String
+  weekNumber Int
+  scheduledAt DateTime
+  status     String   @default("SCHEDULED")
+}
+
+model Ladder {
+  id                   String   @id @default(cuid())
+  groupId              String?
+  name                 String
+  type                 String
+  challengeRange       Int      @default(3)
+  responseDeadlineHours Int     @default(48)
+  inactivityPenalty    Int      @default(0)
+  createdById          String
+  active               Boolean  @default(true)
+}
+
+model LadderPosition {
+  id           String   @id @default(cuid())
+  ladderId     String
+  userId       String
+  position     Int
+  rating       Decimal  @db.Decimal(6, 2)
+  wins         Int      @default(0)
+  losses       Int      @default(0)
+  lastActiveAt DateTime?
+  updatedAt    DateTime @updatedAt
+  @@unique([ladderId, userId])
+}
+
+model Challenge {
+  id            String   @id @default(cuid())
+  ladderId      String
+  challengerId  String
+  challengedId  String
+  createdAt     DateTime @default(now())
+  deadlineAt    DateTime
+  status        String   @default("PENDING")
+  matchId       String?
+}
+
+model RatingHistory {
+  id          String   @id @default(cuid())
+  userId      String
+  ladderId    String?
+  matchId     String?
+  ratingBefore Decimal @db.Decimal(6, 2)
+  ratingAfter  Decimal @db.Decimal(6, 2)
+  ratingDelta  Decimal @db.Decimal(6, 2)
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model NotificationPreference {
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  emailReminders    Boolean @default(true)
+  inAppReminders    Boolean @default(true)
+  scoreDisputeAlerts Boolean @default(true)
+  challengeAlerts   Boolean @default(true)
+}

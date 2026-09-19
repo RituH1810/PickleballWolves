@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f3f5f2;
+  --foreground: #1b211e;
+  --ink-soft: #67716a;
+  --panel: #ffffff;
+  --line: #e2e7e2;
+  --lime: #d8f24e;
+  --lime-deep: #98ba1f;
+  --coral: #f17e62;
+  --blue: #8cc9df;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111512;
+    --foreground: #eef3ed;
+    --panel: #1a211c;
+    --line: #2c382e;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+::selection { background: var(--lime); color: #151a16; }
+
+.noise {
+  background-image: radial-gradient(rgba(42, 55, 44, .09) .7px, transparent .7px);
+  background-size: 8px 8px;
+}
+
+.panel { background: var(--panel); border: 1px solid var(--line); }
+
+.fade-up { animation: fade-up .6s ease both; }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
