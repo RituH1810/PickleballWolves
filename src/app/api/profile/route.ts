@@ -17,8 +17,10 @@ export async function GET() {
     update: { email: user.email ?? "", name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player" },
     create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player", skillRating: 2.0 },
   });
-
-  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString() } });
+  const matches = await prisma.match.findMany({ where: { deletedAt: null, players: { some: { userId: user.id } } }, include: { players: true, scores: true } });
+  const wins = matches.filter((match) => { const player = match.players.find((matchPlayer) => matchPlayer.userId === user.id); return match.scores.reduce((total, score) => total + (player?.side === "A" ? score.sideAScore - score.sideBScore : score.sideBScore - score.sideAScore), 0) > 0; }).length;
+  const rank = (await prisma.user.count({ where: { skillRating: { gt: profile.skillRating } } })) + 1;
+  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString(), record: `${wins} - ${Math.max(0, matches.length - wins)}`, winRate: matches.length ? `${((wins / matches.length) * 100).toFixed(1)}%` : "0.0%", rank } });
 }
 
 export async function PATCH(request: Request) {
