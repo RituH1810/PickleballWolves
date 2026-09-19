@@ -18,7 +18,7 @@ export default function LoginPage() {
     setError("");
     const { error: authError } = await createClient().auth.signInWithPassword({ email, password });
     if (authError) setError(authError.message);
-    else router.push("/");
+    else router.push("/dashboard");
     setLoading(false);
   }
 

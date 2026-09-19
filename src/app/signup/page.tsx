@@ -21,7 +21,7 @@ export default function SignupPage() {
     setMessage("");
     const { data, error: authError } = await createClient().auth.signUp({ email, password, options: { data: { name } } });
     if (authError) setError(authError.message);
-    else if (data.session) router.push("/");
+    else if (data.session) router.push("/dashboard");
     else setMessage("Check your email to confirm your account, then sign in.");
     setLoading(false);
   }
