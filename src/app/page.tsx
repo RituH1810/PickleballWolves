@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Activity, ArrowDownRight, ArrowUpRight, Bell, CalendarDays, ChevronRight, CircleHelp, Grid2X2, LayoutDashboard, MapPin, Menu, Plus, Search, Settings, Trophy, Users, X } from "lucide-react";
 import { currentUser, events, groups, leaderboard, recentResults, type DemoEvent } from "@/lib/demo";
 
@@ -31,6 +31,7 @@ export default function Home() {
   const [activeNav, setActiveNav] = useState("Dashboard");
   const [eventList, setEventList] = useState(events);
   const [filter, setFilter] = useState<"All" | "Doubles" | "Mixed doubles">("All");
+  useEffect(() => { fetch("/api/dashboard").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.events) setEventList(data.events); }); }, []);
   const toggleEvent = (id: string) => setEventList((items) => items.map((item) => item.id === id ? { ...item, attending: !item.attending, spotsLeft: item.attending ? item.spotsLeft + 1 : Math.max(0, item.spotsLeft - 1) } : item));
   const visibleEvents = eventList.filter((event) => filter === "All" || event.format === filter);
 
