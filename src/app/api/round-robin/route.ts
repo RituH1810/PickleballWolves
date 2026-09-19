@@ -9,6 +9,8 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Sign in to create a round robin." }, { status: 401 });
   const profile = await ensureProfile(user);
   const body = await request.json();
-  const roundRobin = await prisma.roundRobin.create({ data: { name: body.name?.trim() || "New round robin", createdById: profile.id, format: body.format || "ROTATING_PARTNERS", courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
+  const partnerFormat = ["ROTATE", "FIXED"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
+  const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : "DOUBLES";
+  const roundRobin = await prisma.roundRobin.create({ data: { name: body.name?.trim() || "New round robin", createdById: profile.id, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
   return NextResponse.json({ roundRobin }, { status: 201 });
 }

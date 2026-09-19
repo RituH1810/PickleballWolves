@@ -186,6 +186,8 @@ model RoundRobin {
   createdById   String
   name          String
   format        String
+  partnerFormat String   @default("ROTATE")
+  playFormat    String   @default("DOUBLES")
   courtCount    Int
   roundCount    Int
   pointsToWin   Int

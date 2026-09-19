@@ -1,13 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Trophy, Users, Waves } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, Check, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Users, Waves } from "lucide-react";
 
 type Player = { id: string; name: string; skillRating: string };
-type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
-type Round = { id: string; roundNumber: number; matches: Match[] };
-type Standing = { rank: number; name: string; wins: number; losses: number; differential: number };
+
+const playFormats = [
+  { id: "SINGLES", label: "Singles", detail: "1 vs 1, no partner." },
+  { id: "DOUBLES", label: "Doubles", detail: "2 vs 2 teams." },
+  { id: "MIXED", label: "Mixed doubles", detail: "2 vs 2 teams, mixed pairs." },
+];
 
 const partnerFormats = [
   { id: "ROTATE", label: "Rotate", detail: "Get a new partner every round." },
@@ -114,17 +118,15 @@ const gameFormats = [
 ];
 
 export default function RoundRobinPage() {
+  const router = useRouter();
   const [players, setPlayers] = useState<Player[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [form, setForm] = useState({ name: "Saturday Wolves Round Robin", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true });
-  const [roundRobinId, setRoundRobinId] = useState("");
-  const [rounds, setRounds] = useState<Round[]>([]);
-  const [standings, setStandings] = useState<Standing[]>([]);
+  const [form, setForm] = useState({ name: "Saturday Wolves Round Robin", playFormat: "DOUBLES", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true });
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
-  const justGeneratedRef = useRef(false);
-  const liveMatchesRef = useRef<HTMLDivElement>(null);
+  const [generating, setGenerating] = useState(false);
 
   const activeGameFormat = gameFormats.find((format) => format.id === form.gameFormat) ?? gameFormats[0];
+  const minPlayers = form.playFormat === "SINGLES" ? 2 : 4;
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -133,51 +135,25 @@ export default function RoundRobinPage() {
 
   useEffect(() => { fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, []);
 
-  useEffect(() => {
-    if (justGeneratedRef.current && rounds.length > 0) {
-      liveMatchesRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      justGeneratedRef.current = false;
-    }
-  }, [rounds]);
-
   async function createAndGenerate() {
-    if (selected.length < 4) { showNotice("Select at least four players.", "error"); return; }
-    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: `${form.partnerFormat}_${form.gameFormat}`, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced }) });
+    if (selected.length < minPlayers) { showNotice(`Select at least ${minPlayers} players.`, "error"); return; }
+    setGenerating(true);
+    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced }) });
     const createdData = await created.json();
-    if (!created.ok) { showNotice(createdData.error ?? "Unable to create round robin.", "error"); return; }
-    setRoundRobinId(createdData.roundRobin.id);
+    if (!created.ok) { showNotice(createdData.error ?? "Unable to create round robin.", "error"); setGenerating(false); return; }
     const generated = await fetch(`/api/round-robin/${createdData.roundRobin.id}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ playerIds: selected }) });
-    if (!generated.ok) { showNotice((await generated.json()).error ?? "Unable to generate schedule.", "error"); return; }
-    await loadRoom(createdData.roundRobin.id);
-    showNotice("Matches generated. Courts are ready.", "success");
-    justGeneratedRef.current = true;
-  }
-
-  async function loadRoom(id = roundRobinId) {
-    const [roomResponse, standingsResponse] = await Promise.all([fetch(`/api/round-robin/${id}`), fetch(`/api/round-robin/${id}/standings`)]);
-    const room = await roomResponse.json();
-    const table = await standingsResponse.json();
-    setRounds(room.roundRobin?.rounds ?? []);
-    setStandings(table.standings ?? []);
-  }
-
-  async function saveScore(matchId: string, sideAScore: string, sideBScore: string) {
-    const response = await fetch(`/api/matches/${matchId}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sideAScore: Number(sideAScore), sideBScore: Number(sideBScore), gameNumber: 1 }) });
-    if (response.ok) { showNotice("Score saved and standings updated.", "success"); loadRoom(); }
-    else showNotice((await response.json()).error ?? "Unable to save score.", "error");
+    if (!generated.ok) { showNotice((await generated.json()).error ?? "Unable to generate schedule.", "error"); setGenerating(false); return; }
+    router.push(`/round-robin/${createdData.roundRobin.id}`);
   }
 
   return (
     <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
         <Link href="/dashboard" className="flex items-center gap-2 text-xs font-bold text-[#6b8f21]"><ArrowLeft size={14} />Back to dashboard</Link>
-        <div className="mt-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[#98ba1f]">Competition tools</p>
-            <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[#1b211e]">Build a round robin.</h1>
-            <p className="mt-3 text-sm text-[#67716a]">Choose a format, fill the player list, then run the courts from one live room.</p>
-          </div>
-          {rounds.length > 0 && <span className="flex items-center gap-2 rounded-full bg-[#e4f3a8] px-4 py-2 text-xs font-bold text-[#5c7b1a]"><Check size={15} />Live schedule</span>}
+        <div className="mt-8">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-[#98ba1f]">Competition tools</p>
+          <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[#1b211e]">Build a round robin.</h1>
+          <p className="mt-3 text-sm text-[#67716a]">Choose a format, fill the player list, then run the courts from one live room.</p>
         </div>
         {notice && (
           <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#fde3dd] text-[#a94f3d]" : "bg-[#e4f3a8] text-[#5c7b1a]"}`}>
@@ -190,16 +166,30 @@ export default function RoundRobinPage() {
           <h2 className="font-extrabold">1. Choose your format</h2>
           <p className="mt-1 text-xs text-[#67716a]">Select from 8 fun formats.</p>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[#67716a]">Partner format</p>
-          <div className="mt-2 flex gap-2">
-            {partnerFormats.map((option) => (
-              <button key={option.id} onClick={() => setForm({ ...form, partnerFormat: option.id })} className={`relative flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.partnerFormat === option.id ? "border-[#98ba1f] bg-[#f0f5d9]" : "border-[#e2e7e2]"}`}>
-                {option.badge && <span className="absolute -top-2 right-2 rounded-full bg-[#1b211e] px-2 py-0.5 text-[9px] font-black text-white">{option.badge}</span>}
+          <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[#67716a]">Play format</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {playFormats.map((option) => (
+              <button key={option.id} onClick={() => setForm({ ...form, playFormat: option.id })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.playFormat === option.id ? "border-[#98ba1f] bg-[#f0f5d9]" : "border-[#e2e7e2]"}`}>
                 <span className="block text-sm font-bold">{option.label}</span>
                 <span className="block text-[11px] text-[#67716a]">{option.detail}</span>
               </button>
             ))}
           </div>
+
+          {form.playFormat !== "SINGLES" && (
+            <>
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[#67716a]">Partner format</p>
+              <div className="mt-2 flex gap-2">
+                {partnerFormats.map((option) => (
+                  <button key={option.id} onClick={() => setForm({ ...form, partnerFormat: option.id })} className={`relative flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.partnerFormat === option.id ? "border-[#98ba1f] bg-[#f0f5d9]" : "border-[#e2e7e2]"}`}>
+                    {option.badge && <span className="absolute -top-2 right-2 rounded-full bg-[#1b211e] px-2 py-0.5 text-[9px] font-black text-white">{option.badge}</span>}
+                    <span className="block text-sm font-bold">{option.label}</span>
+                    <span className="block text-[11px] text-[#67716a]">{option.detail}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
           <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[#67716a]">Game format</p>
           <div className="mt-2 grid gap-6 lg:grid-cols-[.9fr_1.1fr]">
@@ -275,67 +265,9 @@ export default function RoundRobinPage() {
               </button>
             ))}
           </div>
-          <button onClick={createAndGenerate} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1b211e] text-sm font-bold text-white">Generate matches <ArrowRight size={16} /></button>
+          <button onClick={createAndGenerate} disabled={generating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#1b211e] text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-60">{generating ? "Generating..." : "Generate matches"} <ArrowRight size={16} /></button>
         </section>
-
-        {rounds.length > 0 && (
-          <div ref={liveMatchesRef} className="mt-6 grid gap-6 scroll-mt-8 lg:grid-cols-[1fr_.35fr]">
-            <section className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
-                <button onClick={() => loadRoom()} className="text-xs font-bold text-[#6b8f21]">Refresh standings</button>
-              </div>
-              {rounds.map((round) => (
-                <section key={round.id} className="rounded-[20px] border border-[#e2e7e2] bg-white p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="font-extrabold">Round {round.roundNumber}</h3>
-                    <span className="text-xs text-[#67716a]">{round.matches.length} courts active</span>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {round.matches.map((match) => <MatchCard key={match.id} match={match} onSave={saveScore} />)}
-                  </div>
-                </section>
-              ))}
-            </section>
-            <aside className="rounded-[20px] border border-[#e2e7e2] bg-white p-5">
-              <div className="flex items-center gap-2"><Trophy size={18} className="text-[#98ba1f]" /><h2 className="font-extrabold">Standings</h2></div>
-              <div className="mt-4 space-y-2">
-                {standings.map((player) => (
-                  <div key={player.name} className="flex items-center gap-2 rounded-xl bg-[#f3f6ef] px-3 py-3">
-                    <span className="w-5 text-xs font-black text-[#98ba1f]">{player.rank}</span>
-                    <span className="flex-1 text-xs font-bold">{player.name}</span>
-                    <span className="text-xs font-black">{player.wins}W</span>
-                  </div>
-                ))}
-              </div>
-            </aside>
-          </div>
-        )}
       </div>
     </main>
-  );
-}
-
-function MatchCard({ match, onSave }: { match: Match; onSave: (matchId: string, sideA: string, sideB: string) => void }) {
-  const [sideA, setSideA] = useState(match.scores[0]?.sideAScore?.toString() ?? "");
-  const [sideB, setSideB] = useState(match.scores[0]?.sideBScore?.toString() ?? "");
-  return (
-    <article className="rounded-xl border border-[#e2e7e2] p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#67716a]">Court {match.courtNumber}</span>
-        <span className="rounded-full bg-[#eef2ed] px-2 py-1 text-[10px] font-bold">Ready</span>
-      </div>
-      <div className="space-y-2 text-sm font-bold">
-        <p>{match.players.filter((player) => player.side === "A").map((player) => player.name).join(" / ")}</p>
-        <p className="text-[#67716a]">vs</p>
-        <p>{match.players.filter((player) => player.side === "B").map((player) => player.name).join(" / ")}</p>
-      </div>
-      <div className="mt-4 flex items-center gap-2">
-        <input value={sideA} onChange={(event) => setSideA(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[#dfe6df] text-center font-bold" />
-        <span className="text-[#67716a]">-</span>
-        <input value={sideB} onChange={(event) => setSideB(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[#dfe6df] text-center font-bold" />
-        <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold">Save score</button>
-      </div>
-    </article>
   );
 }

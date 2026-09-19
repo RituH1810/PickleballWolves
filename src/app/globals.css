@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  color-scheme: light;
   --background: #f3f5f2;
   --foreground: #1b211e;
   --ink-soft: #67716a;
@@ -35,6 +36,16 @@ body {
 }
 
 * { box-sizing: border-box; }
+
+input, select, textarea {
+  color: #1b211e;
+  background-color: #ffffff;
+}
+
+input::placeholder, textarea::placeholder {
+  color: #9aa69b;
+  opacity: 1;
+}
 
 ::selection { background: var(--lime); color: #151a16; }
 
