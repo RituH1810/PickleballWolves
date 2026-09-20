@@ -11,7 +11,7 @@ function shuffle<T>(items: T[]): T[] {
   return array;
 }
 
-type MatchInput = { courtNumber: number; players: { create: { userId: string; side: "A" | "B" }[] } };
+type MatchInput = { roundRobinId: string; courtNumber: number; players: { create: { userId: string; side: "A" | "B" }[] } };
 type RoundInput = { roundNumber: number; matches: MatchInput[] };
 
 export async function POST(request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
@@ -41,7 +41,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
         const teamA = units[index];
         const teamB = units[units.length - 1 - index];
         if (teamA.includes("BYE") || teamB.includes("BYE")) continue;
-        matches.push({ courtNumber: (index % roundRobin.courtCount) + 1, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
+        matches.push({ roundRobinId, courtNumber: (index % roundRobin.courtCount) + 1, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
       }
       rounds.push({ roundNumber, matches });
       const fixed = units[0];
@@ -59,7 +59,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
       for (let index = 0; index < Math.floor(teams.length / 2); index++) {
         const teamA = teams[index * 2];
         const teamB = teams[index * 2 + 1];
-        matches.push({ courtNumber: (index % roundRobin.courtCount) + 1, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
+        matches.push({ roundRobinId, courtNumber: (index % roundRobin.courtCount) + 1, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
       }
       rounds.push({ roundNumber, matches });
     }
