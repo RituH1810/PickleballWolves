@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Lock, MapPin, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Lock, MapPin, Trophy, Users } from "lucide-react";
 
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER" };
+type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; wins: number; losses: number; winPct: number; avgPointDiff: number };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
-type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; events: GroupEvent[]; isMember: boolean; myRole: string | null };
+type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; events: GroupEvent[]; isMember: boolean; myRole: string | null };
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -105,6 +106,39 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
           </section>
         </div>
+
+        <section className="mt-5 rounded-[20px] border border-[#e2e7e2] bg-white p-6 sm:p-8">
+          <div className="flex items-center gap-2"><Trophy size={17} className="text-[#98ba1f]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
+          {group.isMember ? (
+            group.leaderboard.length === 0 ? (
+              <p className="mt-4 text-sm text-[#67716a]">No members yet.</p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[480px] text-left text-sm">
+                  <thead><tr className="border-b border-[#e2e7e2] text-[10px] font-bold uppercase tracking-[.14em] text-[#67716a]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Avg pt diff</th><th className="pb-3 text-right">Rating</th></tr></thead>
+                  <tbody>
+                    {group.leaderboard.map((entry) => (
+                      <tr key={entry.id} className="border-b border-[#e2e7e2] last:border-0">
+                        <td className="py-3 font-bold text-[#67716a]">{entry.rank}</td>
+                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#dfe8db] text-[10px] font-black">{entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>{entry.name}</span></td>
+                        <td className="py-3 text-center font-semibold">{entry.wins}</td>
+                        <td className="py-3 text-center font-semibold">{entry.losses}</td>
+                        <td className="py-3 text-center font-semibold">{entry.winPct}%</td>
+                        <td className={`py-3 text-center font-semibold ${entry.avgPointDiff > 0 ? "text-[#6d9a2e]" : entry.avgPointDiff < 0 ? "text-[#dd735b]" : "text-[#67716a]"}`}>{entry.avgPointDiff > 0 ? "+" : ""}{entry.avgPointDiff}</td>
+                        <td className="py-3 text-right font-black">{entry.rating}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : (
+            <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
+              <Lock size={20} className="text-[#98ba1f]" />
+              <p className="text-sm font-bold text-[#1b211e]">Join this group to see its leaderboard.</p>
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );

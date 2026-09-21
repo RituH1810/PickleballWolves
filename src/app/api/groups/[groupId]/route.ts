@@ -16,6 +16,28 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   });
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
   const myMembership = user ? group.memberships.find((membership) => membership.userId === user.id) : undefined;
+
+  const memberIds = group.memberships.map((membership) => membership.userId);
+  const completedMatches = memberIds.length
+    ? await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null, players: { some: { userId: { in: memberIds } } } }, include: { players: true, scores: true } })
+    : [];
+  const leaderboard = group.memberships
+    .map((membership) => {
+      const matches = completedMatches.filter((match) => match.players.some((matchPlayer) => matchPlayer.userId === membership.userId));
+      let wins = 0;
+      let totalDiff = 0;
+      matches.forEach((match) => {
+        const currentPlayer = match.players.find((matchPlayer) => matchPlayer.userId === membership.userId);
+        const diff = match.scores.reduce((total, score) => total + (currentPlayer?.side === "A" ? score.sideAScore - score.sideBScore : score.sideBScore - score.sideAScore), 0);
+        if (diff > 0) wins += 1;
+        totalDiff += diff;
+      });
+      const losses = Math.max(0, matches.length - wins);
+      return { id: membership.user.id, name: membership.user.name, rating: membership.user.skillRating.toString(), wins, losses, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, avgPointDiff: matches.length ? Number((totalDiff / matches.length).toFixed(1)) : 0 };
+    })
+    .sort((a, b) => b.wins - a.wins || b.avgPointDiff - a.avgPointDiff)
+    .map((entry, index) => ({ rank: index + 1, ...entry }));
+
   return NextResponse.json({
     group: {
       id: group.id,
@@ -24,6 +46,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       description: group.description,
       memberCount: group.memberships.length,
       members: group.memberships.map((membership) => ({ id: membership.user.id, name: membership.user.name, skillRating: membership.user.skillRating.toString(), role: membership.role })),
+      leaderboard,
       events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: event.location, format: event.format })),
       isMember: Boolean(myMembership),
       myRole: myMembership?.role ?? null,
