@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, Check, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Users, Waves } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronRight, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Users, Waves } from "lucide-react";
 
 type Player = { id: string; name: string; skillRating: string };
+type MyRoundRobin = { id: string; name: string; format: string; partnerFormat: string; playFormat: string; status: string; matchCount: number; isOwner: boolean };
+
+const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
+const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
 
 const playFormats = [
   { id: "SINGLES", label: "Singles", detail: "1 vs 1, no partner." },
@@ -124,6 +128,8 @@ export default function RoundRobinPage() {
   const [form, setForm] = useState({ name: "Saturday Wolves Round Robin", playFormat: "DOUBLES", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true });
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [myRoundRobins, setMyRoundRobins] = useState<MyRoundRobin[]>([]);
+  const [loadingMine, setLoadingMine] = useState(true);
 
   const activeGameFormat = gameFormats.find((format) => format.id === form.gameFormat) ?? gameFormats[0];
   const minPlayers = form.playFormat === "SINGLES" ? 2 : 4;
@@ -134,6 +140,7 @@ export default function RoundRobinPage() {
   }
 
   useEffect(() => { fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, []);
+  useEffect(() => { fetch("/api/round-robin").then((response) => response.ok ? response.json() : null).then((data) => setMyRoundRobins(data?.roundRobins ?? [])).finally(() => setLoadingMine(false)); }, []);
 
   async function createAndGenerate() {
     if (selected.length < minPlayers) { showNotice(`Select at least ${minPlayers} players.`, "error"); return; }
@@ -160,6 +167,25 @@ export default function RoundRobinPage() {
             {notice.text}
             {notice.type === "error" && notice.text.toLowerCase().includes("sign in") && <Link href="/login" className="ml-2 underline">Sign in</Link>}
           </p>
+        )}
+
+        {!loadingMine && myRoundRobins.length > 0 && (
+          <section className="mt-8 rounded-[24px] border border-[#e2e7e2] bg-white p-6 sm:p-8">
+            <h2 className="font-extrabold">Your round robins</h2>
+            <p className="mt-1 text-xs text-[#67716a]">Every round robin you&apos;ve created or played in, saved to your account.</p>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {myRoundRobins.map((roundRobin) => (
+                <Link key={roundRobin.id} href={`/round-robin/${roundRobin.id}`} className="flex items-center gap-3 rounded-xl border border-[#e2e7e2] px-4 py-3 transition-colors hover:border-[#98ba1f] hover:bg-[#f0f5d9]">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold text-[#1b211e]">{roundRobin.name}</p>
+                    <p className="mt-1 truncate text-xs text-[#67716a]">{partnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {playFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat} · {roundRobin.matchCount} matches{!roundRobin.isOwner ? " · Playing" : ""}</p>
+                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#e4f3a8] text-[#5c7b1a]" : "bg-[#eef2ed] text-[#67716a]"}`}>{roundRobin.status === "LIVE" ? "Live" : roundRobin.status === "COMPLETED" ? "Completed" : "Setup"}</span>
+                  <ChevronRight size={16} className="text-[#a0aaa1]" />
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         <section className="mt-8 rounded-[24px] border border-[#e2e7e2] bg-white p-6 sm:p-8">

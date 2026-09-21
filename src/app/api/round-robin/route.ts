@@ -3,6 +3,30 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ensureProfile } from "@/lib/server-profile";
 
+export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ roundRobins: [] });
+  const roundRobins = await prisma.roundRobin.findMany({
+    where: { OR: [{ createdById: user.id }, { matches: { some: { players: { some: { userId: user.id } } } } }] },
+    orderBy: { createdAt: "desc" },
+    include: { _count: { select: { matches: true } } },
+  });
+  return NextResponse.json({
+    roundRobins: roundRobins.map((roundRobin) => ({
+      id: roundRobin.id,
+      name: roundRobin.name,
+      format: roundRobin.format,
+      partnerFormat: roundRobin.partnerFormat,
+      playFormat: roundRobin.playFormat,
+      status: roundRobin.status,
+      matchCount: roundRobin._count.matches,
+      createdAt: roundRobin.createdAt,
+      isOwner: roundRobin.createdById === user.id,
+    })),
+  });
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
