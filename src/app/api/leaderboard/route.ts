@@ -21,6 +21,6 @@ export async function GET() {
     const differential = scored - conceded;
     return { name: player.name, rating: player.skillRating.toString(), record: `${wins} - ${losses}`, wins, losses, scored, conceded, differential, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, avgPointDiff: matches.length ? Number((differential / matches.length).toFixed(1)) : 0, matches: matches.length, movement: 0 };
   });
-  const leaderboard = entries.sort((a, b) => b.wins - a.wins || b.differential - a.differential).map((entry, index) => ({ rank: index + 1, ...entry }));
+  const leaderboard = entries.sort((a, b) => b.winPct - a.winPct || b.differential - a.differential).map((entry, index) => ({ rank: index + 1, ...entry }));
   return NextResponse.json({ leaderboard });
 }

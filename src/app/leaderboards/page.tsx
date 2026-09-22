@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, PawPrint, Trophy } from "lucide-react";
 
-type Leader = { rank: number; name: string; wins: number; losses: number; scored: number; conceded: number; differential: number; matches: number };
+type Leader = { rank: number; name: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number; matches: number };
 
 export default function LeaderboardsPage() {
   const [leaders, setLeaders] = useState<Leader[]>([]);
@@ -17,7 +17,7 @@ export default function LeaderboardsPage() {
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">PickleballWolves</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Leaderboard.</h1>
-            <p className="mt-3 text-sm text-[var(--ink-soft)]">Ranked by wins, then point differential, across every recorded match.</p>
+            <p className="mt-3 text-sm text-[var(--ink-soft)]">Ranked by win %, then point differential, across every recorded match.</p>
           </div>
           <Trophy size={36} className="text-[var(--lime-deep)]" />
         </div>
@@ -30,6 +30,7 @@ export default function LeaderboardsPage() {
                   <th className="pb-3">Player</th>
                   <th className="pb-3 text-center">W</th>
                   <th className="pb-3 text-center">L</th>
+                  <th className="pb-3 text-center">Win%</th>
                   <th className="pb-3 text-center">Points earned</th>
                   <th className="pb-3 text-center">Points against</th>
                   <th className="pb-3 text-right">Difference</th>
@@ -42,6 +43,7 @@ export default function LeaderboardsPage() {
                     <td className="py-4 font-bold text-[var(--foreground)]">{leader.name}<small className="ml-2 font-normal text-[var(--ink-soft)]">{leader.matches} matches</small></td>
                     <td className="py-4 text-center font-semibold">{leader.wins}</td>
                     <td className="py-4 text-center font-semibold">{leader.losses}</td>
+                    <td className="py-4 text-center font-semibold">{leader.winPct}%</td>
                     <td className="py-4 text-center font-semibold">{leader.scored}</td>
                     <td className="py-4 text-center font-semibold">{leader.conceded}</td>
                     <td className={`py-4 text-right font-black ${leader.differential > 0 ? "text-[var(--lime-deep)]" : leader.differential < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{leader.differential > 0 ? "+" : ""}{leader.differential}</td>
