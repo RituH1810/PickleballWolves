@@ -12,9 +12,11 @@ export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Only set name on first-ever profile creation; never resync it from auth metadata afterward,
+  // or a Google login would silently overwrite a name the user (or an admin) had customized.
   const profile = await prisma.user.upsert({
     where: { id: user.id },
-    update: { email: user.email ?? "", name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player" },
+    update: { email: user.email ?? "" },
     create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player", skillRating: 2.0 },
   });
   const matches = await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null, players: { some: { userId: user.id } } }, include: { players: true, scores: true } });
