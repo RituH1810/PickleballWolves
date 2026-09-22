@@ -9,6 +9,7 @@ export async function POST(_request: Request, context: { params: Promise<{ round
   const { roundRobinId } = await context.params;
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+  if (roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the round robin organizer can end it." }, { status: 403 });
   const updated = await prisma.roundRobin.update({ where: { id: roundRobinId }, data: { status: "COMPLETED", completedAt: new Date() } });
   return NextResponse.json({ roundRobin: updated });
 }
