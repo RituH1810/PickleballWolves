@@ -12,6 +12,7 @@ type DashboardGroup = { id: string; name: string; members: number; next: string;
 type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number };
 type RecentResult = { opponent: string; event: string; score: string; result: string; points: string; date: string };
 type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: string | null };
+type MyRoundRobin = { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: string | null; isOrganizer: boolean };
 
 const pendingPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const pendingPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
@@ -39,6 +40,7 @@ export function DashboardPage() {
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>([]);
   const [recentResultsList, setRecentResultsList] = useState<RecentResult[]>([]);
   const [pendingRoundRobins, setPendingRoundRobins] = useState<PendingRoundRobin[]>([]);
+  const [myRoundRobins, setMyRoundRobins] = useState<MyRoundRobin[]>([]);
   const [profileSummary, setProfileSummary] = useState({ name: "Player", rating: "-", initials: "PW", record: "0 - 0", winRate: "0.0%", rank: "-" as number | string });
   const [filter, setFilter] = useState<"All" | "Doubles" | "Mixed doubles">("All");
   const [loadingDashboard, setLoadingDashboard] = useState(true);
@@ -64,6 +66,7 @@ export function DashboardPage() {
       if (data?.events) setEventList(data.events);
       if (data?.groups) setGroupList(data.groups);
       if (data?.pendingRoundRobins) setPendingRoundRobins(data.pendingRoundRobins);
+      if (data?.myRoundRobins) setMyRoundRobins(data.myRoundRobins);
     }).finally(() => setLoadingDashboard(false));
     Promise.all([dashboardPromise, matchesPromise]).then(([dashboardData, matchData]) => {
       if (!matchData?.matches) return;
@@ -143,7 +146,24 @@ export function DashboardPage() {
         )}
         <div className="mt-10 grid gap-5 xl:grid-cols-2">
           <section className="panel rounded-[20px] p-5 sm:p-6" id="groups"><div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Your groups</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Your communities, all in one place.</p></div><Link href="/groups" className="text-xs font-bold text-[var(--lime-deep)]">View all</Link></div><div className="divide-y divide-[var(--line)]">{loadingDashboard ? Array.from({ length: 2 }).map((_, index) => <div key={index} className="flex items-center gap-3 py-4 first:pt-0"><div className="skeleton h-11 w-11 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><div className="skeleton h-3.5 w-2/3 rounded" /><div className="skeleton h-3 w-1/2 rounded" /></div></div>) : groupList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">No groups yet. Join or create one to see it here.</p> : groupList.map((group) => <Link key={group.id} href={`/groups/${group.id}`} className="flex items-center gap-3 py-4 first:pt-0 last:pb-0"><div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xs font-black text-[#0f1712] ${group.color === "lime" ? "bg-[var(--lime)]" : group.color === "blue" ? "bg-[var(--blue)]" : "bg-[var(--coral)]"}`}>{group.mark}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{group.name}</p><p className="mt-1 truncate text-xs text-[var(--ink-soft)]">{group.members} members · {group.next}</p></div><ChevronRight size={17} className="text-[var(--ink-soft)]" /></Link>)}</div></section>
-          <section className="panel rounded-[20px] p-5 sm:p-6" id="upcoming"><div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Upcoming</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Your next scheduled games.</p></div></div><div className="divide-y divide-[var(--line)]">{loadingDashboard ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="flex items-center gap-3 py-3 first:pt-0"><div className="skeleton h-10 w-10 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><div className="skeleton h-3.5 w-2/3 rounded" /><div className="skeleton h-3 w-1/3 rounded" /></div></div>) : eventList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">No upcoming games yet.</p> : eventList.slice(0, 5).map((event) => <div key={event.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><CalendarDays size={16} /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{event.title}</p><p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{event.dateLabel} · {event.timeLabel}</p></div><span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">{event.format}</span></div>)}</div></section>
+          <section className="panel rounded-[20px] p-5 sm:p-6" id="my-round-robins">
+            <div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Your round robins</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Round robins you&apos;re organizing or playing in.</p></div><Link href="/round-robin" className="text-xs font-bold text-[var(--lime-deep)]">View all</Link></div>
+            <div className="divide-y divide-[var(--line)]">
+              {loadingDashboard ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="flex items-center gap-3 py-3 first:pt-0"><div className="skeleton h-10 w-10 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><div className="skeleton h-3.5 w-2/3 rounded" /><div className="skeleton h-3 w-1/3 rounded" /></div></div>) : myRoundRobins.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">No round robins yet. <Link href="/round-robin" className="font-bold text-[var(--lime-deep)]">Build one</Link> to get started.</p> : myRoundRobins.map((roundRobin) => (
+                <Link key={roundRobin.id} href={`/round-robin/${roundRobin.id}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><Repeat size={16} /></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">{roundRobin.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{roundRobin.groupName ? `${roundRobin.groupName} · ` : ""}{roundRobin.scheduledAt ? new Date(roundRobin.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : (pendingPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {roundRobin.isOrganizer && <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizing</span>}
+                    <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{roundRobin.status === "LIVE" && <LivePulse color="#c7e572" size={6} />}{roundRobin.status === "LIVE" ? "Live" : "Setup"}</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         </div>
         <section className="panel mt-5 overflow-x-auto rounded-[20px] p-5 sm:p-6" id="leaderboard">
           <div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Community leaderboard</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Ranked by win % and point differential across every recorded match.</p></div></div>
