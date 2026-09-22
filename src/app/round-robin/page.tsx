@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Users, Waves } from "lucide-react";
+import { LivePulse, PaddleIcon } from "@/components/pickleball-art";
 
 type Player = { id: string; name: string; rank: number | null };
 type MyRoundRobin = { id: string; name: string; format: string; partnerFormat: string; playFormat: string; status: string; matchCount: number; isOwner: boolean; organizerName: string };
@@ -199,7 +200,8 @@ export default function RoundRobinPage() {
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
         <Link href="/dashboard" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
-        <div className="mt-8">
+        <div className="relative mt-8">
+          <PaddleIcon className="animate-float pointer-events-none absolute -top-4 right-2 hidden h-16 w-16 opacity-80 sm:block" />
           <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Competition tools</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Build a round robin.</h1>
           <p className="mt-3 text-sm text-[var(--ink-soft)]">Choose a format, fill the player list, then run the courts from one live room.</p>
@@ -222,7 +224,7 @@ export default function RoundRobinPage() {
                     <p className="truncate text-sm font-bold text-[var(--foreground)]">{roundRobin.name}</p>
                     <p className="mt-1 truncate text-xs text-[var(--ink-soft)]">{partnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {playFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat} · {roundRobin.matchCount} matches{!roundRobin.isOwner ? ` · Organized by ${roundRobin.organizerName}` : ""}</p>
                   </div>
-                  <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{roundRobin.status === "LIVE" ? "Live" : roundRobin.status === "COMPLETED" ? "Completed" : "Setup"}</span>
+                  <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{roundRobin.status === "LIVE" && <LivePulse color="#c7e572" size={6} />}{roundRobin.status === "LIVE" ? "Live" : roundRobin.status === "COMPLETED" ? "Completed" : "Setup"}</span>
                   <ChevronRight size={16} className="text-[var(--ink-soft)]" />
                 </Link>
               ))}
