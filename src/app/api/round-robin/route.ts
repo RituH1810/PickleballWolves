@@ -12,6 +12,9 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { matches: true } } },
   });
+  const organizerIds = [...new Set(roundRobins.map((roundRobin) => roundRobin.createdById))];
+  const organizers = await prisma.user.findMany({ where: { id: { in: organizerIds } }, select: { id: true, name: true } });
+  const organizerNameById = new Map(organizers.map((organizer) => [organizer.id, organizer.name]));
   return NextResponse.json({
     roundRobins: roundRobins.map((roundRobin) => ({
       id: roundRobin.id,
@@ -23,6 +26,7 @@ export async function GET() {
       matchCount: roundRobin._count.matches,
       createdAt: roundRobin.createdAt,
       isOwner: roundRobin.createdById === user.id,
+      organizerName: organizerNameById.get(roundRobin.createdById) ?? "Unknown",
     })),
   });
 }

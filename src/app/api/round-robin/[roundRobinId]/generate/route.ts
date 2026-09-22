@@ -21,6 +21,8 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const { roundRobinId } = await context.params;
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin || roundRobin.createdById !== user.id) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+  const existingScoreCount = await prisma.gameScore.count({ where: { match: { roundRobinId } } });
+  if (existingScoreCount > 0) return NextResponse.json({ error: "Matches already have scores entered; the schedule can no longer be regenerated." }, { status: 400 });
   const body = await request.json();
   const explicitTeams: string[][] | null = Array.isArray(body.teams)
     ? body.teams.filter((team: unknown): team is string[] => Array.isArray(team) && team.length === 2 && team.every((id) => typeof id === "string"))

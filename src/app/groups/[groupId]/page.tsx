@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Trophy, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Trophy, UserPlus, Users } from "lucide-react";
 
+type Player = { id: string; name: string; skillRating: string };
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER" };
 type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
@@ -17,6 +18,18 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const [notFound, setNotFound] = useState(false);
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [showInvite, setShowInvite] = useState(false);
+  const [inviteSelected, setInviteSelected] = useState<string[]>([]);
+  const [inviting, setInviting] = useState(false);
+
+  async function loadGroup() {
+    const response = await fetch(`/api/groups/${groupId}`);
+    if (response.status === 404) { setNotFound(true); return; }
+    if (!response.ok) return;
+    const data = await response.json();
+    setGroup(data.group ?? null);
+  }
 
   useEffect(() => {
     fetch(`/api/groups/${groupId}`).then(async (response) => {
@@ -26,6 +39,20 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       setGroup(data.group ?? null);
     }).finally(() => setLoading(false));
   }, [groupId]);
+  useEffect(() => { if (showInvite && players.length === 0) fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, [showInvite, players.length]);
+
+  async function inviteSelectedPlayers() {
+    if (!inviteSelected.length) return;
+    setInviting(true);
+    const response = await fetch(`/api/groups/${groupId}/invite`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userIds: inviteSelected }) });
+    const data = await response.json();
+    if (!response.ok) { setNotice({ text: data.error ?? "Unable to invite players", type: "error" }); setInviting(false); return; }
+    await loadGroup();
+    setInviteSelected([]);
+    setShowInvite(false);
+    setNotice({ text: `Added ${data.added} player${data.added === 1 ? "" : "s"} to the group.`, type: "success" });
+    setInviting(false);
+  }
 
   async function toggleMembership() {
     if (!group) return;
@@ -33,8 +60,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     const response = await fetch(`/api/groups/${groupId}/membership`, { method: group.isMember ? "DELETE" : "POST" });
     const data = await response.json();
     if (!response.ok) { setNotice({ text: data.error ?? "Unable to update membership", type: "error" }); setUpdating(false); return; }
-    const reload = await fetch(`/api/groups/${groupId}`);
-    if (reload.ok) { const reloaded = await reload.json(); setGroup(reloaded.group ?? null); }
+    await loadGroup();
     setNotice({ text: group.isMember ? "Left group" : "You're in! Joined the group.", type: "success" });
     setUpdating(false);
   }
@@ -66,13 +92,47 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <h1 className="text-2xl font-black tracking-[-.03em] text-[var(--foreground)] sm:text-3xl">{group.name}</h1>
               <p className="mt-1 flex items-center gap-1 text-sm text-[var(--ink-soft)]"><MapPin size={14} />{group.location}</p>
             </div>
-            <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>
-              {group.isMember && <Check size={15} />}
-              {group.isMember ? "Joined" : "Join group"}
-            </button>
+            <div className="flex items-center gap-2">
+              {group.myRole === "ORGANIZER" && (
+                <button onClick={() => setShowInvite((current) => !current)} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                  <UserPlus size={15} />Invite players
+                </button>
+              )}
+              <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>
+                {group.isMember && <Check size={15} />}
+                {group.isMember ? "Joined" : "Join group"}
+              </button>
+            </div>
           </div>
           {group.description && <p className="mt-5 text-sm leading-6 text-[#c3d0c5]">{group.description}</p>}
           <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-[var(--ink-soft)]"><Users size={16} />{group.memberCount} member{group.memberCount === 1 ? "" : "s"}</p>
+
+          {showInvite && group.myRole === "ORGANIZER" && (
+            <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[#131f19] p-5">
+              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Invite players</p>
+              <p className="mt-1 text-xs text-[var(--ink-soft)]">Add existing players straight to the group.</p>
+              {(() => {
+                const memberIds = new Set(group.members.map((member) => member.id));
+                const candidates = players.filter((player) => !memberIds.has(player.id));
+                if (candidates.length === 0) return <p className="mt-4 text-sm text-[var(--ink-soft)]">Everyone on the platform is already in this group.</p>;
+                return (
+                  <>
+                    <div className="mt-4 grid max-h-56 gap-2 overflow-y-auto sm:grid-cols-2">
+                      {candidates.map((player) => (
+                        <button key={player.id} onClick={() => setInviteSelected((current) => current.includes(player.id) ? current.filter((id) => id !== player.id) : [...current, player.id])} className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${inviteSelected.includes(player.id) ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                          <span className="font-bold">{player.name}</span>
+                          {inviteSelected.includes(player.id) && <Check size={15} className="text-[var(--lime-deep)]" />}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={inviteSelectedPlayers} disabled={inviting || inviteSelected.length === 0} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">
+                      {inviting ? "Adding..." : `Add ${inviteSelected.length || ""} to group`.trim()}
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
+          )}
         </section>
 
         <div className="mt-5 grid gap-5 md:grid-cols-[1fr_.8fr]">
