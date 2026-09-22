@@ -36,14 +36,14 @@ const partnerFormats = [
 ];
 
 const gameFormats = [
-  { id: "POPCORN", label: "Popcorn", icon: Shuffle, blurb: "Mix in with as many players as possible." },
-  { id: "GAUNTLET", label: "Gauntlet", icon: Swords, blurb: "Battle up the ladder one challenger at a time." },
-  { id: "RIVER", label: "Up & Down the River", icon: Waves, blurb: "Move up or down a court based on your result." },
-  { id: "THRONE", label: "Claim the Throne", icon: Crown, blurb: "Defend the top court or dethrone the leader." },
-  { id: "CREAM", label: "Cream of the Crop", icon: TrendingUp, blurb: "Play unlimited rounds; best win rate wins." },
-  { id: "DOUBLE_HEADER", label: "Double Header", icon: Layers, blurb: "Two games a round for double the action." },
-  { id: "MIXED_MADNESS", label: "Mixed Madness", icon: Users, blurb: "Randomized mixed-doubles pairings every round." },
-  { id: "SCRAMBLE", label: "Scramble", icon: Dices, blurb: "Fully randomized teams and matchups." },
+  { id: "POPCORN", label: "Dink Mixer", icon: Shuffle, blurb: "Mix in with as many players as possible." },
+  { id: "GAUNTLET", label: "Challenger's Court", icon: Swords, blurb: "Battle up the ladder one challenger at a time." },
+  { id: "RIVER", label: "Tidal Courts", icon: Waves, blurb: "Move up or down a court based on your result." },
+  { id: "THRONE", label: "King of the Kitchen", icon: Crown, blurb: "Defend the top court or dethrone the leader." },
+  { id: "CREAM", label: "Top Dill", icon: TrendingUp, blurb: "Play unlimited rounds; best win rate wins." },
+  { id: "DOUBLE_HEADER", label: "Double Dink", icon: Layers, blurb: "Two games a round for double the action." },
+  { id: "MIXED_MADNESS", label: "Dilly Mixer", icon: Users, blurb: "Randomized mixed-doubles pairings every round." },
+  { id: "SCRAMBLE", label: "Full Pickle", icon: Dices, blurb: "Fully randomized teams and matchups." },
 ];
 
 export default function EditRoundRobinPage({ params }: { params: Promise<{ roundRobinId: string }> }) {

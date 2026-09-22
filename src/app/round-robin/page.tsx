@@ -25,7 +25,7 @@ const partnerFormats = [
 const gameFormats = [
   {
     id: "POPCORN",
-    label: "Popcorn",
+    label: "Dink Mixer",
     icon: Shuffle,
     blurb: "Mix in with as many players as possible.",
     description: "Every round generates a fresh, random matchup. Don't like the draw? Shuffle for a new one. Works with any number of players or courts.",
@@ -37,7 +37,7 @@ const gameFormats = [
   },
   {
     id: "GAUNTLET",
-    label: "Gauntlet",
+    label: "Challenger's Court",
     icon: Swords,
     blurb: "Battle up the ladder one challenger at a time.",
     description: "Winners move up a court and losers move down. Climb to court one and defend your spot as challengers line up.",
@@ -49,7 +49,7 @@ const gameFormats = [
   },
   {
     id: "RIVER",
-    label: "Up & Down the River",
+    label: "Tidal Courts",
     icon: Waves,
     blurb: "Move up or down a court based on your result.",
     description: "Win and you head upstream to a tougher court. Lose and you drift downstream. Skill levels even out as the rounds go on.",
@@ -61,7 +61,7 @@ const gameFormats = [
   },
   {
     id: "THRONE",
-    label: "Claim the Throne",
+    label: "King of the Kitchen",
     icon: Crown,
     blurb: "Defend the top court or dethrone the leader.",
     description: "One court is the throne. Win there and you stay king or queen. Lose anywhere and a new challenger steps up to take their shot.",
@@ -73,7 +73,7 @@ const gameFormats = [
   },
   {
     id: "CREAM",
-    label: "Cream of the Crop",
+    label: "Top Dill",
     icon: TrendingUp,
     blurb: "Play unlimited rounds; best win rate wins.",
     description: "This format optimizes for the most unique matchups across a long session. Play as many rounds as you like and watch standings update live.",
@@ -85,7 +85,7 @@ const gameFormats = [
   },
   {
     id: "DOUBLE_HEADER",
-    label: "Double Header",
+    label: "Double Dink",
     icon: Layers,
     blurb: "Two games a round for double the action.",
     description: "Each round pairs you up for two full games before rotating, so you get more play per matchup with fewer changeovers.",
@@ -97,7 +97,7 @@ const gameFormats = [
   },
   {
     id: "MIXED_MADNESS",
-    label: "Mixed Madness",
+    label: "Dilly Mixer",
     icon: Users,
     blurb: "Randomized mixed-doubles pairings every round.",
     description: "Best for groups with an even mix of players. Every round randomizes mixed-doubles pairings for balanced, social matchups.",
@@ -109,7 +109,7 @@ const gameFormats = [
   },
   {
     id: "SCRAMBLE",
-    label: "Scramble",
+    label: "Full Pickle",
     icon: Dices,
     blurb: "Fully randomized teams and matchups.",
     description: "The most social option. Teams and opponents are reshuffled every round so no two rounds look the same.",
