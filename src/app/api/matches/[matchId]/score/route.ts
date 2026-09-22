@@ -13,9 +13,18 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const sideBScore = Number(body.sideBScore);
   if (!Number.isInteger(sideAScore) || !Number.isInteger(sideBScore) || sideAScore < 0 || sideBScore < 0 || sideAScore === sideBScore) return NextResponse.json({ error: "Enter two different non-negative scores." }, { status: 400 });
   const winnerSide = sideAScore > sideBScore ? Side.A : Side.B;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: true, roundRobin: { select: { createdById: true } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: true, roundRobin: { select: { createdById: true, groupId: true } } } });
   if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 });
-  if (match.roundRobin && match.roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the round robin organizer can update scores." }, { status: 403 });
+  if (match.roundRobin) {
+    // The organizer can always score; for group round robins, any member who has actually
+    // joined can enter scores too, not just the organizer.
+    let canEnterScore = match.roundRobin.createdById === user.id;
+    if (!canEnterScore && match.roundRobin.groupId) {
+      const myRsvp = await prisma.roundRobinRSVP.findUnique({ where: { roundRobinId_userId: { roundRobinId: match.roundRobinId!, userId: user.id } } });
+      canEnterScore = myRsvp?.status === "JOINED";
+    }
+    if (!canEnterScore) return NextResponse.json({ error: "Only the organizer or a joined member can update scores." }, { status: 403 });
+  }
   const score = await prisma.gameScore.upsert({ where: { matchId_gameNumber: { matchId, gameNumber: Number(body.gameNumber) || 1 } }, update: { sideAScore, sideBScore, enteredById: user.id }, create: { matchId, gameNumber: Number(body.gameNumber) || 1, sideAScore, sideBScore, enteredById: user.id } });
   await prisma.match.update({ where: { id: matchId }, data: { status: MatchStatus.COMPLETED, winnerSide } });
   await prisma.auditLog.create({ data: { actorId: user.id, entityType: "GameScore", entityId: score.id, action: "SCORE_ENTERED", afterData: { matchId, gameNumber: score.gameNumber, sideAScore, sideBScore }, matchId } });

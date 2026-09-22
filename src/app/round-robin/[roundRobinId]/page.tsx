@@ -262,7 +262,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                   <span className="text-xs text-[var(--ink-soft)]">{round.matches.length} courts active</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {round.matches.map((match) => <MatchCard key={match.id} match={match} onSave={saveScore} canEdit={room.isOwner} />)}
+                  {round.matches.map((match) => <MatchCard key={match.id} match={match} onSave={saveScore} canEdit={room.isOwner || room.myRsvpStatus === "JOINED"} />)}
                 </div>
               </section>
             ))}
@@ -310,7 +310,7 @@ function MatchCard({ match, onSave, canEdit }: { match: Match; onSave: (matchId:
       ) : (
         <div className="mt-4 flex items-center justify-between rounded-lg bg-[#131f19] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
           {match.scores[0] ? <span className="font-bold text-[var(--foreground)]">{match.scores[0].sideAScore} - {match.scores[0].sideBScore}</span> : <span>Score not entered yet</span>}
-          <span>Organizer only</span>
+          <span>Members only</span>
         </div>
       )}
     </article>
