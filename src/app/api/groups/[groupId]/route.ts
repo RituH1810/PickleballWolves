@@ -17,6 +17,13 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   });
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
   const myMembership = user ? group.memberships.find((membership) => membership.userId === user.id) : undefined;
+  const myAnyMembership = user ? await prisma.membership.findUnique({ where: { groupId_userId: { groupId, userId: user.id } } }) : null;
+
+  let pendingRequests: { id: string; name: string }[] = [];
+  if (myMembership && myMembership.status === MembershipStatus.ACTIVE) {
+    const requests = await prisma.membership.findMany({ where: { groupId, status: MembershipStatus.PENDING }, include: { user: { select: { id: true, name: true } } } });
+    pendingRequests = requests.map((request) => ({ id: request.user.id, name: request.user.name }));
+  }
 
   // Scope to matches actually played as part of this group's own events or round robins --
   // not just any match a member happened to play anywhere on the platform.
@@ -73,6 +80,8 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       roundRobins: group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })),
       isMember: Boolean(myMembership),
       myRole: myMembership?.role ?? null,
+      myStatus: myAnyMembership?.status ?? null,
+      pendingRequests,
     },
   });
 }

@@ -12,17 +12,17 @@ async function getSignedInUser() {
 
 export async function POST(_request: Request, context: { params: Promise<{ groupId: string }> }) {
   const user = await getSignedInUser();
-  if (!user) return NextResponse.json({ error: "Sign in to join a group." }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Sign in to request to join a group." }, { status: 401 });
   const { groupId } = await context.params;
   const group = await prisma.group.findUnique({ where: { id: groupId } });
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
   const profile = await ensureProfile(user);
-  await prisma.membership.upsert({
+  const membership = await prisma.membership.upsert({
     where: { groupId_userId: { groupId, userId: profile.id } },
-    update: { status: MembershipStatus.ACTIVE, joinedAt: new Date() },
-    create: { groupId, userId: profile.id, role: MembershipRole.MEMBER, status: MembershipStatus.ACTIVE, joinedAt: new Date() },
+    update: { status: MembershipStatus.PENDING },
+    create: { groupId, userId: profile.id, role: MembershipRole.MEMBER, status: MembershipStatus.PENDING },
   });
-  return NextResponse.json({ status: "ACTIVE" });
+  return NextResponse.json({ status: membership.status });
 }
 
 export async function DELETE(_request: Request, context: { params: Promise<{ groupId: string }> }) {

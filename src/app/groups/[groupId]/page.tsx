@@ -10,7 +10,8 @@ type LeaderboardEntry = { rank: number; id: string; name: string; rating: string
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
 type GroupRoundRobin = { id: string; name: string; scheduledAt: string | null; playFormat: string; partnerFormat: string };
-type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; isMember: boolean; myRole: string | null };
+type PendingRequest = { id: string; name: string };
+type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; isMember: boolean; myRole: string | null; myStatus: "ACTIVE" | "PENDING" | "DECLINED" | null; pendingRequests: PendingRequest[] };
 
 const groupPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
@@ -83,13 +84,22 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   async function toggleMembership() {
     if (!group) return;
+    const isPending = group.myStatus === "PENDING";
     setUpdating(true);
-    const response = await fetch(`/api/groups/${groupId}/membership`, { method: group.isMember ? "DELETE" : "POST" });
+    const response = await fetch(`/api/groups/${groupId}/membership`, { method: group.isMember || isPending ? "DELETE" : "POST" });
     const data = await response.json();
     if (!response.ok) { setNotice({ text: data.error ?? "Unable to update membership", type: "error" }); setUpdating(false); return; }
     await loadGroup();
-    setNotice({ text: group.isMember ? "Left group" : "You're in! Joined the group.", type: "success" });
+    setNotice({ text: group.isMember ? "Left group" : isPending ? "Request withdrawn." : "Request sent! A group member needs to approve you.", type: "success" });
     setUpdating(false);
+  }
+
+  async function respondToRequest(userId: string, status: "ACTIVE" | "DECLINED") {
+    const response = await fetch(`/api/groups/${groupId}/requests/${userId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    const data = await response.json();
+    if (!response.ok) { setNotice({ text: data.error ?? "Unable to respond to this request.", type: "error" }); return; }
+    await loadGroup();
+    setNotice({ text: status === "ACTIVE" ? "Request approved." : "Request declined.", type: "success" });
   }
 
   if (loading) return (
@@ -134,9 +144,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <UserPlus size={15} />Invite players
                 </button>
               )}
-              <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>
-                {group.isMember && <Check size={15} />}
-                {group.isMember ? "Joined" : "Join group"}
+              <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember || group.myStatus === "PENDING" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>
+                {(group.isMember || group.myStatus === "PENDING") && <Check size={15} />}
+                {group.isMember ? "Joined" : group.myStatus === "PENDING" ? "Requested" : "Join group"}
               </button>
             </div>
           </div>
@@ -199,6 +209,25 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
           )}
         </section>
+
+        {group.isMember && group.pendingRequests.length > 0 && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
+            <h2 className="font-extrabold">Join requests</h2>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Any group member can approve or decline.</p>
+            <div className="mt-4 space-y-2">
+              {group.pendingRequests.map((request) => (
+                <div key={request.id} className="flex items-center gap-3 rounded-xl bg-[#131f19] px-4 py-3">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{request.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
+                  <p className="min-w-0 flex-1 truncate text-sm font-bold">{request.name}</p>
+                  <div className="flex shrink-0 gap-2">
+                    <button onClick={() => respondToRequest(request.id, "ACTIVE")} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Approve</button>
+                    <button onClick={() => respondToRequest(request.id, "DECLINED")} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]">Decline</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <div className="mt-5 grid gap-5 md:grid-cols-[1fr_.8fr]">
           <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
