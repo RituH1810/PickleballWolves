@@ -12,13 +12,13 @@ export async function GET() {
   ]);
 
   let pendingRoundRobins: { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: Date | null }[] = [];
-  let myRoundRobins: { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: Date | null; isOrganizer: boolean }[] = [];
+  let myRoundRobins: { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: Date | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null }[] = [];
   if (user) {
     const myLiveRoundRobins = await prisma.roundRobin.findMany({
       where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ createdById: user.id }, { rsvps: { some: { userId: user.id, status: "JOINED" } } }] },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
       take: 8,
-      include: { group: { select: { name: true } } },
+      include: { group: { select: { name: true } }, rsvps: { where: { userId: user.id } } },
     });
     myRoundRobins = myLiveRoundRobins.map((roundRobin) => ({
       id: roundRobin.id,
@@ -29,6 +29,7 @@ export async function GET() {
       status: roundRobin.status,
       scheduledAt: roundRobin.scheduledAt,
       isOrganizer: roundRobin.createdById === user.id,
+      myRsvpStatus: roundRobin.rsvps[0]?.status ?? null,
     }));
 
     const myGroupIds = (await prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { groupId: true } })).map((membership) => membership.groupId);
