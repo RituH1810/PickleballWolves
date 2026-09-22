@@ -25,6 +25,7 @@ export async function GET() {
       playFormat: roundRobin.playFormat,
       status: roundRobin.status,
       matchCount: roundRobin._count.matches,
+      scheduledAt: roundRobin.scheduledAt,
       createdAt: roundRobin.createdAt,
       isOwner: roundRobin.createdById === user.id,
       organizerName: organizerNameById.get(roundRobin.createdById) ?? "Unknown",
@@ -45,8 +46,12 @@ export async function POST(request: Request) {
     if (!membership || membership.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "Join this group before creating a round robin for it." }, { status: 403 });
   }
 
+  const scheduledAt = typeof body.scheduledAt === "string" && body.scheduledAt ? new Date(body.scheduledAt) : null;
+  if (scheduledAt && Number.isNaN(scheduledAt.getTime())) return NextResponse.json({ error: "Enter a valid date and time." }, { status: 400 });
+  if (groupId && !scheduledAt) return NextResponse.json({ error: "Pick a date and time so the group knows when to show up." }, { status: 400 });
+
   const partnerFormat = ["ROTATE", "FIXED"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
   const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : "DOUBLES";
-  const roundRobin = await prisma.roundRobin.create({ data: { name: body.name?.trim() || "New round robin", createdById: profile.id, groupId, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
+  const roundRobin = await prisma.roundRobin.create({ data: { name: body.name?.trim() || "New round robin", createdById: profile.id, groupId, scheduledAt, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
   return NextResponse.json({ roundRobin }, { status: 201 });
 }

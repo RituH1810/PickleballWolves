@@ -46,7 +46,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const fixedPartners = roundRobin.partnerFormat === "FIXED";
   if (fixedPartners && isDoubles && !explicitTeams) return NextResponse.json({ error: "Pair up your fixed teams before generating." }, { status: 400 });
   const rounds: RoundInput[] = [];
-  const scheduledAt = new Date();
+  const scheduledAt = roundRobin.scheduledAt ?? new Date();
 
   if (!isDoubles || fixedPartners) {
     // Stable units for the whole event: individual players (singles), or explicit organizer-chosen teams (fixed doubles/mixed).

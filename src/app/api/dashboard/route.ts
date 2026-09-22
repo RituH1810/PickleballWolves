@@ -11,13 +11,13 @@ export async function GET() {
     prisma.group.findMany({ where: { visibility: "PUBLIC" }, orderBy: { createdAt: "asc" }, take: 6, include: { _count: { select: { memberships: true } }, events: { where: { status: "PUBLISHED" }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true } } } }),
   ]);
 
-  let pendingRoundRobins: { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; myStatus: "JOINED" | "DECLINED" | null }[] = [];
+  let pendingRoundRobins: { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; myStatus: "JOINED" | "DECLINED" | null; scheduledAt: Date | null }[] = [];
   if (user) {
     const myGroupIds = (await prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { groupId: true } })).map((membership) => membership.groupId);
     if (myGroupIds.length) {
       const roundRobins = await prisma.roundRobin.findMany({
         where: { groupId: { in: myGroupIds }, status: "SETUP" },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         include: { group: { select: { name: true } }, rsvps: true },
       });
       const organizerIds = [...new Set(roundRobins.map((roundRobin) => roundRobin.createdById))];
@@ -32,6 +32,7 @@ export async function GET() {
         partnerFormat: roundRobin.partnerFormat,
         joinedCount: roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED").length,
         myStatus: roundRobin.rsvps.find((rsvp) => rsvp.userId === user.id)?.status ?? null,
+        scheduledAt: roundRobin.scheduledAt,
       }));
     }
   }

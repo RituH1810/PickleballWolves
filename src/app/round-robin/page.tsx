@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Check, ChevronRight, Crown, Dices, Layers, Shuff
 import { LivePulse, PaddleIcon } from "@/components/pickleball-art";
 
 type Player = { id: string; name: string; rank: number | null };
-type MyRoundRobin = { id: string; name: string; format: string; partnerFormat: string; playFormat: string; status: string; matchCount: number; isOwner: boolean; organizerName: string };
+type MyRoundRobin = { id: string; name: string; format: string; partnerFormat: string; playFormat: string; status: string; matchCount: number; isOwner: boolean; organizerName: string; scheduledAt: string | null };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
@@ -131,7 +131,7 @@ function RoundRobinBuilder() {
   const [selected, setSelected] = useState<string[]>([]);
   const [teams, setTeams] = useState<[string, string][]>([]);
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "Saturday Wolves Round Robin", playFormat: "DOUBLES", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true });
+  const [form, setForm] = useState({ name: "Saturday Wolves Round Robin", playFormat: "DOUBLES", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true, scheduledAt: "" });
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [generating, setGenerating] = useState(false);
   const [myRoundRobins, setMyRoundRobins] = useState<MyRoundRobin[]>([]);
@@ -185,8 +185,9 @@ function RoundRobinBuilder() {
   useEffect(() => { if (groupId) fetch(`/api/groups/${groupId}`).then((response) => response.ok ? response.json() : null).then((data) => setGroupName(data?.group?.name ?? "")); }, [groupId]);
 
   async function createForGroup() {
+    if (!form.scheduledAt) { showNotice("Pick a date and time for the group.", "error"); return; }
     setGenerating(true);
-    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ groupId, name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced }) });
+    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ groupId, name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced, scheduledAt: new Date(form.scheduledAt).toISOString() }) });
     const createdData = await created.json();
     if (!created.ok) { showNotice(createdData.error ?? "Unable to create round robin.", "error"); setGenerating(false); return; }
     router.push(`/round-robin/${createdData.roundRobin.id}`);
@@ -199,7 +200,7 @@ function RoundRobinBuilder() {
       if (selected.some((id) => !pairedPlayerIds.has(id))) { showNotice("Every selected player must be paired into a team.", "error"); return; }
     }
     setGenerating(true);
-    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced }) });
+    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced, scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : undefined }) });
     const createdData = await created.json();
     if (!created.ok) { showNotice(createdData.error ?? "Unable to create round robin.", "error"); setGenerating(false); return; }
     const generateBody = needsFixedTeams ? { teams } : { playerIds: selected };
@@ -234,7 +235,7 @@ function RoundRobinBuilder() {
                 <Link key={roundRobin.id} href={`/round-robin/${roundRobin.id}`} className="flex items-center gap-3 rounded-xl border border-[var(--line)] px-4 py-3 transition-colors hover:border-[var(--lime-deep)] hover:bg-[#1e2b17]">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[var(--foreground)]">{roundRobin.name}</p>
-                    <p className="mt-1 truncate text-xs text-[var(--ink-soft)]">{partnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {playFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat} · {roundRobin.matchCount} matches{!roundRobin.isOwner ? ` · Organized by ${roundRobin.organizerName}` : ""}</p>
+                    <p className="mt-1 truncate text-xs text-[var(--ink-soft)]">{partnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {playFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat} · {roundRobin.matchCount} matches{!roundRobin.isOwner ? ` · Organized by ${roundRobin.organizerName}` : ""}{roundRobin.scheduledAt ? ` · ${new Date(roundRobin.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}` : ""}</p>
                   </div>
                   <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{roundRobin.status === "LIVE" && <LivePulse color="#c7e572" size={6} />}{roundRobin.status === "LIVE" ? "Live" : roundRobin.status === "COMPLETED" ? "Completed" : "Setup"}</span>
                   <ChevronRight size={16} className="text-[var(--ink-soft)]" />
@@ -320,6 +321,10 @@ function RoundRobinBuilder() {
           <div className="mt-8 grid gap-5 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
             <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Event name
               <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
+            </label>
+            <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">When{groupId ? "" : " (optional)"}
+              <input type="datetime-local" required={Boolean(groupId)} value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
+              {groupId && <span className="mt-1 block text-[11px] font-normal normal-case text-[var(--ink-soft)]">The group will see this date on their upcoming matches.</span>}
             </label>
             <label className="text-xs font-bold text-[#c3d0c5]">Courts
               <input type="number" min="1" value={form.courtCount} onChange={(event) => setForm({ ...form, courtCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />

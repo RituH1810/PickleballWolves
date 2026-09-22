@@ -58,6 +58,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ round
   const body = await request.json();
   const partnerFormat = ["ROTATE", "FIXED"].includes(body.partnerFormat) ? body.partnerFormat : roundRobin.partnerFormat;
   const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : roundRobin.playFormat;
+  let scheduledAt = roundRobin.scheduledAt;
+  if (typeof body.scheduledAt === "string" && body.scheduledAt) {
+    const parsed = new Date(body.scheduledAt);
+    if (Number.isNaN(parsed.getTime())) return NextResponse.json({ error: "Enter a valid date and time." }, { status: 400 });
+    scheduledAt = parsed;
+  }
+  if (roundRobin.groupId && !scheduledAt) return NextResponse.json({ error: "Pick a date and time so the group knows when to show up." }, { status: 400 });
+
   const updated = await prisma.roundRobin.update({
     where: { id: roundRobinId },
     data: {
@@ -65,6 +73,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ round
       format: body.format || roundRobin.format,
       partnerFormat,
       playFormat,
+      scheduledAt,
       courtCount: Number(body.courtCount) || roundRobin.courtCount,
       roundCount: Number(body.roundCount) || roundRobin.roundCount,
       pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : roundRobin.pointsToWin,

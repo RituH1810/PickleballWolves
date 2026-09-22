@@ -11,7 +11,7 @@ type DashboardEvent = { id: string; title: string; dateLabel: string; timeLabel:
 type DashboardGroup = { id: string; name: string; members: number; next: string; mark: string; color?: string };
 type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number };
 type RecentResult = { opponent: string; event: string; score: string; result: string; points: string; date: string };
-type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; myStatus: "JOINED" | "DECLINED" | null };
+type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; myStatus: "JOINED" | "DECLINED" | null; scheduledAt: string | null };
 
 const pendingPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const pendingPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
@@ -127,6 +127,7 @@ export function DashboardPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <Link href={`/round-robin/${roundRobin.id}`} className="truncate text-sm font-extrabold text-[var(--foreground)] hover:text-[var(--lime-deep)]">{roundRobin.name}</Link>
+                      {roundRobin.scheduledAt && <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-[var(--lime-deep)]"><CalendarDays size={13} />{new Date(roundRobin.scheduledAt).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>}
                       <p className="mt-1 text-xs text-[var(--ink-soft)]">{roundRobin.groupName} · {pendingPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {pendingPlayFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat}</p>
                       <p className="mt-1 text-xs text-[var(--ink-soft)]">Organized by {roundRobin.organizerName} · {roundRobin.joinedCount} joined</p>
                     </div>

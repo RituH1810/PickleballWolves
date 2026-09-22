@@ -21,8 +21,17 @@ type RoundRobinDetail = {
   skillBalanced: boolean;
   isOwner: boolean;
   hasScores: boolean;
+  groupId: string | null;
+  scheduledAt: string | null;
   rounds: Round[];
 };
+
+function toDatetimeLocal(iso: string | null) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
 
 const playFormats = [
   { id: "SINGLES", label: "Singles", detail: "1 vs 1, no partner." },
@@ -55,7 +64,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
   const [selected, setSelected] = useState<string[]>([]);
   const [teams, setTeams] = useState<[string, string][]>([]);
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
-  const [form, setForm] = useState({ name: "", playFormat: "DOUBLES", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true });
+  const [form, setForm] = useState({ name: "", playFormat: "DOUBLES", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true, scheduledAt: "" });
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState(0);
@@ -118,6 +127,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
             pointsToWin: String(roundRobin.pointsToWin),
             winBy: String(roundRobin.winBy),
             skillBalanced: roundRobin.skillBalanced,
+            scheduledAt: toDatetimeLocal(roundRobin.scheduledAt),
           });
           const firstRound = roundRobin.rounds[0];
           if (firstRound) {
@@ -149,8 +159,9 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
       if (teams.length < 2) { showNotice("Pair up at least two teams.", "error"); return; }
       if (selected.some((id) => !pairedPlayerIds.has(id))) { showNotice("Every selected player must be paired into a team.", "error"); return; }
     }
+    if (detail?.groupId && !form.scheduledAt) { showNotice("Pick a date and time for the group.", "error"); return; }
     setSaving(true);
-    const patched = await fetch(`/api/round-robin/${roundRobinId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced }) });
+    const patched = await fetch(`/api/round-robin/${roundRobinId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced, scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : undefined }) });
     const patchedData = await patched.json();
     if (!patched.ok) { showNotice(patchedData.error ?? "Unable to save changes.", "error"); setSaving(false); return; }
     const generateBody = needsFixedTeams ? { teams } : { playerIds: selected };
@@ -244,6 +255,9 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
           <div className="mt-8 grid gap-5 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
             <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Event name
               <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
+            </label>
+            <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">When{detail?.groupId ? "" : " (optional)"}
+              <input type="datetime-local" required={Boolean(detail?.groupId)} value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
             </label>
             <label className="text-xs font-bold text-[#c3d0c5]">Courts
               <input type="number" min="1" value={form.courtCount} onChange={(event) => setForm({ ...form, courtCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />

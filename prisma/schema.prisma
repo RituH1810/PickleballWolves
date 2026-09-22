@@ -197,6 +197,7 @@ model RoundRobin {
   winBy         Int
   skillBalanced Boolean  @default(false)
   status        String   @default("SETUP")
+  scheduledAt   DateTime?
   createdAt     DateTime @default(now())
   completedAt   DateTime?
   group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
