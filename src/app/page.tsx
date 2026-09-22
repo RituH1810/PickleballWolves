@@ -11,7 +11,7 @@ type DashboardEvent = { id: string; title: string; dateLabel: string; timeLabel:
 type DashboardGroup = { id: string; name: string; members: number; next: string; mark: string; color?: string };
 type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number };
 type RecentResult = { opponent: string; event: string; score: string; result: string; points: string; date: string };
-type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; myStatus: "JOINED" | "DECLINED" | null; scheduledAt: string | null };
+type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: string | null };
 
 const pendingPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const pendingPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
@@ -88,7 +88,7 @@ export function DashboardPage() {
   const toggleEvent = async (id: string) => { const event = eventList.find((item) => item.id === id); if (!event || event.id.length < 20) return; const response = await fetch(`/api/events/${id}/rsvp`, { method: event.attending ? "DELETE" : "POST" }); if (response.ok) setEventList((items) => items.map((item) => item.id === id ? { ...item, attending: !item.attending, spotsLeft: item.attending ? item.spotsLeft + 1 : Math.max(0, item.spotsLeft - 1) } : item)); };
   const respondRoundRobin = async (id: string, status: "JOINED" | "DECLINED") => {
     const response = await fetch(`/api/round-robin/${id}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-    if (response.ok) setPendingRoundRobins((items) => items.map((item) => item.id === id ? { ...item, myStatus: status, joinedCount: status === "JOINED" && item.myStatus !== "JOINED" ? item.joinedCount + 1 : status !== "JOINED" && item.myStatus === "JOINED" ? Math.max(0, item.joinedCount - 1) : item.joinedCount } : item));
+    if (response.ok) setPendingRoundRobins((items) => items.filter((item) => item.id !== id));
   };
   const visibleEvents = eventList.filter((event) => filter === "All" || event.format === filter);
 
@@ -133,8 +133,8 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <div className="mt-4 flex gap-2">
-                    <button onClick={() => respondRoundRobin(roundRobin.id, "JOINED")} className={`flex-1 rounded-full px-4 py-2 text-xs font-bold transition-colors ${roundRobin.myStatus === "JOINED" ? "bg-[var(--lime)] text-[#0f1712]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{roundRobin.myStatus === "JOINED" ? "You're in" : "Join"}</button>
-                    <button onClick={() => respondRoundRobin(roundRobin.id, "DECLINED")} className={`flex-1 rounded-full px-4 py-2 text-xs font-bold transition-colors ${roundRobin.myStatus === "DECLINED" ? "bg-[var(--coral)] text-[#2e1a16]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{roundRobin.myStatus === "DECLINED" ? "Declined" : "Decline"}</button>
+                    <button onClick={() => respondRoundRobin(roundRobin.id, "JOINED")} className="flex-1 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] transition-colors hover:bg-[#c3e043]">Join</button>
+                    <button onClick={() => respondRoundRobin(roundRobin.id, "DECLINED")} className="flex-1 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Decline</button>
                   </div>
                 </div>
               ))}
