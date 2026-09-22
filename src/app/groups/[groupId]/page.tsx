@@ -80,22 +80,25 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <h2 className="font-extrabold">Members</h2>
             {group.isMember ? (
               <div className="mt-4 divide-y divide-[var(--line)]">
-                {group.members.map((member) => (
-                  <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold">{member.name}</p>
-                      <p className="text-[11px] text-[var(--ink-soft)]">{member.skillRating} rating</p>
+                {group.members.map((member) => {
+                  const rank = group.leaderboard.find((entry) => entry.id === member.id)?.rank;
+                  return (
+                    <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                      <span className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold">{member.name}</p>
+                        <p className="text-[11px] text-[var(--ink-soft)]">{rank ? `#${rank} rank` : "Unranked"}</p>
+                      </div>
+                      {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
                     </div>
-                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
                 <Lock size={20} className="text-[var(--lime-deep)]" />
                 <p className="text-sm font-bold text-[var(--foreground)]">Join this group to see its members.</p>
-                <p className="text-xs text-[var(--ink-soft)]">Member names and ratings are visible to members only.</p>
+                <p className="text-xs text-[var(--ink-soft)]">Member names and ranks are visible to members only.</p>
               </div>
             )}
           </section>
