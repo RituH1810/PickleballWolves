@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Users, Waves } from "lucide-react";
 import { LivePulse, PaddleIcon } from "@/components/pickleball-art";
 
@@ -122,8 +122,11 @@ const gameFormats = [
   },
 ];
 
-export default function RoundRobinPage() {
+function RoundRobinBuilder() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const groupId = searchParams.get("groupId");
+  const [groupName, setGroupName] = useState("");
   const [players, setPlayers] = useState<Player[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [teams, setTeams] = useState<[string, string][]>([]);
@@ -140,7 +143,7 @@ export default function RoundRobinPage() {
   const needsFixedTeams = form.playFormat !== "SINGLES" && form.partnerFormat === "FIXED";
   const pairedPlayerIds = new Set(teams.flat());
   // Step wizard is mobile-only (see sm:hidden / sm:block below); desktop always shows every section at once.
-  const stepLabels = needsFixedTeams ? ["Format", "Players", "Teams"] : ["Format", "Players"];
+  const stepLabels = groupId ? ["Format"] : (needsFixedTeams ? ["Format", "Players", "Teams"] : ["Format", "Players"]);
   const totalSteps = stepLabels.length;
   const clampedStep = Math.min(step, totalSteps - 1);
 
@@ -177,8 +180,17 @@ export default function RoundRobinPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  useEffect(() => { fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, []);
+  useEffect(() => { if (!groupId) fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, [groupId]);
   useEffect(() => { fetch("/api/round-robin").then((response) => response.ok ? response.json() : null).then((data) => setMyRoundRobins(data?.roundRobins ?? [])).finally(() => setLoadingMine(false)); }, []);
+  useEffect(() => { if (groupId) fetch(`/api/groups/${groupId}`).then((response) => response.ok ? response.json() : null).then((data) => setGroupName(data?.group?.name ?? "")); }, [groupId]);
+
+  async function createForGroup() {
+    setGenerating(true);
+    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ groupId, name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced }) });
+    const createdData = await created.json();
+    if (!created.ok) { showNotice(createdData.error ?? "Unable to create round robin.", "error"); setGenerating(false); return; }
+    router.push(`/round-robin/${createdData.roundRobin.id}`);
+  }
 
   async function createAndGenerate() {
     if (selected.length < minPlayers) { showNotice(`Select at least ${minPlayers} players.`, "error"); return; }
@@ -202,9 +214,9 @@ export default function RoundRobinPage() {
         <Link href="/dashboard" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
         <div className="relative mt-8">
           <PaddleIcon className="animate-float pointer-events-none absolute -top-4 right-2 hidden h-16 w-16 opacity-80 sm:block" />
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Competition tools</p>
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{groupId ? `For ${groupName || "your group"}` : "Competition tools"}</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Build a round robin.</h1>
-          <p className="mt-3 text-sm text-[var(--ink-soft)]">Choose a format, fill the player list, then run the courts from one live room.</p>
+          <p className="mt-3 text-sm text-[var(--ink-soft)]">{groupId ? "Pick a format and every group member gets invited. Generate the schedule once enough people have joined." : "Choose a format, fill the player list, then run the courts from one live room."}</p>
         </div>
         {notice && (
           <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>
@@ -232,16 +244,18 @@ export default function RoundRobinPage() {
           </section>
         )}
 
-        <div className="mt-8 flex items-center justify-between sm:hidden">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">Step {clampedStep + 1} of {totalSteps}</p>
-            <p className="text-sm font-bold text-[var(--foreground)]">{stepLabels[clampedStep]}</p>
+        {totalSteps > 1 && (
+          <div className="mt-8 flex items-center justify-between sm:hidden">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">Step {clampedStep + 1} of {totalSteps}</p>
+              <p className="text-sm font-bold text-[var(--foreground)]">{stepLabels[clampedStep]}</p>
+            </div>
+            <div className="flex gap-2">
+              {clampedStep > 0 && <button onClick={goToPrevStep} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)]">Back</button>}
+              {clampedStep < totalSteps - 1 && <button onClick={goToNextStep} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712]">Next</button>}
+            </div>
           </div>
-          <div className="flex gap-2">
-            {clampedStep > 0 && <button onClick={goToPrevStep} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)]">Back</button>}
-            {clampedStep < totalSteps - 1 && <button onClick={goToNextStep} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712]">Next</button>}
-          </div>
-        </div>
+        )}
 
         <section className={`${clampedStep === 0 ? "block" : "hidden"} sm:block mt-4 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:mt-8 sm:p-8`}>
           <h2 className="font-extrabold">1. Choose your format</h2>
@@ -331,10 +345,14 @@ export default function RoundRobinPage() {
             <input type="checkbox" checked={form.skillBalanced} onChange={(event) => setForm({ ...form, skillBalanced: event.target.checked })} className="h-5 w-5 accent-[var(--lime)]" />
             Skill-balanced matchups
           </label>
-          <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Add players <ArrowRight size={16} /></button>
+          {groupId ? (
+            <button onClick={createForGroup} disabled={generating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{generating ? "Creating..." : "Create & invite the group"} <ArrowRight size={16} /></button>
+          ) : (
+            <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Add players <ArrowRight size={16} /></button>
+          )}
         </section>
 
-        <section className={`${clampedStep === 1 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
+        {!groupId && <section className={`${clampedStep === 1 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">2. Add players</h2></div>
             <span className="text-xs font-bold text-[var(--ink-soft)]">{selected.length} selected</span>
@@ -349,9 +367,9 @@ export default function RoundRobinPage() {
           </div>
           {!needsFixedTeams && <button onClick={createAndGenerate} disabled={generating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{generating ? "Generating..." : "Generate matches"} <ArrowRight size={16} /></button>}
           {needsFixedTeams && <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Pair up teams <ArrowRight size={16} /></button>}
-        </section>
+        </section>}
 
-        {needsFixedTeams && (
+        {!groupId && needsFixedTeams && (
           <section className={`${clampedStep === 2 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
             <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">3. Pair up your teams</h2></div>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Tap two players to make them a fixed team for the whole event. Tap a paired player to undo it.</p>
@@ -387,5 +405,13 @@ export default function RoundRobinPage() {
         )}
       </div>
     </main>
+  );
+}
+
+export default function RoundRobinPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="mx-auto max-w-6xl"><div className="skeleton h-4 w-40 rounded" /><div className="skeleton mt-6 h-16 w-2/3 max-w-lg rounded-xl" /></div></main>}>
+      <RoundRobinBuilder />
+    </Suspense>
   );
 }

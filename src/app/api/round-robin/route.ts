@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ensureProfile } from "@/lib/server-profile";
@@ -37,8 +38,15 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Sign in to create a round robin." }, { status: 401 });
   const profile = await ensureProfile(user);
   const body = await request.json();
+
+  const groupId = typeof body.groupId === "string" && body.groupId ? body.groupId : null;
+  if (groupId) {
+    const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId, userId: profile.id } } });
+    if (!membership || membership.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "Join this group before creating a round robin for it." }, { status: 403 });
+  }
+
   const partnerFormat = ["ROTATE", "FIXED"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
   const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : "DOUBLES";
-  const roundRobin = await prisma.roundRobin.create({ data: { name: body.name?.trim() || "New round robin", createdById: profile.id, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
+  const roundRobin = await prisma.roundRobin.create({ data: { name: body.name?.trim() || "New round robin", createdById: profile.id, groupId, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
   return NextResponse.json({ roundRobin }, { status: 201 });
 }

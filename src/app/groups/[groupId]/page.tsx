@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Trophy, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -106,6 +106,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <p className="mt-1 flex items-center gap-1 text-sm text-[var(--ink-soft)]"><MapPin size={14} />{group.location}</p>
             </div>
             <div className="flex items-center gap-2">
+              {group.isMember && (
+                <Link href={`/round-robin?groupId=${groupId}`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                  <Repeat size={15} />Create round robin
+                </Link>
+              )}
               {group.isMember && (
                 <button onClick={() => setShowInvite((current) => !current)} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
                   <UserPlus size={15} />Invite players

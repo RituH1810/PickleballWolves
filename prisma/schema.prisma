@@ -83,6 +83,7 @@ model User {
   createdGroups   Group[]      @relation("GroupCreator")
   createdEvents   Event[]      @relation("EventCreator")
   rsvps           RSVP[]
+  roundRobinRsvps RoundRobinRSVP[]
   enteredMatches  Match[]      @relation("MatchEnteredBy")
   confirmedMatches Match[]     @relation("MatchConfirmedBy")
   matchPlayers    MatchPlayer[]
@@ -105,6 +106,7 @@ model Group {
   events      Event[]
   invites     GroupInvite[]
   announcements Announcement[]
+  roundRobins RoundRobin[]
 }
 
 model Membership {
@@ -183,6 +185,7 @@ model RSVP {
 model RoundRobin {
   id            String   @id @default(cuid())
   eventId       String?
+  groupId       String?
   createdById   String
   name          String
   format        String
@@ -196,8 +199,26 @@ model RoundRobin {
   status        String   @default("SETUP")
   createdAt     DateTime @default(now())
   completedAt   DateTime?
+  group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
   rounds        Round[]
   matches       Match[]
+  rsvps         RoundRobinRSVP[]
+}
+
+enum RoundRobinRsvpStatus {
+  JOINED
+  DECLINED
+}
+
+model RoundRobinRSVP {
+  id           String               @id @default(cuid())
+  roundRobinId String
+  userId       String
+  status       RoundRobinRsvpStatus
+  respondedAt  DateTime             @default(now())
+  roundRobin   RoundRobin           @relation(fields: [roundRobinId], references: [id], onDelete: Cascade)
+  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([roundRobinId, userId])
 }
 
 model Round {

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, Check, Trophy, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Trophy, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 
 type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
 type Standing = { rank: number; name: string; wins: number; losses: number; differential: number };
-type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean };
+type JoinedPlayer = { id: string; name: string };
+type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
@@ -21,6 +22,9 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [ending, setEnding] = useState(false);
+  const [teams, setTeams] = useState<[string, string][]>([]);
+  const [pendingPartner, setPendingPartner] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -70,6 +74,37 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     setEnding(false);
   }
 
+  async function respondRsvp(status: "JOINED" | "DECLINED") {
+    const response = await fetch(`/api/round-robin/${roundRobinId}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    const data = await response.json();
+    if (!response.ok) { showNotice(data.error ?? "Unable to update your RSVP.", "error"); return; }
+    await loadRoom();
+    showNotice(status === "JOINED" ? "You're in!" : "You declined this round robin.", "success");
+  }
+
+  function toggleJoinedPairing(playerId: string) {
+    const pairedPlayerIds = new Set(teams.flat());
+    if (pairedPlayerIds.has(playerId)) {
+      setTeams((current) => current.filter((team) => !team.includes(playerId)));
+      return;
+    }
+    if (pendingPartner === playerId) { setPendingPartner(null); return; }
+    if (pendingPartner) { setTeams((current) => [...current, [pendingPartner, playerId]]); setPendingPartner(null); return; }
+    setPendingPartner(playerId);
+  }
+
+  async function generateFromJoined(needsFixedTeams: boolean) {
+    if (needsFixedTeams && teams.length < 2) { showNotice("Pair up at least two teams.", "error"); return; }
+    setGenerating(true);
+    const body = needsFixedTeams ? { teams } : {};
+    const response = await fetch(`/api/round-robin/${roundRobinId}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const data = await response.json();
+    if (!response.ok) { showNotice(data.error ?? "Unable to generate schedule.", "error"); setGenerating(false); return; }
+    await loadRoom();
+    showNotice("Schedule generated!", "success");
+    setGenerating(false);
+  }
+
   if (loading) return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
@@ -84,6 +119,10 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   );
   if (!room) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[var(--foreground)]">Round robin not found.</p><Link href="/round-robin" className="mt-3 inline-block text-sm font-bold text-[var(--lime-deep)]">Build a new one</Link></div></main>;
 
+  const needsFixedTeams = room.playFormat !== "SINGLES" && room.partnerFormat === "FIXED";
+  const pairedPlayerIds = new Set(teams.flat());
+  function joinedPlayerName(id: string) { return room?.joinedPlayers.find((player) => player.id === id)?.name ?? "Unknown"; }
+
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
@@ -92,7 +131,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{partnerFormatLabels[room.partnerFormat] ?? room.partnerFormat} · {playFormatLabels[room.playFormat] ?? room.playFormat}</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{room.name}</h1>
-            <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{room.isOwner ? "you" : room.organizerName}</span></p>
+            <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{room.isOwner ? "you" : room.organizerName}</span>{room.groupName && <> for <span className="font-bold text-[var(--foreground)]">{room.groupName}</span></>}</p>
           </div>
           <div className="flex items-center gap-3">
             <span className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${room.status === "COMPLETED" ? "bg-[#1c2a1a] text-[var(--ink-soft)]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{room.status === "LIVE" ? <LivePulse color="#c7e572" size={9} /> : <Check size={15} />}{room.status === "LIVE" ? "Live schedule" : room.status === "COMPLETED" ? "Completed" : room.status}</span>
@@ -102,6 +141,63 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         </div>
         {notice && (
           <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>
+        )}
+
+        {room.groupId && room.status === "SETUP" && (
+          <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="font-extrabold">Who&apos;s in</h2>
+                <p className="mt-1 text-xs text-[var(--ink-soft)]">{room.groupName ?? "Group"} members can join or decline. The schedule generates from who joins.</p>
+              </div>
+              {room.isGroupMember && (
+                <div className="flex gap-2">
+                  <button onClick={() => respondRsvp("JOINED")} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${room.myRsvpStatus === "JOINED" ? "bg-[var(--lime)] text-[#0f1712]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{room.myRsvpStatus === "JOINED" ? "You're in" : "Join"}</button>
+                  <button onClick={() => respondRsvp("DECLINED")} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${room.myRsvpStatus === "DECLINED" ? "bg-[var(--coral)] text-[#2e1a16]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{room.myRsvpStatus === "DECLINED" ? "Declined" : "Decline"}</button>
+                </div>
+              )}
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
+              {room.joinedPlayers.map((player) => <span key={player.id} className="rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[#c7e572]">{player.name}</span>)}
+            </div>
+            {room.isOwner && (
+              <div className="mt-5 border-t border-[var(--line)] pt-5">
+                {needsFixedTeams ? (
+                  <>
+                    <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Pair up teams from who&apos;s joined</p>
+                    {room.joinedPlayers.length === 0 ? <p className="mt-3 text-sm text-[var(--ink-soft)]">Wait for members to join first.</p> : (
+                      <>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {room.joinedPlayers.map((player) => {
+                            const paired = pairedPlayerIds.has(player.id);
+                            const isPending = pendingPartner === player.id;
+                            return (
+                              <button key={player.id} onClick={() => toggleJoinedPairing(player.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[#0f1712]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
+                                {player.name}{isPending ? " · pick a partner" : ""}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-4 space-y-2">
+                          {teams.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No teams yet.</p>}
+                          {teams.map(([a, b], index) => (
+                            <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[#131f19] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]">
+                              <span>Team {index + 1}: {joinedPlayerName(a)} &amp; {joinedPlayerName(b)}</span>
+                              <button onClick={() => toggleJoinedPairing(a)} className="text-xs font-bold text-[var(--lime-deep)]">Unpair</button>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-[var(--ink-soft)]">{room.joinedPlayers.length < 4 ? `Need at least ${4 - room.joinedPlayers.length} more member${4 - room.joinedPlayers.length === 1 ? "" : "s"} to join before generating.` : "Ready to generate the schedule."}</p>
+                )}
+                <button onClick={() => generateFromJoined(needsFixedTeams)} disabled={generating || (needsFixedTeams ? teams.length < 2 : room.joinedPlayers.length < 4)} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{generating ? "Generating..." : "Generate matches"} <ArrowRight size={16} /></button>
+              </div>
+            )}
+          </section>
         )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">

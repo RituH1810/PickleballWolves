@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
@@ -6,11 +7,41 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
   const { roundRobinId } = await context.params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId }, include: { rounds: { orderBy: { roundNumber: "asc" }, include: { matches: { where: { deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } } } } });
+  const roundRobin = await prisma.roundRobin.findUnique({
+    where: { id: roundRobinId },
+    include: {
+      group: { select: { id: true, name: true } },
+      rsvps: { include: { user: { select: { id: true, name: true } } } },
+      rounds: { orderBy: { roundNumber: "asc" }, include: { matches: { where: { deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } } },
+    },
+  });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
   const organizer = await prisma.user.findUnique({ where: { id: roundRobin.createdById }, select: { name: true } });
   const hasScores = roundRobin.rounds.some((round) => round.matches.some((match) => match.scores.length > 0));
-  return NextResponse.json({ roundRobin: { ...roundRobin, organizerName: organizer?.name ?? "Unknown", isOwner: user ? roundRobin.createdById === user.id : false, hasScores, rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })) } });
+
+  const joinedPlayers = roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED").map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name }));
+  const myRsvpStatus = user ? roundRobin.rsvps.find((rsvp) => rsvp.userId === user.id)?.status ?? null : null;
+  let isGroupMember = false;
+  if (user && roundRobin.groupId) {
+    const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } });
+    isGroupMember = Boolean(membership && membership.status === MembershipStatus.ACTIVE);
+  }
+
+  return NextResponse.json({
+    roundRobin: {
+      ...roundRobin,
+      organizerName: organizer?.name ?? "Unknown",
+      isOwner: user ? roundRobin.createdById === user.id : false,
+      hasScores,
+      groupId: roundRobin.group?.id ?? null,
+      groupName: roundRobin.group?.name ?? null,
+      joinedPlayers,
+      joinedCount: joinedPlayers.length,
+      myRsvpStatus,
+      isGroupMember,
+      rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })),
+    },
+  });
 }
 
 export async function PATCH(request: Request, context: { params: Promise<{ roundRobinId: string }> }) {

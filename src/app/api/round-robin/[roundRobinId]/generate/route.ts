@@ -27,8 +27,19 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const explicitTeams: string[][] | null = Array.isArray(body.teams)
     ? body.teams.filter((team: unknown): team is string[] => Array.isArray(team) && team.length === 2 && team.every((id) => typeof id === "string"))
     : null;
-  const playerIds: string[] = explicitTeams ? explicitTeams.flat() : (Array.isArray(body.playerIds) ? body.playerIds.filter((id: unknown): id is string => typeof id === "string") : []);
-  if (playerIds.length < 4) return NextResponse.json({ error: "Add at least four players." }, { status: 400 });
+  let playerIds: string[] = explicitTeams ? explicitTeams.flat() : (Array.isArray(body.playerIds) ? body.playerIds.filter((id: unknown): id is string => typeof id === "string") : []);
+
+  if (roundRobin.groupId) {
+    const joined = await prisma.roundRobinRSVP.findMany({ where: { roundRobinId, status: "JOINED" }, select: { userId: true } });
+    const joinedIds = new Set(joined.map((rsvp) => rsvp.userId));
+    if (explicitTeams) {
+      if (playerIds.some((id) => !joinedIds.has(id))) return NextResponse.json({ error: "Every paired player must have joined the round robin first." }, { status: 400 });
+    } else {
+      playerIds = [...joinedIds];
+    }
+  }
+
+  if (playerIds.length < 4) return NextResponse.json({ error: roundRobin.groupId ? "At least four group members need to join before you can generate the schedule." : "Add at least four players." }, { status: 400 });
   if (explicitTeams && new Set(playerIds).size !== playerIds.length) return NextResponse.json({ error: "Each player can only be on one team." }, { status: 400 });
 
   const isDoubles = roundRobin.playFormat !== "SINGLES";

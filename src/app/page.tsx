@@ -11,6 +11,10 @@ type DashboardEvent = { id: string; title: string; dateLabel: string; timeLabel:
 type DashboardGroup = { id: string; name: string; members: number; next: string; mark: string; color?: string };
 type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number };
 type RecentResult = { opponent: string; event: string; score: string; result: string; points: string; date: string };
+type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; myStatus: "JOINED" | "DECLINED" | null };
+
+const pendingPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
+const pendingPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
 
 function Logo() {
   return <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#1b211e] text-sm font-black tracking-tight text-[var(--lime)]">PW</div><div><p className="text-[15px] font-extrabold tracking-tight">Pickleball<span className="text-[var(--lime-deep)]">Wolves</span></p><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[var(--ink-soft)]">Find your pack</p></div></div>;
@@ -34,6 +38,7 @@ export function DashboardPage() {
   const [groupList, setGroupList] = useState<DashboardGroup[]>([]);
   const [leaderboardList, setLeaderboardList] = useState<LeaderboardEntry[]>([]);
   const [recentResultsList, setRecentResultsList] = useState<RecentResult[]>([]);
+  const [pendingRoundRobins, setPendingRoundRobins] = useState<PendingRoundRobin[]>([]);
   const [profileSummary, setProfileSummary] = useState({ name: "Player", rating: "-", initials: "PW", record: "0 - 0", winRate: "0.0%", rank: "-" as number | string });
   const [filter, setFilter] = useState<"All" | "Doubles" | "Mixed doubles">("All");
   const [loadingDashboard, setLoadingDashboard] = useState(true);
@@ -58,6 +63,7 @@ export function DashboardPage() {
     dashboardPromise.then((data) => {
       if (data?.events) setEventList(data.events);
       if (data?.groups) setGroupList(data.groups);
+      if (data?.pendingRoundRobins) setPendingRoundRobins(data.pendingRoundRobins);
     }).finally(() => setLoadingDashboard(false));
     Promise.all([dashboardPromise, matchesPromise]).then(([dashboardData, matchData]) => {
       if (!matchData?.matches) return;
@@ -80,6 +86,10 @@ export function DashboardPage() {
   }, []);
   useEffect(() => { const routes: Record<string, string> = { "My games": "/events", Groups: "/groups", "Round robin": "/round-robin", Leaderboards: "/leaderboards", "Match history": "/matches" }; const handlers: Array<[Element, EventListener]> = []; document.querySelectorAll("button").forEach((button) => { const label = button.textContent?.replace(/\d+$/, "").trim() ?? ""; const route = routes[label]; if (route) { const handler = () => router.push(route); button.addEventListener("click", handler); handlers.push([button, handler]); } }); const notification = document.querySelector('button[aria-label="Notifications"]'); if (notification) { const handler = () => router.push("/notifications"); notification.addEventListener("click", handler); handlers.push([notification, handler]); } const createGame = Array.from(document.querySelectorAll("button")).find((button) => button.textContent?.includes("Create a game")); if (createGame) { const handler = () => router.push("/events"); createGame.addEventListener("click", handler); handlers.push([createGame, handler]); } const signOut = Array.from(document.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Sign out"); if (signOut) { const handler = async () => { await createClient().auth.signOut(); router.push("/login"); }; signOut.addEventListener("click", handler); handlers.push([signOut, handler]); } return () => handlers.forEach(([element, handler]) => element.removeEventListener("click", handler)); }, [router]);
   const toggleEvent = async (id: string) => { const event = eventList.find((item) => item.id === id); if (!event || event.id.length < 20) return; const response = await fetch(`/api/events/${id}/rsvp`, { method: event.attending ? "DELETE" : "POST" }); if (response.ok) setEventList((items) => items.map((item) => item.id === id ? { ...item, attending: !item.attending, spotsLeft: item.attending ? item.spotsLeft + 1 : Math.max(0, item.spotsLeft - 1) } : item)); };
+  const respondRoundRobin = async (id: string, status: "JOINED" | "DECLINED") => {
+    const response = await fetch(`/api/round-robin/${id}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    if (response.ok) setPendingRoundRobins((items) => items.map((item) => item.id === id ? { ...item, myStatus: status, joinedCount: status === "JOINED" && item.myStatus !== "JOINED" ? item.joinedCount + 1 : status !== "JOINED" && item.myStatus === "JOINED" ? Math.max(0, item.joinedCount - 1) : item.joinedCount } : item));
+  };
   const visibleEvents = eventList.filter((event) => filter === "All" || event.format === filter);
 
   return <div className="min-h-screen bg-[var(--background)] noise lg:flex">
@@ -107,6 +117,29 @@ export function DashboardPage() {
         </section>
         <section className="mt-8 grid gap-3 sm:grid-cols-3"><div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">My record</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profileSummary.record}</p><p className="mt-1 text-xs font-semibold text-[var(--lime-deep)]">{profileSummary.winRate} win rate</p></div><div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 flex items-center gap-2 text-3xl font-black tracking-[-.04em]">#{profileSummary.rank} <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--lime-deep)]"><LivePulse />live</span></p><p className="mt-1 text-xs font-semibold text-[var(--ink-soft)]">Across PickleballWolves</p></div><div className="rounded-2xl bg-[#1b211e] p-5 text-white"><p className="text-xs font-bold uppercase tracking-[.14em] text-[#a9b6a9]">Playing this week</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{eventList.filter((event) => event.attending).length} <span className="text-base font-semibold text-[#a9b6a9]">games</span></p><p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--lime)]"><LivePulse />Live from your events</p></div></section>
         <section className="mt-10" id="events"><div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><h2 className="text-xl font-extrabold tracking-tight">Your upcoming games</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Keep your edge sharp with the right competition.</p></div><div className="flex gap-1 rounded-full bg-[#1a2a1c] p-1">{(["All", "Doubles", "Mixed doubles"] as const).map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${filter === item ? "bg-[var(--panel)] text-[var(--foreground)] shadow-sm" : "text-[var(--ink-soft)]"}`}>{item}</button>)}</div></div><div className="grid gap-4 lg:grid-cols-3">{loadingDashboard ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-[220px] rounded-[20px]" />) : visibleEvents.length === 0 ? <div className="flex items-center gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)] lg:col-span-3"><PawPrint size={18} className="shrink-0 text-[var(--lime-deep)]" /><p>No upcoming games yet. <a href="/events" className="font-bold text-[var(--lime-deep)]">Create one</a> to get the pack together.</p></div> : visibleEvents.map((event) => <EventCard key={event.id} event={event} onToggle={toggleEvent} />)}</div></section>
+
+        {!loadingDashboard && pendingRoundRobins.length > 0 && (
+          <section className="mt-10" id="round-robin-invites">
+            <div className="mb-5"><h2 className="text-xl font-extrabold tracking-tight">Round robin invites</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Round robins your groups are setting up. Join in or pass.</p></div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {pendingRoundRobins.map((roundRobin) => (
+                <div key={roundRobin.id} className="panel rounded-[20px] p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link href={`/round-robin/${roundRobin.id}`} className="truncate text-sm font-extrabold text-[var(--foreground)] hover:text-[var(--lime-deep)]">{roundRobin.name}</Link>
+                      <p className="mt-1 text-xs text-[var(--ink-soft)]">{roundRobin.groupName} · {pendingPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {pendingPlayFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat}</p>
+                      <p className="mt-1 text-xs text-[var(--ink-soft)]">Organized by {roundRobin.organizerName} · {roundRobin.joinedCount} joined</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <button onClick={() => respondRoundRobin(roundRobin.id, "JOINED")} className={`flex-1 rounded-full px-4 py-2 text-xs font-bold transition-colors ${roundRobin.myStatus === "JOINED" ? "bg-[var(--lime)] text-[#0f1712]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{roundRobin.myStatus === "JOINED" ? "You're in" : "Join"}</button>
+                    <button onClick={() => respondRoundRobin(roundRobin.id, "DECLINED")} className={`flex-1 rounded-full px-4 py-2 text-xs font-bold transition-colors ${roundRobin.myStatus === "DECLINED" ? "bg-[var(--coral)] text-[#2e1a16]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{roundRobin.myStatus === "DECLINED" ? "Declined" : "Decline"}</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
         <div className="mt-10 grid gap-5 xl:grid-cols-2">
           <section className="panel rounded-[20px] p-5 sm:p-6" id="groups"><div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Your groups</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Your communities, all in one place.</p></div><Link href="/groups" className="text-xs font-bold text-[var(--lime-deep)]">View all</Link></div><div className="divide-y divide-[var(--line)]">{loadingDashboard ? Array.from({ length: 2 }).map((_, index) => <div key={index} className="flex items-center gap-3 py-4 first:pt-0"><div className="skeleton h-11 w-11 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><div className="skeleton h-3.5 w-2/3 rounded" /><div className="skeleton h-3 w-1/2 rounded" /></div></div>) : groupList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">No groups yet. Join or create one to see it here.</p> : groupList.map((group) => <Link key={group.id} href={`/groups/${group.id}`} className="flex items-center gap-3 py-4 first:pt-0 last:pb-0"><div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xs font-black text-[#0f1712] ${group.color === "lime" ? "bg-[var(--lime)]" : group.color === "blue" ? "bg-[var(--blue)]" : "bg-[var(--coral)]"}`}>{group.mark}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{group.name}</p><p className="mt-1 truncate text-xs text-[var(--ink-soft)]">{group.members} members · {group.next}</p></div><ChevronRight size={17} className="text-[var(--ink-soft)]" /></Link>)}</div></section>
           <section className="panel rounded-[20px] p-5 sm:p-6" id="upcoming"><div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Upcoming</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Your next scheduled games.</p></div></div><div className="divide-y divide-[var(--line)]">{loadingDashboard ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="flex items-center gap-3 py-3 first:pt-0"><div className="skeleton h-10 w-10 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><div className="skeleton h-3.5 w-2/3 rounded" /><div className="skeleton h-3 w-1/3 rounded" /></div></div>) : eventList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">No upcoming games yet.</p> : eventList.slice(0, 5).map((event) => <div key={event.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0"><div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><CalendarDays size={16} /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{event.title}</p><p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{event.dateLabel} · {event.timeLabel}</p></div><span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">{event.format}</span></div>)}</div></section>
