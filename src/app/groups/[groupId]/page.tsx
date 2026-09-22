@@ -9,7 +9,11 @@ type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | 
 type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
-type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; isMember: boolean; myRole: string | null };
+type GroupRoundRobin = { id: string; name: string; scheduledAt: string | null; playFormat: string; partnerFormat: string };
+type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; isMember: boolean; myRole: string | null };
+
+const groupPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
+const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -90,6 +94,10 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   if (notFound || !group) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[var(--foreground)]">Group not found.</p><Link href="/groups" className="mt-3 inline-block text-sm font-bold text-[var(--lime-deep)]">Back to groups</Link></div></main>;
 
   const mark = group.name.split(" ").map((word) => word[0]).join("").slice(0, 2).toUpperCase();
+  const upcomingGames = [
+    ...group.events.map((event) => ({ kind: "event" as const, id: event.id, date: event.startsAt, title: event.title, detail: event.location })),
+    ...group.roundRobins.filter((roundRobin) => roundRobin.scheduledAt).map((roundRobin) => ({ kind: "roundRobin" as const, id: roundRobin.id, date: roundRobin.scheduledAt as string, title: roundRobin.name, detail: `${groupPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · ${groupPlayFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat}` })),
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
@@ -189,16 +197,23 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
             <h2 className="font-extrabold">Upcoming games</h2>
             <div className="mt-4 space-y-3">
-              {group.events.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No upcoming games yet.</p>}
-              {group.events.map((event) => (
-                <div key={event.id} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 last:border-0 last:pb-0">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><CalendarDays size={16} /></div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold">{event.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{new Date(event.startsAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {event.location}</p>
-                  </div>
-                </div>
-              ))}
+              {upcomingGames.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No upcoming games yet.</p>}
+              {upcomingGames.map((item) => {
+                const content = (
+                  <>
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]">{item.kind === "roundRobin" ? <Repeat size={16} /> : <CalendarDays size={16} />}</div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">{item.title}</p>
+                      <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{new Date(item.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {item.detail}</p>
+                    </div>
+                  </>
+                );
+                return item.kind === "roundRobin" ? (
+                  <Link key={item.id} href={`/round-robin/${item.id}`} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 transition-colors last:border-0 last:pb-0 hover:text-[var(--lime-deep)]">{content}</Link>
+                ) : (
+                  <div key={item.id} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 last:border-0 last:pb-0">{content}</div>
+                );
+              })}
             </div>
           </section>
         </div>

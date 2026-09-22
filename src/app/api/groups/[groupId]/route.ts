@@ -12,6 +12,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
     include: {
       memberships: { where: { status: MembershipStatus.ACTIVE }, orderBy: { joinedAt: "asc" }, include: { user: { select: { id: true, name: true, skillRating: true } } } },
       events: { where: { status: "PUBLISHED", startsAt: { gte: new Date() } }, orderBy: { startsAt: "asc" }, take: 6 },
+      roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, scheduledAt: { gte: new Date() } }, orderBy: { scheduledAt: "asc" }, take: 6 },
     },
   });
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
@@ -69,6 +70,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       leaderboard,
       recentResults,
       events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: event.location, format: event.format })),
+      roundRobins: group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })),
       isMember: Boolean(myMembership),
       myRole: myMembership?.role ?? null,
     },
