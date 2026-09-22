@@ -10,7 +10,7 @@ export async function POST(request: Request, context: { params: Promise<{ groupI
   const { groupId } = await context.params;
 
   const myMembership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId, userId: user.id } } });
-  if (!myMembership || myMembership.role !== MembershipRole.ORGANIZER) return NextResponse.json({ error: "Only the group organizer can invite players." }, { status: 403 });
+  if (!myMembership || myMembership.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "Join this group before inviting others." }, { status: 403 });
 
   const body = await request.json();
   const userIds: string[] = Array.isArray(body.userIds) ? body.userIds.filter((id: unknown): id is string => typeof id === "string") : [];

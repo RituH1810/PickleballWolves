@@ -22,6 +22,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const [showInvite, setShowInvite] = useState(false);
   const [inviteSelected, setInviteSelected] = useState<string[]>([]);
   const [inviting, setInviting] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [sendingEmailInvite, setSendingEmailInvite] = useState(false);
 
   async function loadGroup() {
     const response = await fetch(`/api/groups/${groupId}`);
@@ -52,6 +54,17 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     setShowInvite(false);
     setNotice({ text: `Added ${data.added} player${data.added === 1 ? "" : "s"} to the group.`, type: "success" });
     setInviting(false);
+  }
+
+  async function sendEmailInvite() {
+    if (!inviteEmail.trim()) return;
+    setSendingEmailInvite(true);
+    const response = await fetch(`/api/groups/${groupId}/invite-email`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: inviteEmail.trim() }) });
+    const data = await response.json();
+    if (!response.ok) { setNotice({ text: data.error ?? "Unable to send invite", type: "error" }); setSendingEmailInvite(false); return; }
+    setInviteEmail("");
+    setNotice({ text: `Invite email sent to ${data.invitedEmail}.`, type: "success" });
+    setSendingEmailInvite(false);
   }
 
   async function toggleMembership() {
@@ -93,7 +106,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <p className="mt-1 flex items-center gap-1 text-sm text-[var(--ink-soft)]"><MapPin size={14} />{group.location}</p>
             </div>
             <div className="flex items-center gap-2">
-              {group.myRole === "ORGANIZER" && (
+              {group.isMember && (
                 <button onClick={() => setShowInvite((current) => !current)} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
                   <UserPlus size={15} />Invite players
                 </button>
@@ -107,10 +120,19 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           {group.description && <p className="mt-5 text-sm leading-6 text-[#c3d0c5]">{group.description}</p>}
           <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-[var(--ink-soft)]"><Users size={16} />{group.memberCount} member{group.memberCount === 1 ? "" : "s"}</p>
 
-          {showInvite && group.myRole === "ORGANIZER" && (
+          {showInvite && group.isMember && (
             <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[#131f19] p-5">
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Invite players</p>
-              <p className="mt-1 text-xs text-[var(--ink-soft)]">Add existing players straight to the group.</p>
+              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Invite by email</p>
+              <p className="mt-1 text-xs text-[var(--ink-soft)]">Send a sign-in link to anyone, even if they&apos;re not on the platform yet.</p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <input value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} type="email" placeholder="player@example.com" className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm outline-none focus:border-[var(--lime-deep)]" />
+                <button onClick={sendEmailInvite} disabled={sendingEmailInvite || !inviteEmail.trim()} className="flex h-11 items-center justify-center rounded-xl bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">
+                  {sendingEmailInvite ? "Sending..." : "Send invite"}
+                </button>
+              </div>
+
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Add existing players</p>
+              <p className="mt-1 text-xs text-[var(--ink-soft)]">Add players who are already on the platform straight to the group.</p>
               {(() => {
                 const memberIds = new Set(group.members.map((member) => member.id));
                 const candidates = players.filter((player) => !memberIds.has(player.id));
