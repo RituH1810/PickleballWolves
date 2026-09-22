@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Copy, Lock, Mail, MapPin, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -28,6 +28,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const [inviting, setInviting] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [sendingEmailInvite, setSendingEmailInvite] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
+  const [loadingInviteLink, setLoadingInviteLink] = useState(true);
 
   async function loadGroup() {
     const response = await fetch(`/api/groups/${groupId}`);
@@ -46,6 +48,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     }).finally(() => setLoading(false));
   }, [groupId]);
   useEffect(() => { if (showInvite && players.length === 0) fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, [showInvite, players.length]);
+  useEffect(() => {
+    if (!showInvite || inviteLink) return;
+    fetch(`/api/groups/${groupId}/invite-link`, { method: "POST" }).then((response) => response.ok ? response.json() : null).then((data) => { if (data?.url) setInviteLink(data.url); }).finally(() => setLoadingInviteLink(false));
+  }, [showInvite, inviteLink, groupId]);
+
+  async function copyInviteLink() {
+    try { await navigator.clipboard.writeText(inviteLink); setNotice({ text: "Invite link copied!", type: "success" }); } catch { setNotice({ text: "Unable to copy the link.", type: "error" }); }
+  }
 
   async function inviteSelectedPlayers() {
     if (!inviteSelected.length) return;
@@ -135,7 +145,27 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
           {showInvite && group.isMember && (
             <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[#131f19] p-5">
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Invite by email</p>
+              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Share invite link</p>
+              <p className="mt-1 text-xs text-[var(--ink-soft)]">Send this link on WhatsApp, text, email, or anywhere else.</p>
+              {loadingInviteLink ? (
+                <div className="skeleton mt-3 h-11 rounded-xl" />
+              ) : inviteLink ? (
+                <>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <input readOnly value={inviteLink} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
+                    <button onClick={copyInviteLink} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`Join ${group.name} on PickleballWolves: ${inviteLink}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
+                    <a href={`sms:?body=${encodeURIComponent(`Join ${group.name} on PickleballWolves: ${inviteLink}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
+                    <a href={`mailto:?subject=${encodeURIComponent(`Join ${group.name} on PickleballWolves`)}&body=${encodeURIComponent(`Join ${group.name} on PickleballWolves: ${inviteLink}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+                  </div>
+                </>
+              ) : (
+                <p className="mt-3 text-sm text-[var(--ink-soft)]">Unable to load an invite link right now.</p>
+              )}
+
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Invite by email</p>
               <p className="mt-1 text-xs text-[var(--ink-soft)]">Send a sign-in link to anyone, even if they&apos;re not on the platform yet.</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <input value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} type="email" placeholder="player@example.com" className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm outline-none focus:border-[var(--lime-deep)]" />

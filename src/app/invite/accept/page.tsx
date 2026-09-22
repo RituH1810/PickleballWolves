@@ -14,6 +14,7 @@ function AcceptInvite() {
 
   useEffect(() => {
     fetch("/api/groups/invites/accept", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).then(async (response) => {
+      if (response.status === 401) { router.push(`/signup?next=${encodeURIComponent(`/invite/accept?token=${token}`)}`); return; }
       const data = await response.json();
       if (!response.ok) { setStatus("error"); setError(data.error ?? "Unable to accept this invite."); return; }
       router.push(`/groups/${data.groupId}`);
