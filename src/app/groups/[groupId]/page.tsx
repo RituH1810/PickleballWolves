@@ -246,9 +246,9 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <div key={result.id} className="rounded-xl bg-[#131f19] px-4 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-bold">
-                        <span className={result.winnerSide === "A" ? "text-[var(--lime-deep)]" : "text-[var(--foreground)]"}>{result.sideA}</span>
+                        <span className={result.winnerSide === "A" ? "text-[var(--lime-deep)]" : result.winnerSide === "B" ? "text-[var(--coral)]" : "text-[var(--foreground)]"}>{result.sideA}</span>
                         <span className="mx-2 font-normal text-[var(--ink-soft)]">vs</span>
-                        <span className={result.winnerSide === "B" ? "text-[var(--lime-deep)]" : "text-[var(--foreground)]"}>{result.sideB}</span>
+                        <span className={result.winnerSide === "B" ? "text-[var(--lime-deep)]" : result.winnerSide === "A" ? "text-[var(--coral)]" : "text-[var(--foreground)]"}>{result.sideB}</span>
                       </p>
                       <span className="text-xs font-bold text-[var(--ink-soft)]">{new Date(result.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span>
                     </div>
