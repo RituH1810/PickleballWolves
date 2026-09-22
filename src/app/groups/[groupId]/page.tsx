@@ -4,7 +4,7 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Trophy, UserPlus, Users } from "lucide-react";
 
-type Player = { id: string; name: string; skillRating: string };
+type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
 type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };

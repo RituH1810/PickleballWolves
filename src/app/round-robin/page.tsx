@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, ChevronRight, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Users, Waves } from "lucide-react";
 
-type Player = { id: string; name: string; skillRating: string };
+type Player = { id: string; name: string; rank: number | null };
 type MyRoundRobin = { id: string; name: string; format: string; partnerFormat: string; playFormat: string; status: string; matchCount: number; isOwner: boolean; organizerName: string };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
@@ -313,7 +313,7 @@ export default function RoundRobinPage() {
           <div className="mt-4 grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2">
             {players.map((player) => (
               <button key={player.id} onClick={() => togglePlayerSelected(player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
-                <span><span className="block text-sm font-bold">{player.name}</span><span className="text-[11px] text-[var(--ink-soft)]">{player.skillRating} rating</span></span>
+                <span><span className="block text-sm font-bold">{player.name}</span><span className="text-[11px] text-[var(--ink-soft)]">{player.rank ? `#${player.rank} rank` : "Unranked"}</span></span>
                 {selected.includes(player.id) && <Check size={16} className="text-[var(--lime-deep)]" />}
               </button>
             ))}
