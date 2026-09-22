@@ -36,6 +36,7 @@ export function DashboardPage() {
   const [profileSummary, setProfileSummary] = useState({ name: "Player", rating: "-", initials: "PW", record: "0 - 0", winRate: "0.0%", rank: "-" as number | string });
   const [filter, setFilter] = useState<"All" | "Doubles" | "Mixed doubles">("All");
   const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [loadingMatches, setLoadingMatches] = useState(true);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const [todayLabel, setTodayLabel] = useState("");
   // Dashboard is statically prerendered at build time, so computing this during render would freeze
@@ -51,20 +52,22 @@ export function DashboardPage() {
     { label: "Match history", icon: Activity },
   ];
   useEffect(() => {
-    fetch("/api/dashboard").then((response) => response.ok ? response.json() : null).then((data) => {
+    const dashboardPromise = fetch("/api/dashboard").then((response) => response.ok ? response.json() : null);
+    const matchesPromise = fetch("/api/matches").then((response) => response.ok ? response.json() : null);
+    dashboardPromise.then((data) => {
       if (data?.events) setEventList(data.events);
       if (data?.groups) setGroupList(data.groups);
-      const userId: string | null = data?.userId ?? null;
-      fetch("/api/matches").then((response) => response.ok ? response.json() : null).then((matchData) => {
-        if (!matchData?.matches) return;
-        setRecentResultsList(matchData.matches.slice(0, 3).map((match: { players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[]; scheduledAt: string | null }) => {
-          const mine = match.players.find((player) => player.id === userId);
-          const margin = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideAScore - score.sideBScore : score.sideBScore - score.sideAScore), 0);
-          const opponents = match.players.filter((player) => player.id !== userId).map((player) => player.name).join(" / ") || match.players.map((player) => player.name).join(" / ");
-          return { opponent: opponents, event: match.event, score: match.scores.map((score) => `${score.sideAScore} - ${score.sideBScore}`).join(", ") || "No score", result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", points: "", date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
-        }));
-      }).finally(() => setLoadingDashboard(false));
-    });
+    }).finally(() => setLoadingDashboard(false));
+    Promise.all([dashboardPromise, matchesPromise]).then(([dashboardData, matchData]) => {
+      if (!matchData?.matches) return;
+      const userId: string | null = dashboardData?.userId ?? null;
+      setRecentResultsList(matchData.matches.slice(0, 3).map((match: { players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[]; scheduledAt: string | null }) => {
+        const mine = match.players.find((player) => player.id === userId);
+        const margin = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideAScore - score.sideBScore : score.sideBScore - score.sideAScore), 0);
+        const opponents = match.players.filter((player) => player.id !== userId).map((player) => player.name).join(" / ") || match.players.map((player) => player.name).join(" / ");
+        return { opponent: opponents, event: match.event, score: match.scores.map((score) => `${score.sideAScore} - ${score.sideBScore}`).join(", ") || "No score", result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", points: "", date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
+      }));
+    }).finally(() => setLoadingMatches(false));
     fetch("/api/leaderboard").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.leaderboard) setLeaderboardList(data.leaderboard.map((entry: { rank: number; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number }) => ({ ...entry, initials: entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() }))); }).finally(() => setLoadingLeaderboard(false));
     fetch("/api/profile").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.profile) { const name = data.profile.name; setProfileSummary({ name, rating: data.profile.skillRating, initials: name.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase(), record: data.profile.record, winRate: data.profile.winRate, rank: data.profile.rank }); } });
   }, []);
@@ -125,7 +128,7 @@ export function DashboardPage() {
             </table>
           )}
         </section>
-        <section className="panel mt-5 rounded-[20px] p-5 sm:p-6"><div className="mb-4 flex items-end justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Recent results</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Your last three matches</p></div><a href="#history" className="text-xs font-bold text-[var(--lime-deep)]">Match history</a></div><div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">Match</th><th className="pb-3">Event</th><th className="pb-3">Score</th><th className="pb-3">Result</th><th className="pb-3 text-right">Rating change</th></tr></thead><tbody>{loadingDashboard ? <tr><td colSpan={5} className="py-4"><div className="skeleton h-8 rounded-xl" /></td></tr> : recentResultsList.length === 0 ? <tr><td colSpan={5} className="py-6 text-sm text-[var(--ink-soft)]">No matches recorded yet.</td></tr> : null}{recentResultsList.map((result) => <tr key={`${result.opponent}-${result.date}`} className="border-b border-[var(--line)] last:border-0"><td className="py-4 font-bold">{result.opponent}<span className="ml-2 text-xs font-normal text-[var(--ink-soft)]">{result.date}</span></td><td className="py-4 text-[var(--ink-soft)]">{result.event}</td><td className="py-4 font-semibold">{result.score}</td><td className="py-4"><span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${result.result === "W" ? "bg-[#1e2b17] text-[#c7e572]" : result.result === "L" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{result.result}</span></td><td className={`py-4 text-right font-bold ${result.points.startsWith("+") ? "text-[var(--lime-deep)]" : result.points.startsWith("-") ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{result.points || "—"}</td></tr>)}</tbody></table></div></section>
+        <section className="panel mt-5 rounded-[20px] p-5 sm:p-6"><div className="mb-4 flex items-end justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Recent results</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Your last three matches</p></div><a href="#history" className="text-xs font-bold text-[var(--lime-deep)]">Match history</a></div><div className="overflow-x-auto"><table className="w-full min-w-[620px] text-left text-sm"><thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">Match</th><th className="pb-3">Event</th><th className="pb-3">Score</th><th className="pb-3">Result</th><th className="pb-3 text-right">Rating change</th></tr></thead><tbody>{loadingMatches ? <tr><td colSpan={5} className="py-4"><div className="skeleton h-8 rounded-xl" /></td></tr> : recentResultsList.length === 0 ? <tr><td colSpan={5} className="py-6 text-sm text-[var(--ink-soft)]">No matches recorded yet.</td></tr> : null}{recentResultsList.map((result) => <tr key={`${result.opponent}-${result.date}`} className="border-b border-[var(--line)] last:border-0"><td className="py-4 font-bold">{result.opponent}<span className="ml-2 text-xs font-normal text-[var(--ink-soft)]">{result.date}</span></td><td className="py-4 text-[var(--ink-soft)]">{result.event}</td><td className="py-4 font-semibold">{result.score}</td><td className="py-4"><span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${result.result === "W" ? "bg-[#1e2b17] text-[#c7e572]" : result.result === "L" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{result.result}</span></td><td className={`py-4 text-right font-bold ${result.points.startsWith("+") ? "text-[var(--lime-deep)]" : result.points.startsWith("-") ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{result.points || "—"}</td></tr>)}</tbody></table></div></section>
       </div>
     </main>
   </div>;

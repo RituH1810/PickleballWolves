@@ -61,7 +61,9 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       location: group.location,
       description: group.description,
       memberCount: group.memberships.length,
-      members: group.memberships.map((membership) => ({ id: membership.user.id, name: membership.user.name, skillRating: membership.user.skillRating.toString(), role: membership.role })),
+      members: group.memberships
+        .map((membership) => ({ id: membership.user.id, name: membership.user.name, skillRating: membership.user.skillRating.toString(), role: membership.role, rank: leaderboard.find((entry) => entry.id === membership.user.id)?.rank ?? null }))
+        .sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity)),
       leaderboard,
       recentResults,
       events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: event.location, format: event.format })),

@@ -5,7 +5,7 @@ import { use, useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Trophy, UserPlus, Users } from "lucide-react";
 
 type Player = { id: string; name: string; skillRating: string };
-type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER" };
+type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
 type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
@@ -162,19 +162,16 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <h2 className="font-extrabold">Members</h2>
             {group.isMember ? (
               <div className="mt-4 divide-y divide-[var(--line)]">
-                {group.members.map((member) => {
-                  const rank = group.leaderboard.find((entry) => entry.id === member.id)?.rank;
-                  return (
-                    <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                      <span className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold">{member.name}</p>
-                        <p className="text-[11px] text-[var(--ink-soft)]">{rank ? `#${rank} rank` : "Unranked"}</p>
-                      </div>
-                      {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
+                {group.members.map((member) => (
+                  <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">{member.name}</p>
+                      <p className="text-[11px] text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"}</p>
                     </div>
-                  );
-                })}
+                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
