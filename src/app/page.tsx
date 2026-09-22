@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type DashboardEvent = { id: string; title: string; dateLabel: string; timeLabel: string; location: string; format: string; spotsLeft: number; totalSpots: number; group: string; accent: "lime" | "coral" | "blue"; attending?: boolean };
 type DashboardGroup = { id: string; name: string; members: number; next: string; mark: string; color?: string };
-type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; wins: number; losses: number; winPct: number; avgPointDiff: number; movement: number };
+type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number };
 type RecentResult = { opponent: string; event: string; score: string; result: string; points: string; date: string };
 
 function Logo() {
@@ -65,7 +65,7 @@ export function DashboardPage() {
         }));
       }).finally(() => setLoadingDashboard(false));
     });
-    fetch("/api/leaderboard").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.leaderboard) setLeaderboardList(data.leaderboard.map((entry: { rank: number; name: string; rating: string; wins: number; losses: number; winPct: number; avgPointDiff: number; movement: number }) => ({ ...entry, initials: entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() }))); }).finally(() => setLoadingLeaderboard(false));
+    fetch("/api/leaderboard").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.leaderboard) setLeaderboardList(data.leaderboard.map((entry: { rank: number; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number }) => ({ ...entry, initials: entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() }))); }).finally(() => setLoadingLeaderboard(false));
     fetch("/api/profile").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.profile) { const name = data.profile.name; setProfileSummary({ name, rating: data.profile.skillRating, initials: name.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase(), record: data.profile.record, winRate: data.profile.winRate, rank: data.profile.rank }); } });
   }, []);
   useEffect(() => { const routes: Record<string, string> = { "My games": "/events", Groups: "/groups", "Round robin": "/round-robin", Leaderboards: "/leaderboards", "Match history": "/matches" }; const handlers: Array<[Element, EventListener]> = []; document.querySelectorAll("button").forEach((button) => { const label = button.textContent?.replace(/\d+$/, "").trim() ?? ""; const route = routes[label]; if (route) { const handler = () => router.push(route); button.addEventListener("click", handler); handlers.push([button, handler]); } }); const notification = document.querySelector('button[aria-label="Notifications"]'); if (notification) { const handler = () => router.push("/notifications"); notification.addEventListener("click", handler); handlers.push([notification, handler]); } const createGame = Array.from(document.querySelectorAll("button")).find((button) => button.textContent?.includes("Create a game")); if (createGame) { const handler = () => router.push("/events"); createGame.addEventListener("click", handler); handlers.push([createGame, handler]); } const signOut = Array.from(document.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Sign out"); if (signOut) { const handler = async () => { await createClient().auth.signOut(); router.push("/login"); }; signOut.addEventListener("click", handler); handlers.push([signOut, handler]); } return () => handlers.forEach(([element, handler]) => element.removeEventListener("click", handler)); }, [router]);
@@ -106,8 +106,8 @@ export function DashboardPage() {
           {loadingLeaderboard ? (
             <div className="space-y-3 py-2">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>
           ) : leaderboardList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">Play a match to appear on the leaderboard.</p> : (
-            <table className="w-full min-w-[520px] text-left text-sm">
-              <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
+            <table className="w-full min-w-[680px] text-left text-sm">
+              <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
               <tbody>
                 {leaderboardList.map((player) => (
                   <tr key={player.name} className={`border-b border-[var(--line)] last:border-0 ${player.name === profileSummary.name ? "bg-[#1e2b17]" : ""}`}>
@@ -116,6 +116,8 @@ export function DashboardPage() {
                     <td className="py-3 text-center font-semibold">{player.wins}</td>
                     <td className="py-3 text-center font-semibold">{player.losses}</td>
                     <td className="py-3 text-center font-semibold">{player.winPct}%</td>
+                    <td className="py-3 text-center font-semibold">{player.scored}</td>
+                    <td className="py-3 text-center font-semibold">{player.conceded}</td>
                     <td className={`py-3 text-right font-semibold ${player.avgPointDiff > 0 ? "text-[var(--lime-deep)]" : player.avgPointDiff < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{player.avgPointDiff > 0 ? "+" : ""}{player.avgPointDiff}</td>
                   </tr>
                 ))}

@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Lock, MapPin, Trophy, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Lock, MapPin, PawPrint, Trophy, Users } from "lucide-react";
 
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER" };
-type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; wins: number; losses: number; winPct: number; avgPointDiff: number };
+type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
+type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
-type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; events: GroupEvent[]; isMember: boolean; myRole: string | null };
+type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; isMember: boolean; myRole: string | null };
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -122,8 +123,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <p className="mt-4 text-sm text-[var(--ink-soft)]">No members yet.</p>
             ) : (
               <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[480px] text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
+                <table className="w-full min-w-[640px] text-left text-sm">
+                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
                   <tbody>
                     {group.leaderboard.map((entry) => (
                       <tr key={entry.id} className="border-b border-[var(--line)] last:border-0">
@@ -132,6 +133,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                         <td className="py-3 text-center font-semibold">{entry.wins}</td>
                         <td className="py-3 text-center font-semibold">{entry.losses}</td>
                         <td className="py-3 text-center font-semibold">{entry.winPct}%</td>
+                        <td className="py-3 text-center font-semibold">{entry.scored}</td>
+                        <td className="py-3 text-center font-semibold">{entry.conceded}</td>
                         <td className={`py-3 text-right font-semibold ${entry.avgPointDiff > 0 ? "text-[var(--lime-deep)]" : entry.avgPointDiff < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{entry.avgPointDiff > 0 ? "+" : ""}{entry.avgPointDiff}</td>
                       </tr>
                     ))}
@@ -143,6 +146,39 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
               <Lock size={20} className="text-[var(--lime-deep)]" />
               <p className="text-sm font-bold text-[var(--foreground)]">Join this group to see its leaderboard.</p>
+            </div>
+          )}
+        </section>
+
+        <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
+          <h2 className="font-extrabold">Recent results</h2>
+          {group.isMember ? (
+            group.recentResults.length === 0 ? (
+              <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
+                <PawPrint size={20} className="text-[var(--lime-deep)]" />
+                <p className="text-sm text-[var(--ink-soft)]">No completed matches yet.</p>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {group.recentResults.map((result) => (
+                  <div key={result.id} className="rounded-xl bg-[#131f19] px-4 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-bold">
+                        <span className={result.winnerSide === "A" ? "text-[var(--lime-deep)]" : "text-[var(--foreground)]"}>{result.sideA}</span>
+                        <span className="mx-2 font-normal text-[var(--ink-soft)]">vs</span>
+                        <span className={result.winnerSide === "B" ? "text-[var(--lime-deep)]" : "text-[var(--foreground)]"}>{result.sideB}</span>
+                      </p>
+                      <span className="text-xs font-bold text-[var(--ink-soft)]">{new Date(result.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</span>
+                    </div>
+                    <p className="mt-1 text-xs font-semibold text-[var(--ink-soft)]">{result.score}</p>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
+              <Lock size={20} className="text-[var(--lime-deep)]" />
+              <p className="text-sm font-bold text-[var(--foreground)]">Join this group to see its recent results.</p>
             </div>
           )}
         </section>
