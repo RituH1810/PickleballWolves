@@ -67,7 +67,7 @@ export default function GroupsPage() {
         )}
 
         <div className="grid gap-4 md:grid-cols-2">
-          {loading ? <p className="text-sm text-[#67716a]">Loading groups...</p> : groups.length === 0 ? (
+          {loading ? Array.from({ length: 4 }).map((_, index) => <div key={index} className="skeleton h-[168px] rounded-[20px]" />) : groups.length === 0 ? (
             <div className="rounded-[20px] border border-[#e2e7e2] bg-white p-8 text-center md:col-span-2">
               <p className="font-bold text-[#1b211e]">No groups yet.</p>
               <p className="mt-2 text-sm text-[#67716a]">Create the first one for your court.</p>

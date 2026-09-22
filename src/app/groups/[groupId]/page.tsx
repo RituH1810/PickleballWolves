@@ -38,7 +38,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     setUpdating(false);
   }
 
-  if (loading) return <main className="grid min-h-screen place-items-center bg-[#f3f5f2] px-5 py-8 noise sm:px-10"><p className="text-sm text-[#67716a]">Loading group...</p></main>;
+  if (loading) return (
+    <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
+      <div className="mx-auto max-w-4xl">
+        <div className="skeleton h-4 w-32 rounded" />
+        <div className="skeleton mt-6 h-40 rounded-[24px]" />
+        <div className="mt-5 grid gap-5 md:grid-cols-[1fr_.8fr]"><div className="skeleton h-56 rounded-[20px]" /><div className="skeleton h-56 rounded-[20px]" /></div>
+      </div>
+    </main>
+  );
   if (notFound || !group) return <main className="grid min-h-screen place-items-center bg-[#f3f5f2] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[#1b211e]">Group not found.</p><Link href="/groups" className="mt-3 inline-block text-sm font-bold text-[#6b8f21]">Back to groups</Link></div></main>;
 
   const mark = group.name.split(" ").map((word) => word[0]).join("").slice(0, 2).toUpperCase();

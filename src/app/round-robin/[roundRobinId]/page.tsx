@@ -69,7 +69,18 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     setEnding(false);
   }
 
-  if (loading) return <main className="grid min-h-screen place-items-center bg-[#f3f5f2] px-5 py-8 noise sm:px-10"><p className="text-sm text-[#67716a]">Loading matches...</p></main>;
+  if (loading) return (
+    <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
+      <div className="mx-auto max-w-6xl">
+        <div className="skeleton h-4 w-40 rounded" />
+        <div className="skeleton mt-6 h-16 w-2/3 max-w-lg rounded-xl" />
+        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
+          <div className="space-y-4">{Array.from({ length: 2 }).map((_, index) => <div key={index} className="skeleton h-40 rounded-[20px]" />)}</div>
+          <div className="skeleton h-64 rounded-[20px]" />
+        </div>
+      </div>
+    </main>
+  );
   if (!room) return <main className="grid min-h-screen place-items-center bg-[#f3f5f2] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[#1b211e]">Round robin not found.</p><Link href="/round-robin" className="mt-3 inline-block text-sm font-bold text-[#6b8f21]">Build a new one</Link></div></main>;
 
   return (
