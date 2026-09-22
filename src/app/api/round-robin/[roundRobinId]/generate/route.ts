@@ -22,18 +22,21 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin || roundRobin.createdById !== user.id) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
   const body = await request.json();
-  const playerIds: string[] = Array.isArray(body.playerIds) ? body.playerIds.filter((id: unknown): id is string => typeof id === "string") : [];
+  const explicitTeams: string[][] | null = Array.isArray(body.teams)
+    ? body.teams.filter((team: unknown): team is string[] => Array.isArray(team) && team.length === 2 && team.every((id) => typeof id === "string"))
+    : null;
+  const playerIds: string[] = explicitTeams ? explicitTeams.flat() : (Array.isArray(body.playerIds) ? body.playerIds.filter((id: unknown): id is string => typeof id === "string") : []);
   if (playerIds.length < 4) return NextResponse.json({ error: "Add at least four players." }, { status: 400 });
+  if (explicitTeams && new Set(playerIds).size !== playerIds.length) return NextResponse.json({ error: "Each player can only be on one team." }, { status: 400 });
 
   const isDoubles = roundRobin.playFormat !== "SINGLES";
   const fixedPartners = roundRobin.partnerFormat === "FIXED";
+  if (fixedPartners && isDoubles && !explicitTeams) return NextResponse.json({ error: "Pair up your fixed teams before generating." }, { status: 400 });
   const rounds: RoundInput[] = [];
 
   if (!isDoubles || fixedPartners) {
-    // Stable units for the whole event: individual players (singles), or fixed teams (doubles/mixed) rotated with the circle method.
-    let units: string[][] = isDoubles
-      ? Array.from({ length: Math.floor(playerIds.length / 2) }, (_, i) => [playerIds[i * 2], playerIds[i * 2 + 1]])
-      : playerIds.map((id) => [id]);
+    // Stable units for the whole event: individual players (singles), or explicit organizer-chosen teams (fixed doubles/mixed).
+    let units: string[][] = explicitTeams ?? playerIds.map((id) => [id]);
     if (units.length % 2) units.push(["BYE"]);
     for (let roundNumber = 1; roundNumber <= roundRobin.roundCount; roundNumber++) {
       const matches: MatchInput[] = [];

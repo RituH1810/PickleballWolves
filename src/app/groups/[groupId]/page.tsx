@@ -39,7 +39,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
+    <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-4xl">
         <div className="skeleton h-4 w-32 rounded" />
         <div className="skeleton mt-6 h-40 rounded-[24px]" />
@@ -47,67 +47,67 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       </div>
     </main>
   );
-  if (notFound || !group) return <main className="grid min-h-screen place-items-center bg-[#f3f5f2] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[#1b211e]">Group not found.</p><Link href="/groups" className="mt-3 inline-block text-sm font-bold text-[#6b8f21]">Back to groups</Link></div></main>;
+  if (notFound || !group) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[var(--foreground)]">Group not found.</p><Link href="/groups" className="mt-3 inline-block text-sm font-bold text-[var(--lime-deep)]">Back to groups</Link></div></main>;
 
   const mark = group.name.split(" ").map((word) => word[0]).join("").slice(0, 2).toUpperCase();
 
   return (
-    <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
+    <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-4xl">
-        <Link href="/groups" className="flex items-center gap-2 text-xs font-bold text-[#6b8f21]"><ArrowLeft size={14} />Back to groups</Link>
+        <Link href="/groups" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to groups</Link>
 
-        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#fde3dd] text-[#a94f3d]" : "bg-[#e4f3a8] text-[#5c7b1a]"}`}>{notice.text}</p>}
+        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}
 
-        <section className="mt-6 rounded-[24px] border border-[#e2e7e2] bg-white p-6 sm:p-8">
+        <section className="mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#d8f24e] text-lg font-black">{mark}</div>
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#d8f24e] text-lg font-black text-[#1b211e]">{mark}</div>
             <div className="flex-1">
-              <h1 className="text-2xl font-black tracking-[-.03em] text-[#1b211e] sm:text-3xl">{group.name}</h1>
-              <p className="mt-1 flex items-center gap-1 text-sm text-[#67716a]"><MapPin size={14} />{group.location}</p>
+              <h1 className="text-2xl font-black tracking-[-.03em] text-[var(--foreground)] sm:text-3xl">{group.name}</h1>
+              <p className="mt-1 flex items-center gap-1 text-sm text-[var(--ink-soft)]"><MapPin size={14} />{group.location}</p>
             </div>
-            <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember ? "bg-[#e4f3a8] text-[#5c7b1a]" : "bg-[#1b211e] text-white hover:bg-[#344037]"}`}>
+            <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>
               {group.isMember && <Check size={15} />}
               {group.isMember ? "Joined" : "Join group"}
             </button>
           </div>
-          {group.description && <p className="mt-5 text-sm leading-6 text-[#465247]">{group.description}</p>}
-          <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-[#67716a]"><Users size={16} />{group.memberCount} member{group.memberCount === 1 ? "" : "s"}</p>
+          {group.description && <p className="mt-5 text-sm leading-6 text-[#c3d0c5]">{group.description}</p>}
+          <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-[var(--ink-soft)]"><Users size={16} />{group.memberCount} member{group.memberCount === 1 ? "" : "s"}</p>
         </section>
 
         <div className="mt-5 grid gap-5 md:grid-cols-[1fr_.8fr]">
-          <section className="rounded-[20px] border border-[#e2e7e2] bg-white p-6">
+          <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
             <h2 className="font-extrabold">Members</h2>
             {group.isMember ? (
               <div className="mt-4 divide-y divide-[var(--line)]">
                 {group.members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[#dfe8db] text-[10px] font-black">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
+                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{member.name}</p>
-                      <p className="text-[11px] text-[#67716a]">{member.skillRating} rating</p>
+                      <p className="text-[11px] text-[var(--ink-soft)]">{member.skillRating} rating</p>
                     </div>
-                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[#eef2ed] px-2.5 py-1 text-[10px] font-bold text-[#67716a]">Organizer</span>}
+                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
                   </div>
                 ))}
               </div>
             ) : (
               <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
-                <Lock size={20} className="text-[#98ba1f]" />
-                <p className="text-sm font-bold text-[#1b211e]">Join this group to see its members.</p>
-                <p className="text-xs text-[#67716a]">Member names and ratings are visible to members only.</p>
+                <Lock size={20} className="text-[var(--lime-deep)]" />
+                <p className="text-sm font-bold text-[var(--foreground)]">Join this group to see its members.</p>
+                <p className="text-xs text-[var(--ink-soft)]">Member names and ratings are visible to members only.</p>
               </div>
             )}
           </section>
-          <section className="rounded-[20px] border border-[#e2e7e2] bg-white p-6">
+          <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
             <h2 className="font-extrabold">Upcoming games</h2>
             <div className="mt-4 space-y-3">
-              {group.events.length === 0 && <p className="text-sm text-[#67716a]">No upcoming games yet.</p>}
+              {group.events.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No upcoming games yet.</p>}
               {group.events.map((event) => (
-                <div key={event.id} className="flex items-center gap-3 border-b border-[#e2e7e2] pb-3 last:border-0 last:pb-0">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#eef2ed] text-[#6b8f21]"><CalendarDays size={16} /></div>
+                <div key={event.id} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 last:border-0 last:pb-0">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><CalendarDays size={16} /></div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">{event.title}</p>
-                    <p className="mt-0.5 truncate text-xs text-[#67716a]">{new Date(event.startsAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {event.location}</p>
+                    <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{new Date(event.startsAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {event.location}</p>
                   </div>
                 </div>
               ))}
@@ -115,25 +115,24 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           </section>
         </div>
 
-        <section className="mt-5 rounded-[20px] border border-[#e2e7e2] bg-white p-6 sm:p-8">
-          <div className="flex items-center gap-2"><Trophy size={17} className="text-[#98ba1f]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
+        <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
+          <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
           {group.isMember ? (
             group.leaderboard.length === 0 ? (
-              <p className="mt-4 text-sm text-[#67716a]">No members yet.</p>
+              <p className="mt-4 text-sm text-[var(--ink-soft)]">No members yet.</p>
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[480px] text-left text-sm">
-                  <thead><tr className="border-b border-[#e2e7e2] text-[10px] font-bold uppercase tracking-[.14em] text-[#67716a]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Avg pt diff</th><th className="pb-3 text-right">Rating</th></tr></thead>
+                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
                   <tbody>
                     {group.leaderboard.map((entry) => (
-                      <tr key={entry.id} className="border-b border-[#e2e7e2] last:border-0">
-                        <td className="py-3 font-bold text-[#67716a]">{entry.rank}</td>
-                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#dfe8db] text-[10px] font-black">{entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>{entry.name}</span></td>
+                      <tr key={entry.id} className="border-b border-[var(--line)] last:border-0">
+                        <td className="py-3 font-bold text-[var(--ink-soft)]">{entry.rank}</td>
+                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>{entry.name}</span></td>
                         <td className="py-3 text-center font-semibold">{entry.wins}</td>
                         <td className="py-3 text-center font-semibold">{entry.losses}</td>
                         <td className="py-3 text-center font-semibold">{entry.winPct}%</td>
-                        <td className={`py-3 text-center font-semibold ${entry.avgPointDiff > 0 ? "text-[#6d9a2e]" : entry.avgPointDiff < 0 ? "text-[#dd735b]" : "text-[#67716a]"}`}>{entry.avgPointDiff > 0 ? "+" : ""}{entry.avgPointDiff}</td>
-                        <td className="py-3 text-right font-black">{entry.rating}</td>
+                        <td className={`py-3 text-right font-semibold ${entry.avgPointDiff > 0 ? "text-[var(--lime-deep)]" : entry.avgPointDiff < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{entry.avgPointDiff > 0 ? "+" : ""}{entry.avgPointDiff}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -142,8 +141,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             )
           ) : (
             <div className="mt-6 flex flex-col items-center gap-2 py-6 text-center">
-              <Lock size={20} className="text-[#98ba1f]" />
-              <p className="text-sm font-bold text-[#1b211e]">Join this group to see its leaderboard.</p>
+              <Lock size={20} className="text-[var(--lime-deep)]" />
+              <p className="text-sm font-bold text-[var(--foreground)]">Join this group to see its leaderboard.</p>
             </div>
           )}
         </section>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Trophy } from "lucide-react";
+import { ArrowLeft, PawPrint, Trophy } from "lucide-react";
 
 type Leader = { rank: number; name: string; wins: number; losses: number; scored: number; conceded: number; differential: number; matches: number };
 
@@ -10,22 +10,22 @@ export default function LeaderboardsPage() {
   const [leaders, setLeaders] = useState<Leader[]>([]);
   useEffect(() => { fetch("/api/leaderboard").then((response) => response.json()).then((data) => setLeaders(data.leaderboard ?? [])); }, []);
   return (
-    <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
+    <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-4xl">
-        <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[#6b8f21]"><ArrowLeft size={14} />Back to dashboard</Link>
+        <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
         <div className="mt-8 flex items-end justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[#98ba1f]">PickleballWolves</p>
-            <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[#1b211e]">Leaderboard.</h1>
-            <p className="mt-3 text-sm text-[#67716a]">Ranked by wins, then point differential, across every recorded match.</p>
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">PickleballWolves</p>
+            <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Leaderboard.</h1>
+            <p className="mt-3 text-sm text-[var(--ink-soft)]">Ranked by wins, then point differential, across every recorded match.</p>
           </div>
-          <Trophy size={36} className="text-[#98ba1f]" />
+          <Trophy size={36} className="text-[var(--lime-deep)]" />
         </div>
-        <section className="mt-8 overflow-x-auto rounded-[20px] border border-[#e2e7e2] bg-white p-5 sm:p-6">
-          {leaders.length === 0 ? <p className="py-6 text-sm text-[#67716a]">Play a match to appear on the leaderboard.</p> : (
+        <section className="mt-8 overflow-x-auto rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+          {leaders.length === 0 ? <div className="py-10 text-center"><PawPrint size={22} className="mx-auto text-[var(--lime-deep)]" /><p className="mt-3 text-sm text-[var(--ink-soft)]">Play a match to appear on the leaderboard.</p></div> : (
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
-                <tr className="border-b border-[#e2e7e2] text-[10px] font-bold uppercase tracking-[.14em] text-[#67716a]">
+                <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">
                   <th className="pb-3">#</th>
                   <th className="pb-3">Player</th>
                   <th className="pb-3 text-center">W</th>
@@ -37,14 +37,14 @@ export default function LeaderboardsPage() {
               </thead>
               <tbody>
                 {leaders.map((leader) => (
-                  <tr key={leader.name} className="border-b border-[#e2e7e2] last:border-0">
-                    <td className={`py-4 font-black ${leader.rank <= 3 ? "text-[#98ba1f]" : "text-[#67716a]"}`}>{leader.rank}</td>
-                    <td className="py-4 font-bold text-[#1b211e]">{leader.name}<small className="ml-2 font-normal text-[#67716a]">{leader.matches} matches</small></td>
+                  <tr key={leader.name} className="border-b border-[var(--line)] last:border-0">
+                    <td className={`py-4 font-black ${leader.rank <= 3 ? "text-[var(--lime-deep)]" : "text-[var(--ink-soft)]"}`}>{leader.rank}</td>
+                    <td className="py-4 font-bold text-[var(--foreground)]">{leader.name}<small className="ml-2 font-normal text-[var(--ink-soft)]">{leader.matches} matches</small></td>
                     <td className="py-4 text-center font-semibold">{leader.wins}</td>
                     <td className="py-4 text-center font-semibold">{leader.losses}</td>
                     <td className="py-4 text-center font-semibold">{leader.scored}</td>
                     <td className="py-4 text-center font-semibold">{leader.conceded}</td>
-                    <td className={`py-4 text-right font-black ${leader.differential > 0 ? "text-[#6d9a2e]" : leader.differential < 0 ? "text-[#dd735b]" : "text-[#67716a]"}`}>{leader.differential > 0 ? "+" : ""}{leader.differential}</td>
+                    <td className={`py-4 text-right font-black ${leader.differential > 0 ? "text-[var(--lime-deep)]" : leader.differential < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{leader.differential > 0 ? "+" : ""}{leader.differential}</td>
                   </tr>
                 ))}
               </tbody>

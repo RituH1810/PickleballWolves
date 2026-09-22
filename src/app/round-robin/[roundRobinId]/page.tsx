@@ -70,7 +70,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
+    <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
         <div className="skeleton h-4 w-40 rounded" />
         <div className="skeleton mt-6 h-16 w-2/3 max-w-lg rounded-xl" />
@@ -81,38 +81,38 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
       </div>
     </main>
   );
-  if (!room) return <main className="grid min-h-screen place-items-center bg-[#f3f5f2] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[#1b211e]">Round robin not found.</p><Link href="/round-robin" className="mt-3 inline-block text-sm font-bold text-[#6b8f21]">Build a new one</Link></div></main>;
+  if (!room) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[var(--foreground)]">Round robin not found.</p><Link href="/round-robin" className="mt-3 inline-block text-sm font-bold text-[var(--lime-deep)]">Build a new one</Link></div></main>;
 
   return (
-    <main className="min-h-screen bg-[#f3f5f2] px-5 py-8 noise sm:px-10">
+    <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
-        <Link href="/round-robin" className="flex items-center gap-2 text-xs font-bold text-[#6b8f21]"><ArrowLeft size={14} />Back to round robin builder</Link>
+        <Link href="/round-robin" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to round robin builder</Link>
         <div className="mt-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[#98ba1f]">{partnerFormatLabels[room.partnerFormat] ?? room.partnerFormat} · {playFormatLabels[room.playFormat] ?? room.playFormat}</p>
-            <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[#1b211e]">{room.name}</h1>
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{partnerFormatLabels[room.partnerFormat] ?? room.partnerFormat} · {playFormatLabels[room.playFormat] ?? room.playFormat}</p>
+            <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{room.name}</h1>
           </div>
           <div className="flex items-center gap-3">
-            <span className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${room.status === "COMPLETED" ? "bg-[#eef2ed] text-[#67716a]" : "bg-[#e4f3a8] text-[#5c7b1a]"}`}><Check size={15} />{room.status === "LIVE" ? "Live schedule" : room.status === "COMPLETED" ? "Completed" : room.status}</span>
-            {room.isOwner && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="rounded-full border border-[#e2e7e2] px-4 py-2 text-xs font-bold text-[#1b211e] transition-colors hover:bg-[#f5f7f4] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
+            <span className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${room.status === "COMPLETED" ? "bg-[#1c2a1a] text-[var(--ink-soft)]" : "bg-[#1e2b17] text-[#c7e572]"}`}><Check size={15} />{room.status === "LIVE" ? "Live schedule" : room.status === "COMPLETED" ? "Completed" : room.status}</span>
+            {room.isOwner && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
           </div>
         </div>
         {notice && (
-          <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#fde3dd] text-[#a94f3d]" : "bg-[#e4f3a8] text-[#5c7b1a]"}`}>{notice.text}</p>
+          <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>
         )}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
-              <button onClick={() => loadRoom()} className="text-xs font-bold text-[#6b8f21]">Refresh standings</button>
+              <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
             </div>
-            {rounds.length === 0 && <p className="rounded-[20px] border border-[#e2e7e2] bg-white p-6 text-sm text-[#67716a]">No matches yet.</p>}
+            {rounds.length === 0 && <p className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)]">No matches yet.</p>}
             {rounds.map((round) => (
-              <section key={round.id} className="rounded-[20px] border border-[#e2e7e2] bg-white p-5">
+              <section key={round.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <h3 className="font-extrabold">Round {round.roundNumber}</h3>
-                  <span className="text-xs text-[#67716a]">{round.matches.length} courts active</span>
+                  <span className="text-xs text-[var(--ink-soft)]">{round.matches.length} courts active</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {round.matches.map((match) => <MatchCard key={match.id} match={match} onSave={saveScore} canEdit={room.isOwner} />)}
@@ -120,13 +120,13 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               </section>
             ))}
           </section>
-          <aside className="rounded-[20px] border border-[#e2e7e2] bg-white p-5">
-            <div className="flex items-center gap-2"><Trophy size={18} className="text-[#98ba1f]" /><h2 className="font-extrabold">Standings</h2></div>
+          <aside className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
+            <div className="flex items-center gap-2"><Trophy size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Standings</h2></div>
             <div className="mt-4 space-y-2">
-              {standings.length === 0 && <p className="text-sm text-[#67716a]">No results yet.</p>}
+              {standings.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No results yet.</p>}
               {standings.map((player) => (
-                <div key={player.name} className="flex items-center gap-2 rounded-xl bg-[#f3f6ef] px-3 py-3">
-                  <span className="w-5 text-xs font-black text-[#98ba1f]">{player.rank}</span>
+                <div key={player.name} className="flex items-center gap-2 rounded-xl bg-[#131f19] px-3 py-3">
+                  <span className="w-5 text-xs font-black text-[var(--lime-deep)]">{player.rank}</span>
                   <span className="flex-1 text-xs font-bold">{player.name}</span>
                   <span className="text-xs font-black">{player.wins}W</span>
                 </div>
@@ -143,26 +143,26 @@ function MatchCard({ match, onSave, canEdit }: { match: Match; onSave: (matchId:
   const [sideA, setSideA] = useState(match.scores[0]?.sideAScore?.toString() ?? "");
   const [sideB, setSideB] = useState(match.scores[0]?.sideBScore?.toString() ?? "");
   return (
-    <article className="rounded-xl border border-[#e2e7e2] p-4">
+    <article className="rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[#67716a]">Court {match.courtNumber}</span>
-        <span className="rounded-full bg-[#eef2ed] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>
+        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Court {match.courtNumber}</span>
+        <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>
       </div>
-      <div className="space-y-2 text-sm font-bold text-[#1b211e]">
+      <div className="space-y-2 text-sm font-bold text-[var(--foreground)]">
         <p>{match.players.filter((player) => player.side === "A").map((player) => player.name).join(" / ")}</p>
-        <p className="text-[#67716a]">vs</p>
+        <p className="text-[var(--ink-soft)]">vs</p>
         <p>{match.players.filter((player) => player.side === "B").map((player) => player.name).join(" / ")}</p>
       </div>
       {canEdit ? (
         <div className="mt-4 flex items-center gap-2">
-          <input value={sideA} onChange={(event) => setSideA(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[#dfe6df] text-center font-bold" />
-          <span className="text-[#67716a]">-</span>
-          <input value={sideB} onChange={(event) => setSideB(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[#dfe6df] text-center font-bold" />
-          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold">Save score</button>
+          <input value={sideA} onChange={(event) => setSideA(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
+          <span className="text-[var(--ink-soft)]">-</span>
+          <input value={sideB} onChange={(event) => setSideB(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
+          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold text-[#1b211e]">Save score</button>
         </div>
       ) : (
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-[#f3f6ef] px-3 py-2.5 text-xs font-semibold text-[#67716a]">
-          {match.scores[0] ? <span className="font-bold text-[#1b211e]">{match.scores[0].sideAScore} - {match.scores[0].sideBScore}</span> : <span>Score not entered yet</span>}
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-[#131f19] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
+          {match.scores[0] ? <span className="font-bold text-[var(--foreground)]">{match.scores[0].sideAScore} - {match.scores[0].sideBScore}</span> : <span>Score not entered yet</span>}
           <span>Organizer only</span>
         </div>
       )}
