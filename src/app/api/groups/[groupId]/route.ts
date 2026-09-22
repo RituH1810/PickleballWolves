@@ -17,10 +17,12 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
   const myMembership = user ? group.memberships.find((membership) => membership.userId === user.id) : undefined;
 
-  const memberIds = group.memberships.map((membership) => membership.userId);
-  const completedMatches = memberIds.length
-    ? await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null, players: { some: { userId: { in: memberIds } } } }, include: { players: { include: { user: { select: { name: true } } } }, scores: true } })
-    : [];
+  // Scope to matches actually played as part of this group's own events or round robins --
+  // not just any match a member happened to play anywhere on the platform.
+  const completedMatches = await prisma.match.findMany({
+    where: { status: "COMPLETED", deletedAt: null, OR: [{ event: { groupId } }, { roundRobin: { groupId } }] },
+    include: { players: { include: { user: { select: { name: true } } } }, scores: true },
+  });
 
   const recentResults = [...completedMatches]
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
