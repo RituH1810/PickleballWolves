@@ -9,17 +9,23 @@ function AcceptInvite() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token") ?? "";
+  const next = searchParams.get("next");
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : null;
   const [status, setStatus] = useState<"working" | "error">("working");
   const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/groups/invites/accept", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token }) }).then(async (response) => {
-      if (response.status === 401) { router.push(`/signup?next=${encodeURIComponent(`/invite/accept?token=${token}`)}`); return; }
+      if (response.status === 401) {
+        const returnTo = `/invite/accept?token=${token}${safeNext ? `&next=${encodeURIComponent(safeNext)}` : ""}`;
+        router.push(`/signup?next=${encodeURIComponent(returnTo)}`);
+        return;
+      }
       const data = await response.json();
       if (!response.ok) { setStatus("error"); setError(data.error ?? "Unable to accept this invite."); return; }
-      router.push(`/groups/${data.groupId}`);
+      router.push(safeNext ?? `/groups/${data.groupId}`);
     }).catch(() => { setStatus("error"); setError("Unable to accept this invite."); });
-  }, [token, router]);
+  }, [token, safeNext, router]);
 
   return (
     <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-10 noise">

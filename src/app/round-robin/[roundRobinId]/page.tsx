@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Trophy, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trophy, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 
 type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
@@ -25,6 +25,9 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [teams, setTeams] = useState<[string, string][]>([]);
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [showShare, setShowShare] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const [loadingShare, setLoadingShare] = useState(false);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -105,6 +108,25 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     setGenerating(false);
   }
 
+  async function toggleShare() {
+    setShowShare((current) => !current);
+    if (shareUrl) return;
+    setLoadingShare(true);
+    if (room?.groupId) {
+      const response = await fetch(`/api/groups/${room.groupId}/invite-link`, { method: "POST" });
+      const data = await response.json();
+      if (response.ok && data.url) setShareUrl(`${data.url}&next=${encodeURIComponent(`/round-robin/${roundRobinId}`)}`);
+      else showNotice(data.error ?? "Unable to generate a share link.", "error");
+    } else {
+      setShareUrl(`${window.location.origin}/round-robin/${roundRobinId}`);
+    }
+    setLoadingShare(false);
+  }
+
+  async function copyShareUrl() {
+    try { await navigator.clipboard.writeText(shareUrl); showNotice("Link copied!", "success"); } catch { showNotice("Unable to copy the link.", "error"); }
+  }
+
   if (loading) return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
@@ -136,12 +158,37 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </div>
           <div className="flex items-center gap-3">
             <span className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold ${room.status === "COMPLETED" ? "bg-[#1c2a1a] text-[var(--ink-soft)]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{room.status === "LIVE" ? <LivePulse color="#c7e572" size={9} /> : <Check size={15} />}{room.status === "LIVE" ? "Live schedule" : room.status === "COMPLETED" ? "Completed" : room.status}</span>
+            <button onClick={toggleShare} className="flex items-center gap-2 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
             {room.isOwner && !room.hasScores && <Link href={`/round-robin/${roundRobinId}/edit`} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Edit round robin</Link>}
             {room.isOwner && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
           </div>
         </div>
         {notice && (
           <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>
+        )}
+
+        {showShare && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Share this round robin</p>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">{room.groupId ? "Anyone who opens this link joins the group and lands right here." : "Send this link on WhatsApp, text, email, or anywhere else."}</p>
+            {loadingShare ? (
+              <div className="skeleton mt-3 h-11 rounded-xl" />
+            ) : shareUrl ? (
+              <>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
+                  <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <a href={`https://wa.me/?text=${encodeURIComponent(`Join us for ${room.name} on PickleballWolves: ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
+                  <a href={`sms:?body=${encodeURIComponent(`Join us for ${room.name} on PickleballWolves: ${shareUrl}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
+                  <a href={`mailto:?subject=${encodeURIComponent(`Join us for ${room.name}`)}&body=${encodeURIComponent(`Join us for ${room.name} on PickleballWolves: ${shareUrl}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+                </div>
+              </>
+            ) : (
+              <p className="mt-3 text-sm text-[var(--ink-soft)]">Unable to load a share link right now.</p>
+            )}
+          </section>
         )}
 
         {room.groupId && room.status === "SETUP" && (
