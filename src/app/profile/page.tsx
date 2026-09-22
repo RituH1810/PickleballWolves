@@ -29,9 +29,15 @@ export default function ProfilePage() {
       const matchesData = await matchesResponse.json();
       setRecentResults((matchesData.matches ?? []).slice(0, 3).map((match: { players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[] }) => {
         const mine = match.players.find((player) => player.id === data.profile.id);
-        const margin = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideAScore - score.sideBScore : score.sideBScore - score.sideAScore), 0);
-        const opponents = match.players.filter((player) => player.id !== data.profile.id).map((player) => player.name).join(" / ") || "Solo entry";
-        return { opponent: opponents, event: match.event, score: match.scores.map((score) => `${score.sideAScore} - ${score.sideBScore}`).join(", ") || "No score", result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-" };
+        const teammates = match.players.filter((player) => player.id !== data.profile.id && player.side === mine?.side).map((player) => player.name);
+        const opposingSide = match.players.filter((player) => player.side !== mine?.side).map((player) => player.name);
+        const myLabel = teammates.length ? `You & ${teammates.join(" & ")}` : "You";
+        const theirLabel = opposingSide.length ? opposingSide.join(" & ") : (match.players.filter((player) => player.id !== data.profile.id).map((player) => player.name).join(" & ") || "Solo entry");
+        const myScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideAScore : score.sideBScore), 0);
+        const theirScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideBScore : score.sideAScore), 0);
+        const margin = myScore - theirScore;
+        const scoreText = match.scores.map((score) => `${mine?.side === "A" ? score.sideAScore : score.sideBScore} - ${mine?.side === "A" ? score.sideBScore : score.sideAScore}`).join(", ") || "No score";
+        return { opponent: `${myLabel} vs ${theirLabel}`, event: match.event, score: scoreText, result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-" };
       }));
     }).finally(() => setLoading(false));
   }, []);

@@ -58,10 +58,15 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
   const [form, setForm] = useState({ name: "", playFormat: "DOUBLES", partnerFormat: "ROTATE", gameFormat: "POPCORN", courtCount: "2", roundCount: "4", pointsToWin: "11", winBy: "1", skillBalanced: true });
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState(0);
 
   const minPlayers = form.playFormat === "SINGLES" ? 2 : 4;
   const needsFixedTeams = form.playFormat !== "SINGLES" && form.partnerFormat === "FIXED";
   const pairedPlayerIds = new Set(teams.flat());
+  // Step wizard is mobile-only (see sm:hidden / sm:block below); desktop always shows every section at once.
+  const stepLabels = needsFixedTeams ? ["Format", "Players", "Teams"] : ["Format", "Players"];
+  const totalSteps = stepLabels.length;
+  const clampedStep = Math.min(step, totalSteps - 1);
 
   function playerName(id: string) { return players.find((player) => player.id === id)?.name ?? "Unknown"; }
 
@@ -84,6 +89,16 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
     if (type === "error") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goToNextStep() {
+    if (clampedStep === 1 && selected.length < minPlayers) { showNotice(`Select at least ${minPlayers} players.`, "error"); return; }
+    setStep((current) => Math.min(current + 1, totalSteps - 1));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function goToPrevStep() {
+    setStep((current) => Math.max(current - 1, 0));
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   useEffect(() => {
@@ -172,7 +187,18 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
           <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>
         )}
 
-        <section className="mt-8 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
+        <div className="mt-8 flex items-center justify-between sm:hidden">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">Step {clampedStep + 1} of {totalSteps}</p>
+            <p className="text-sm font-bold text-[var(--foreground)]">{stepLabels[clampedStep]}</p>
+          </div>
+          <div className="flex gap-2">
+            {clampedStep > 0 && <button onClick={goToPrevStep} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)]">Back</button>}
+            {clampedStep < totalSteps - 1 && <button onClick={goToNextStep} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712]">Next</button>}
+          </div>
+        </div>
+
+        <section className={`${clampedStep === 0 ? "block" : "hidden"} sm:block mt-4 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:mt-8 sm:p-8`}>
           <h2 className="font-extrabold">1. Format</h2>
 
           <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Play format</p>
@@ -243,9 +269,10 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
             <input type="checkbox" checked={form.skillBalanced} onChange={(event) => setForm({ ...form, skillBalanced: event.target.checked })} className="h-5 w-5 accent-[var(--lime)]" />
             Skill-balanced matchups
           </label>
+          <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Players <ArrowRight size={16} /></button>
         </section>
 
-        <section className="mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6">
+        <section className={`${clampedStep === 1 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">2. Players</h2></div>
             <span className="text-xs font-bold text-[var(--ink-soft)]">{selected.length} selected</span>
@@ -259,10 +286,11 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
             ))}
           </div>
           {!needsFixedTeams && <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save & regenerate schedule"} <ArrowRight size={16} /></button>}
+          {needsFixedTeams && <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Teams <ArrowRight size={16} /></button>}
         </section>
 
         {needsFixedTeams && (
-          <section className="mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6">
+          <section className={`${clampedStep === 2 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
             <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">3. Teams</h2></div>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Tap two players to make them a fixed team for the whole event. Tap a paired player to undo it.</p>
             {selected.length === 0 ? (
