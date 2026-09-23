@@ -114,13 +114,6 @@ export function DashboardPage() {
     const response = await fetch(`/api/round-robin/${id}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     if (response.ok) setPendingRoundRobins((items) => items.filter((item) => item.id !== id));
   };
-  const respondMyRoundRobin = async (id: string, status: "JOINED" | "DECLINED") => {
-    const response = await fetch(`/api/round-robin/${id}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-    if (!response.ok) return;
-    setMyRoundRobins((items) => items
-      .map((item) => item.id === id ? { ...item, myRsvpStatus: status } : item)
-      .filter((item) => item.id !== id || status === "JOINED" || item.isOrganizer));
-  };
   const visibleEvents = eventList.filter((event) => filter === "All" || event.format === filter);
   const roundRobinFormatLabel = (playFormat: string) => playFormat === "MIXED" ? "Mixed doubles" : playFormat === "DOUBLES" ? "Doubles" : "Singles";
   const visibleRoundRobins = myRoundRobins.filter((roundRobin) => filter === "All" || roundRobinFormatLabel(roundRobin.playFormat) === filter);
@@ -182,35 +175,8 @@ export function DashboardPage() {
             </div>
           </section>
         )}
-        <div className="mt-10 grid gap-5 xl:grid-cols-2">
+        <div className="mt-10">
           <section className="panel rounded-[20px] p-5 sm:p-6" id="groups"><div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Your groups</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Your communities, all in one place.</p></div><Link href="/groups" className="text-xs font-bold text-[var(--lime-deep)]">View all</Link></div><div className="divide-y divide-[var(--line)]">{loadingDashboard ? Array.from({ length: 2 }).map((_, index) => <div key={index} className="flex items-center gap-3 py-4 first:pt-0"><div className="skeleton h-11 w-11 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><div className="skeleton h-3.5 w-2/3 rounded" /><div className="skeleton h-3 w-1/2 rounded" /></div></div>) : groupList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">No groups yet. Join or create one to see it here.</p> : groupList.map((group) => <Link key={group.id} href={`/groups/${group.id}`} className="flex items-center gap-3 py-4 first:pt-0 last:pb-0"><div className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl text-xs font-black text-[#0f1712] ${group.color === "lime" ? "bg-[var(--lime)]" : group.color === "blue" ? "bg-[var(--blue)]" : "bg-[var(--coral)]"}`}>{group.mark}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{group.name}</p><p className="mt-1 truncate text-xs text-[var(--ink-soft)]">{group.members} members · {group.next}</p></div><ChevronRight size={17} className="text-[var(--ink-soft)]" /></Link>)}</div></section>
-          <section className="panel rounded-[20px] p-5 sm:p-6" id="my-round-robins">
-            <div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Your round robins</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Round robins you&apos;re organizing or playing in.</p></div><Link href="/round-robin" className="text-xs font-bold text-[var(--lime-deep)]">View all</Link></div>
-            <div className="divide-y divide-[var(--line)]">
-              {loadingDashboard ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="flex items-center gap-3 py-3 first:pt-0"><div className="skeleton h-10 w-10 shrink-0 rounded-xl" /><div className="min-w-0 flex-1 space-y-2"><div className="skeleton h-3.5 w-2/3 rounded" /><div className="skeleton h-3 w-1/3 rounded" /></div></div>) : myRoundRobins.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">No round robins yet. <Link href="/round-robin" className="font-bold text-[var(--lime-deep)]">Build one</Link> to get started.</p> : myRoundRobins.map((roundRobin) => (
-                <div key={roundRobin.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                  <Link href={`/round-robin/${roundRobin.id}`} className="flex min-w-0 flex-1 items-center gap-3">
-                    <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><Repeat size={16} /></div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold">{roundRobin.name}</p>
-                      <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{roundRobin.groupName ? `${roundRobin.groupName} · ` : ""}{roundRobin.scheduledAt ? new Date(roundRobin.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : (pendingPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat)}</p>
-                    </div>
-                  </Link>
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    {roundRobin.isOrganizer && <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizing</span>}
-                    {roundRobin.status === "SETUP" ? (
-                      <>
-                        <button onClick={() => respondMyRoundRobin(roundRobin.id, "JOINED")} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors ${roundRobin.myRsvpStatus === "JOINED" ? "bg-[var(--lime)] text-[#0f1712]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{roundRobin.myRsvpStatus === "JOINED" ? "You're in" : "Join"}</button>
-                        <button onClick={() => respondMyRoundRobin(roundRobin.id, "DECLINED")} className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition-colors ${roundRobin.myRsvpStatus === "DECLINED" ? "bg-[var(--coral)] text-[#2e1a16]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>Decline</button>
-                      </>
-                    ) : (
-                      <span className="flex items-center gap-1.5 rounded-full bg-[#1e2b17] px-2.5 py-1 text-[10px] font-bold text-[#c7e572]"><LivePulse color="#c7e572" size={6} />Live</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
         <section className="panel mt-5 overflow-x-auto rounded-[20px] p-5 sm:p-6" id="leaderboard">
           <div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Community leaderboard</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Ranked by win % and point differential across every recorded match.</p></div></div>

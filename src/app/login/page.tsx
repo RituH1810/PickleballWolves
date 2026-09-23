@@ -13,7 +13,7 @@ function LoginForm() {
   const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(searchParams.get("error") === "confirm-link-invalid" ? "That confirmation link is invalid or has expired. Please sign in, or sign up again to get a fresh one." : "");
   const [loading, setLoading] = useState(false);
 
   async function signIn() {

@@ -4,7 +4,12 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
+import type { AuthError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+
+function isEmailRateLimitError(error: AuthError) {
+  return error.status === 429 || error.code === "over_email_send_rate_limit" || /rate limit/i.test(error.message);
+}
 
 function SignupForm() {
   const router = useRouter();
@@ -22,8 +27,8 @@ function SignupForm() {
     setLoading(true);
     setError("");
     setMessage("");
-    const { data, error: authError } = await createClient().auth.signUp({ email, password, options: { data: { name } } });
-    if (authError) setError(authError.message);
+    const { data, error: authError } = await createClient().auth.signUp({ email, password, options: { data: { name }, emailRedirectTo: `${window.location.origin}${safeNext}` } });
+    if (authError) setError(isEmailRateLimitError(authError) ? "We've hit our email limit for the moment. Please try again in a little while." : authError.message);
     else if (data.session) router.push(safeNext);
     else setMessage("Check your email to confirm your account, then sign in.");
     setLoading(false);

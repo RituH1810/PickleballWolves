@@ -31,10 +31,11 @@ export async function POST(request: Request, context: { params: Promise<{ groupI
 
   const origin = new URL(request.url).origin;
   const nextPath = `/invite/accept?token=${token}`;
-  const { error: otpError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(nextPath)}` } });
+  const { error: otpError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: `${origin}${nextPath}` } });
   if (otpError) {
     console.error("Failed to send invite email", otpError);
-    return NextResponse.json({ error: "Unable to send the invite email. Please try again." }, { status: 502 });
+    const isRateLimit = otpError.status === 429 || otpError.code === "over_email_send_rate_limit" || /rate limit/i.test(otpError.message);
+    return NextResponse.json({ error: isRateLimit ? "We've hit our email limit for the moment. Please try again in a little while, or share the invite link instead." : "Unable to send the invite email. Please try again." }, { status: 502 });
   }
 
   return NextResponse.json({ invitedEmail: email });
