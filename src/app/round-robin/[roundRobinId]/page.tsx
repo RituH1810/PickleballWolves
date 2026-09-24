@@ -25,6 +25,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [teams, setTeams] = useState<[string, string][]>([]);
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [addingRound, setAddingRound] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [loadingShare, setLoadingShare] = useState(false);
@@ -106,6 +107,16 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     await loadRoom();
     showNotice("Schedule generated!", "success");
     setGenerating(false);
+  }
+
+  async function addRound() {
+    setAddingRound(true);
+    const response = await fetch(`/api/round-robin/${roundRobinId}/add-round`, { method: "POST" });
+    const data = await response.json();
+    if (!response.ok) { showNotice(data.error ?? "Unable to add a round.", "error"); setAddingRound(false); return; }
+    await loadRoom();
+    showNotice(`Round ${data.roundNumber} added!`, "success");
+    setAddingRound(false);
   }
 
   async function toggleShare() {
@@ -252,7 +263,10 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
-              <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
+              <div className="flex items-center gap-4">
+                {rounds.length > 0 && (room.isOwner || room.myRsvpStatus === "JOINED") && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
+                <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
+              </div>
             </div>
             {rounds.length === 0 && <p className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)]">No matches yet.</p>}
             {rounds.map((round) => (
@@ -293,7 +307,7 @@ function MatchCard({ match, onSave, canEdit }: { match: Match; onSave: (matchId:
     <article className="rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Court {match.courtNumber}</span>
-        <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>
+        {match.scores.length > 0 ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
       </div>
       <div className="space-y-2 text-sm font-bold text-[var(--foreground)]">
         <p>{match.players.filter((player) => player.side === "A").map((player) => player.name).join(" / ")}</p>
