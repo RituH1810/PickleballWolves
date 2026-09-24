@@ -27,7 +27,8 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(user ? "/dashboard" : "/login", request.url));
+    if (!user) return NextResponse.redirect(new URL("/login", request.url));
+    return supabaseResponse;
   }
 
   const isPublic = PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));

@@ -11,6 +11,6 @@ export async function GET(request: Request) {
   }
 
   const next = url.searchParams.get("next");
-  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
   return NextResponse.redirect(new URL(safeNext, request.url));
 }
