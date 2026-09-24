@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
@@ -22,14 +23,14 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
 
-  // The organizer can always start it; for group round robins, any member who has actually
-  // joined can start it too, so the group isn't blocked on the organizer being available.
+  // The organizer can always start it; for group round robins, any active group member can
+  // start it too, so the group isn't blocked on the organizer being available.
   let canGenerate = roundRobin.createdById === user.id;
   if (!canGenerate && roundRobin.groupId) {
-    const myRsvp = await prisma.roundRobinRSVP.findUnique({ where: { roundRobinId_userId: { roundRobinId, userId: user.id } } });
-    canGenerate = myRsvp?.status === "JOINED";
+    const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } });
+    canGenerate = membership?.status === MembershipStatus.ACTIVE;
   }
-  if (!canGenerate) return NextResponse.json({ error: "Only the organizer or a joined member can start this round robin." }, { status: 403 });
+  if (!canGenerate) return NextResponse.json({ error: "Only the organizer or a group member can start this round robin." }, { status: 403 });
 
   const existingScoreCount = await prisma.gameScore.count({ where: { match: { roundRobinId } } });
   if (existingScoreCount > 0) return NextResponse.json({ error: "Matches already have scores entered; the schedule can no longer be regenerated." }, { status: 400 });

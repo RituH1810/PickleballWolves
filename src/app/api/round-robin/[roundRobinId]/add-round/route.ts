@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
@@ -22,13 +23,13 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
 
   // Same permission model as generating the initial schedule: organizer always, or for group
-  // round robins any member who has actually joined.
+  // round robins any active group member.
   let canManage = roundRobin.createdById === user.id;
   if (!canManage && roundRobin.groupId) {
-    const myRsvp = await prisma.roundRobinRSVP.findUnique({ where: { roundRobinId_userId: { roundRobinId, userId: user.id } } });
-    canManage = myRsvp?.status === "JOINED";
+    const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } });
+    canManage = membership?.status === MembershipStatus.ACTIVE;
   }
-  if (!canManage) return NextResponse.json({ error: "Only the organizer or a joined member can add a round." }, { status: 403 });
+  if (!canManage) return NextResponse.json({ error: "Only the organizer or a group member can add a round." }, { status: 403 });
 
   const existingRounds = await prisma.round.findMany({
     where: { roundRobinId },

@@ -220,7 +220,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
               {room.joinedPlayers.map((player) => <span key={player.id} className="rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[#c7e572]">{player.name}</span>)}
             </div>
-            {(room.isOwner || room.myRsvpStatus === "JOINED") && (
+            {(room.isOwner || room.isGroupMember) && (
               <div className="mt-5 border-t border-[var(--line)] pt-5">
                 {needsFixedTeams ? (
                   <>
@@ -264,7 +264,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
               <div className="flex items-center gap-4">
-                {rounds.length > 0 && (room.isOwner || room.myRsvpStatus === "JOINED") && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
+                {rounds.length > 0 && (room.isOwner || room.isGroupMember) && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
                 <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
               </div>
             </div>
