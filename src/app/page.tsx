@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Activity, ArrowRight, Bell, CalendarDays, ChevronRight, CircleHelp, Grid2X2, LayoutDashboard, MapPin, Menu, PawPrint, Plus, Repeat, Search, Settings, Trophy, Users, X } from "lucide-react";
@@ -68,6 +68,14 @@ export function DashboardPage() {
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [loadingLeaderboard, setLoadingLeaderboard] = useState(true);
   const [todayLabel, setTodayLabel] = useState("");
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!profileMenuOpen) return;
+    const handleClick = (event: MouseEvent) => { if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) setProfileMenuOpen(false); };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [profileMenuOpen]);
   // Dashboard is statically prerendered at build time, so computing this during render would freeze
   // it at the build date. Compute it client-side, from the viewer's own clock, after mount instead.
   // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -134,7 +142,7 @@ export function DashboardPage() {
       <div className="mt-5 flex shrink-0 items-center justify-between px-1 text-[var(--ink-soft)]"><button aria-label="Settings" className="rounded-lg p-2 hover:bg-[#1c2a1a]"><Settings size={18} /></button><button aria-label="Help" className="rounded-lg p-2 hover:bg-[#1c2a1a]"><CircleHelp size={18} /></button><button onClick={signOut} aria-label="Sign out" className="text-xs font-semibold hover:text-[var(--foreground)]">Sign out</button></div>
     </aside>
     {mobileOpen && <button className="fixed inset-0 z-20 bg-black/50 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Close navigation" />}
-    <main className="min-w-0 flex-1"><header className="flex h-[76px] items-center justify-between border-b border-[var(--line)] bg-[var(--panel)] px-5 sm:px-8 lg:px-10"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 lg:hidden" aria-label="Open menu"><Menu size={22} /></button><div className="hidden items-center gap-2 text-sm text-[var(--ink-soft)] sm:flex"><span className="font-semibold text-[var(--foreground)]">{activeNav}</span></div><div className="ml-auto flex items-center gap-3"><button className="hidden rounded-full border border-[var(--line)] p-2.5 text-[var(--ink-soft)] hover:bg-[#1c2a1a] sm:block" aria-label="Search"><Search size={18} /></button><button onClick={() => router.push("/notifications")} className="relative rounded-full border border-[var(--line)] p-2.5 text-[var(--ink-soft)] hover:bg-[#1c2a1a]" aria-label="Notifications"><Bell size={18} /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--amber)]" /></button><div className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-xs font-extrabold text-[var(--lime)]">{profileSummary.initials}</div></div></header>
+    <main className="min-w-0 flex-1"><header className="flex h-[76px] items-center justify-between border-b border-[var(--line)] bg-[var(--panel)] px-5 sm:px-8 lg:px-10"><button onClick={() => setMobileOpen(true)} className="rounded-lg p-2 lg:hidden" aria-label="Open menu"><Menu size={22} /></button><div className="hidden items-center gap-2 text-sm text-[var(--ink-soft)] sm:flex"><span className="font-semibold text-[var(--foreground)]">{activeNav}</span></div><div className="ml-auto flex items-center gap-3"><button className="hidden rounded-full border border-[var(--line)] p-2.5 text-[var(--ink-soft)] hover:bg-[#1c2a1a] sm:block" aria-label="Search"><Search size={18} /></button><button onClick={() => router.push("/notifications")} className="relative rounded-full border border-[var(--line)] p-2.5 text-[var(--ink-soft)] hover:bg-[#1c2a1a]" aria-label="Notifications"><Bell size={18} /><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-[var(--amber)]" /></button><div ref={profileMenuRef} className="relative"><button onClick={() => setProfileMenuOpen((open) => !open)} className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-xs font-extrabold text-[var(--lime)] hover:bg-[#2a3d26]" aria-label="Account menu" aria-expanded={profileMenuOpen}>{profileSummary.initials}</button>{profileMenuOpen && <div className="absolute right-0 top-12 z-40 w-44 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--panel)] py-1.5 shadow-[0_18px_40px_rgba(0,0,0,.4)]"><button onClick={() => { setProfileMenuOpen(false); router.push("/profile"); }} className="flex w-full items-center px-4 py-2.5 text-left text-sm font-semibold text-[var(--foreground)] hover:bg-[#1c2a1a]">Profile</button><button onClick={signOut} className="flex w-full items-center px-4 py-2.5 text-left text-sm font-semibold text-[var(--foreground)] hover:bg-[#1c2a1a]">Sign out</button></div>}</div></div></header>
       <div className="mx-auto max-w-[1440px] px-5 py-7 sm:px-8 sm:py-10 lg:px-10"><section className="fade-up relative flex flex-col justify-between gap-6 md:flex-row md:items-end"><PickleballIcon className="animate-float pointer-events-none absolute -top-6 right-8 hidden h-12 w-12 opacity-70 lg:block" /><div><p className="mb-2 text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{todayLabel}</p><h1 className="max-w-[680px] text-3xl font-black tracking-[-.04em] sm:text-5xl">Welcome back to the pack, {profileSummary.name}<span className="text-[var(--lime-deep)]">.</span></h1><p className="mt-3 max-w-lg text-sm leading-6 text-[var(--ink-soft)]">The courts are calling. Here’s your playbook for the week ahead.</p></div><button onClick={() => router.push("/events")} className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] shadow-[0_8px_20px_rgba(216,242,78,.18)] transition-transform hover:-translate-y-0.5 hover:bg-[#c3e043]"><Plus size={18} />Create a game</button></section>
         <section className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
