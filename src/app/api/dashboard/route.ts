@@ -8,7 +8,7 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   const [events, groups] = await Promise.all([
     prisma.event.findMany({ where: { status: "PUBLISHED", startsAt: { gte: new Date() } }, orderBy: { startsAt: "asc" }, take: 6, include: { group: true, rsvps: { select: { userId: true, status: true } } } }),
-    prisma.group.findMany({ where: { visibility: "PUBLIC" }, orderBy: { createdAt: "asc" }, take: 6, include: { _count: { select: { memberships: true } }, events: { where: { status: "PUBLISHED" }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true } } } }),
+    prisma.group.findMany({ where: { visibility: "PUBLIC" }, orderBy: { createdAt: "asc" }, take: 6, include: { _count: { select: { memberships: { where: { status: MembershipStatus.ACTIVE } } } }, events: { where: { status: "PUBLISHED" }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true } } } }),
   ]);
 
   let pendingRoundRobins: { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: Date | null }[] = [];

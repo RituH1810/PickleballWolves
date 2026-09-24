@@ -7,7 +7,7 @@ import { ensureProfile } from "@/lib/server-profile";
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  const groups = await prisma.group.findMany({ where: { visibility: GroupVisibility.PUBLIC }, orderBy: { createdAt: "asc" }, include: { _count: { select: { memberships: true } }, events: { where: { status: "PUBLISHED" }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true } }, memberships: user ? { where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { id: true } } : false } });
+  const groups = await prisma.group.findMany({ where: { visibility: GroupVisibility.PUBLIC }, orderBy: { createdAt: "asc" }, include: { _count: { select: { memberships: { where: { status: MembershipStatus.ACTIVE } } } }, events: { where: { status: "PUBLISHED" }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true } }, memberships: user ? { where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { id: true } } : false } });
   return NextResponse.json({ groups: groups.map((group) => ({ id: group.id, name: group.name, location: group.location, members: group._count.memberships, next: group.events[0]?.title ?? "No upcoming games", mark: group.name.split(" ").map((word) => word[0]).join("").slice(0, 2), isMember: user ? group.memberships.length > 0 : false })) });
 }
 
