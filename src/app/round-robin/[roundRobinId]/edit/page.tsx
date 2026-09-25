@@ -24,6 +24,7 @@ type RoundRobinDetail = {
   groupId: string | null;
   scheduledAt: string | null;
   rounds: Round[];
+  joinedPlayers: { id: string; name: string }[];
 };
 
 function toDatetimeLocal(iso: string | null) {
@@ -129,26 +130,47 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
             skillBalanced: roundRobin.skillBalanced,
             scheduledAt: toDatetimeLocal(roundRobin.scheduledAt),
           });
-          const firstRound = roundRobin.rounds[0];
-          if (firstRound) {
-            const playerIds = [...new Set(firstRound.matches.flatMap((match) => match.players.map((player) => player.userId)))];
-            setSelected(playerIds);
-            if (roundRobin.partnerFormat === "FIXED" && roundRobin.playFormat !== "SINGLES") {
+          if (roundRobin.groupId) {
+            // Group round robins draw their roster from who has actually accepted the invite
+            // (RoundRobinRSVP), not the platform-wide player list -- every accepted member
+            // should start pre-selected here rather than whoever was in the last-generated round.
+            const joinedIds = roundRobin.joinedPlayers.map((player) => player.id);
+            setPlayers(roundRobin.joinedPlayers.map((player) => ({ ...player, rank: null })));
+            setSelected(joinedIds);
+            const firstRound = roundRobin.rounds[0];
+            if (firstRound && roundRobin.partnerFormat === "FIXED" && roundRobin.playFormat !== "SINGLES") {
+              const joinedIdSet = new Set(joinedIds);
               const derivedTeams: [string, string][] = [];
               for (const match of firstRound.matches) {
                 const sideA = match.players.filter((player) => player.side === "A").map((player) => player.userId);
                 const sideB = match.players.filter((player) => player.side === "B").map((player) => player.userId);
-                if (sideA.length === 2) derivedTeams.push([sideA[0], sideA[1]]);
-                if (sideB.length === 2) derivedTeams.push([sideB[0], sideB[1]]);
+                if (sideA.length === 2 && sideA.every((id) => joinedIdSet.has(id))) derivedTeams.push([sideA[0], sideA[1]]);
+                if (sideB.length === 2 && sideB.every((id) => joinedIdSet.has(id))) derivedTeams.push([sideB[0], sideB[1]]);
               }
               setTeams(derivedTeams);
             }
+          } else {
+            const firstRound = roundRobin.rounds[0];
+            if (firstRound) {
+              const playerIds = [...new Set(firstRound.matches.flatMap((match) => match.players.map((player) => player.userId)))];
+              setSelected(playerIds);
+              if (roundRobin.partnerFormat === "FIXED" && roundRobin.playFormat !== "SINGLES") {
+                const derivedTeams: [string, string][] = [];
+                for (const match of firstRound.matches) {
+                  const sideA = match.players.filter((player) => player.side === "A").map((player) => player.userId);
+                  const sideB = match.players.filter((player) => player.side === "B").map((player) => player.userId);
+                  if (sideA.length === 2) derivedTeams.push([sideA[0], sideA[1]]);
+                  if (sideB.length === 2) derivedTeams.push([sideB[0], sideB[1]]);
+                }
+                setTeams(derivedTeams);
+              }
+            }
+            if (playersResponse.ok) {
+              const data = await playersResponse.json();
+              setPlayers(data.players ?? []);
+            }
           }
         }
-      }
-      if (playersResponse.ok) {
-        const data = await playersResponse.json();
-        setPlayers(data.players ?? []);
       }
     }).finally(() => setLoading(false));
   }, [roundRobinId]);
