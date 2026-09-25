@@ -131,12 +131,15 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
             scheduledAt: toDatetimeLocal(roundRobin.scheduledAt),
           });
           if (roundRobin.groupId) {
-            // Group round robins draw their roster from who has actually accepted the invite
-            // (RoundRobinRSVP), not the platform-wide player list -- every accepted member
-            // should start pre-selected here rather than whoever was in the last-generated round.
+            // Group round robins list every active group member (so the organizer can still add
+            // someone who hasn't accepted yet), but only pre-select who's actually accepted the
+            // invite (RoundRobinRSVP), rather than whoever was in the last-generated round.
             const joinedIds = roundRobin.joinedPlayers.map((player) => player.id);
-            setPlayers(roundRobin.joinedPlayers.map((player) => ({ ...player, rank: null })));
             setSelected(joinedIds);
+            fetch(`/api/groups/${roundRobin.groupId}`).then((response) => response.ok ? response.json() : null).then((groupData) => {
+              const members = groupData?.group?.members as { id: string; name: string; rank: number | null }[] | undefined;
+              setPlayers(members?.length ? members.map((member) => ({ id: member.id, name: member.name, rank: member.rank })) : roundRobin.joinedPlayers.map((player) => ({ ...player, rank: null })));
+            });
             const firstRound = roundRobin.rounds[0];
             if (firstRound && roundRobin.partnerFormat === "FIXED" && roundRobin.playFormat !== "SINGLES") {
               const joinedIdSet = new Set(joinedIds);
