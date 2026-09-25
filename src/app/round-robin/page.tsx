@@ -319,20 +319,20 @@ function RoundRobinBuilder() {
           </div>
 
           <div className="mt-8 grid gap-5 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
+            <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">When{groupId ? "" : " (optional)"}
+              <input type="datetime-local" required={Boolean(groupId)} value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
+              {groupId && <span className="mt-1 block text-[11px] font-normal normal-case text-[var(--ink-soft)]">The group will see this date on their upcoming matches.</span>}
+            </label>
             {groupId ? (
               <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Event name
-                <p className="mt-2 flex h-11 w-full items-center rounded-xl border border-[var(--line)] bg-[#131f19] px-4 text-sm text-[var(--ink-soft)]">{groupName || "Your group"} - {new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
-                <span className="mt-1 block text-[11px] font-normal normal-case text-[var(--ink-soft)]">Group round robins are named after the group and today&apos;s date automatically.</span>
+                <p className="mt-2 flex h-11 w-full items-center rounded-xl border border-[var(--line)] bg-[#131f19] px-4 text-sm text-[var(--ink-soft)]">{groupName || "Your group"} - {(form.scheduledAt ? new Date(form.scheduledAt) : new Date()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
+                <span className="mt-1 block text-[11px] font-normal normal-case text-[var(--ink-soft)]">Group round robins are named after the group and the date above automatically.</span>
               </label>
             ) : (
               <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Event name
                 <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
               </label>
             )}
-            <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">When{groupId ? "" : " (optional)"}
-              <input type="datetime-local" required={Boolean(groupId)} value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
-              {groupId && <span className="mt-1 block text-[11px] font-normal normal-case text-[var(--ink-soft)]">The group will see this date on their upcoming matches.</span>}
-            </label>
             <label className="text-xs font-bold text-[#c3d0c5]">Courts
               <input type="number" min="1" value={form.courtCount} onChange={(event) => setForm({ ...form, courtCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
             </label>
