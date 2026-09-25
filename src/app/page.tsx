@@ -162,7 +162,7 @@ export function DashboardPage() {
 
         {!loadingDashboard && pendingRoundRobins.length > 0 && (
           <section className="mt-10" id="round-robin-invites">
-            <div className="mb-5"><h2 className="text-xl font-extrabold tracking-tight">Round robin invites</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Round robins your groups are setting up. Join in or pass.</p></div>
+            <div className="mb-5"><h2 className="text-xl font-extrabold tracking-tight">Round robin invites</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Upcoming round robins from your groups you haven&apos;t responded to yet. Join in or pass.</p></div>
             <div className="grid gap-3 lg:grid-cols-2">
               {pendingRoundRobins.map((roundRobin) => (
                 <div key={roundRobin.id} className="panel rounded-[20px] p-5">

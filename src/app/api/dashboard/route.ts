@@ -41,7 +41,7 @@ export async function GET() {
     const myGroupIds = (await prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { groupId: true } })).map((membership) => membership.groupId);
     if (myGroupIds.length) {
       const roundRobins = await prisma.roundRobin.findMany({
-        where: { groupId: { in: myGroupIds }, status: "SETUP", OR: [{ scheduledAt: null }, { scheduledAt: { gte: new Date() } }] },
+        where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: new Date() } }] },
         orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         include: { group: { select: { name: true } }, rsvps: true },
       });
