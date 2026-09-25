@@ -41,9 +41,11 @@ export async function POST(request: Request) {
   const body = await request.json();
 
   const groupId = typeof body.groupId === "string" && body.groupId ? body.groupId : null;
+  let group: { name: string } | null = null;
   if (groupId) {
     const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId, userId: profile.id } } });
     if (!membership || membership.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "Join this group before creating a round robin for it." }, { status: 403 });
+    group = await prisma.group.findUnique({ where: { id: groupId }, select: { name: true } });
   }
 
   const scheduledAt = typeof body.scheduledAt === "string" && body.scheduledAt ? new Date(body.scheduledAt) : null;
@@ -52,6 +54,9 @@ export async function POST(request: Request) {
 
   const partnerFormat = ["ROTATE", "FIXED"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
   const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : "DOUBLES";
-  const roundRobin = await prisma.roundRobin.create({ data: { name: body.name?.trim() || "New round robin", createdById: profile.id, groupId, scheduledAt, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
+  // Group round robins are named after the group and the day they were created, rather than a
+  // freeform title, so the group's list stays consistent regardless of who organizes each one.
+  const name = group ? `${group.name} - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : (body.name?.trim() || "New round robin");
+  const roundRobin = await prisma.roundRobin.create({ data: { name, createdById: profile.id, groupId, scheduledAt, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
   return NextResponse.json({ roundRobin }, { status: 201 });
 }
