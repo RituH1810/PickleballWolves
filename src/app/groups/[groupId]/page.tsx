@@ -285,7 +285,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[640px] text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
+                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
                   <tbody>
                     {group.leaderboard.map((entry) => (
                       <tr key={entry.id} className="border-b border-[var(--line)] last:border-0">
@@ -298,8 +298,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                           </span>
                         </td>
                         <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>{entry.name}</span></td>
-                        <td className="py-3 text-center font-semibold">{entry.wins}</td>
-                        <td className="py-3 text-center font-semibold">{entry.losses}</td>
+                        <td className="w-14 py-3 text-center font-semibold">{entry.wins}</td>
+                        <td className="w-14 py-3 text-center font-semibold">{entry.losses}</td>
                         <td className="py-3 text-center font-semibold">{entry.winPct}%</td>
                         <td className="py-3 text-center font-semibold">{entry.scored}</td>
                         <td className="py-3 text-center font-semibold">{entry.conceded}</td>

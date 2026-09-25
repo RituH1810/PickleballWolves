@@ -192,14 +192,14 @@ export function DashboardPage() {
             <div className="space-y-3 py-2">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>
           ) : leaderboardList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">Play a match to appear on the leaderboard.</p> : (
             <table className="w-full min-w-[680px] text-left text-sm">
-              <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">W</th><th className="pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
+              <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
               <tbody>
                 {leaderboardList.map((player) => (
                   <tr key={player.name} className={`border-b border-[var(--line)] last:border-0 ${player.name === profileSummary.name ? "bg-[#1e2b17]" : ""}`}>
                     <td className="py-3 font-bold text-[var(--ink-soft)]">{player.rank}</td>
                     <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{player.initials}</span>{player.name}</span></td>
-                    <td className="py-3 text-center font-semibold">{player.wins}</td>
-                    <td className="py-3 text-center font-semibold">{player.losses}</td>
+                    <td className="w-14 py-3 text-center font-semibold">{player.wins}</td>
+                    <td className="w-14 py-3 text-center font-semibold">{player.losses}</td>
                     <td className="py-3 text-center font-semibold">{player.winPct}%</td>
                     <td className="py-3 text-center font-semibold">{player.scored}</td>
                     <td className="py-3 text-center font-semibold">{player.conceded}</td>
