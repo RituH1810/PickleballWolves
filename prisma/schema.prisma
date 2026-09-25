@@ -165,6 +165,7 @@ model Event {
   costCents      Int         @default(0)
   recurrenceRule String?
   status         EventStatus @default(DRAFT)
+  reminderSentAt DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   group          Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
@@ -201,6 +202,7 @@ model RoundRobin {
   skillBalanced Boolean  @default(false)
   status        String   @default("SETUP")
   scheduledAt   DateTime?
+  reminderSentAt DateTime?
   createdAt     DateTime @default(now())
   completedAt   DateTime?
   group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
