@@ -20,7 +20,7 @@ export async function POST(request: Request, context: { params: Promise<{ groupI
 
   const updated = await prisma.membership.update({
     where: { groupId_userId: { groupId, userId } },
-    data: body.status === "ACTIVE" ? { status: MembershipStatus.ACTIVE, joinedAt: new Date() } : { status: MembershipStatus.DECLINED },
+    data: body.status === "ACTIVE" ? { status: MembershipStatus.ACTIVE, joinedAt: new Date(), approvedById: user.id } : { status: MembershipStatus.DECLINED },
   });
   return NextResponse.json({ status: updated.status });
 }

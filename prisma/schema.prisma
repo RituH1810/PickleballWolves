@@ -80,6 +80,7 @@ model User {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   memberships     Membership[]
+  approvedMemberships Membership[] @relation("MembershipApprovedBy")
   createdGroups   Group[]      @relation("GroupCreator")
   createdEvents   Event[]      @relation("EventCreator")
   rsvps           RSVP[]
@@ -110,14 +111,16 @@ model Group {
 }
 
 model Membership {
-  id        String           @id @default(cuid())
-  groupId   String
-  userId    String
-  role      MembershipRole   @default(MEMBER)
-  status    MembershipStatus @default(PENDING)
-  joinedAt  DateTime?
-  group     Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String           @id @default(cuid())
+  groupId      String
+  userId       String
+  role         MembershipRole   @default(MEMBER)
+  status       MembershipStatus @default(PENDING)
+  joinedAt     DateTime?
+  approvedById String?
+  group        Group            @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy   User?            @relation("MembershipApprovedBy", fields: [approvedById], references: [id])
   @@unique([groupId, userId])
 }
 
