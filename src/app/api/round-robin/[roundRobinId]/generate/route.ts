@@ -38,15 +38,22 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const explicitTeams: string[][] | null = Array.isArray(body.teams)
     ? body.teams.filter((team: unknown): team is string[] => Array.isArray(team) && team.length === 2 && team.every((id) => typeof id === "string"))
     : null;
+  const hasExplicitSelection = Boolean(explicitTeams) || Array.isArray(body.playerIds);
   let playerIds: string[] = explicitTeams ? explicitTeams.flat() : (Array.isArray(body.playerIds) ? body.playerIds.filter((id: unknown): id is string => typeof id === "string") : []);
 
   if (roundRobin.groupId) {
-    const joined = await prisma.roundRobinRSVP.findMany({ where: { roundRobinId, status: "JOINED" }, select: { userId: true } });
-    const joinedIds = new Set(joined.map((rsvp) => rsvp.userId));
-    if (explicitTeams) {
-      if (playerIds.some((id) => !joinedIds.has(id))) return NextResponse.json({ error: "Every paired player must have joined the round robin first." }, { status: 400 });
+    if (hasExplicitSelection) {
+      // The organizer picked these players/teams directly (e.g. from the edit page's full
+      // roster) -- trust that choice rather than requiring each one to have separately RSVP'd
+      // JOINED. Still confirm they're actually in the group, not just any platform user.
+      const members = await prisma.membership.findMany({ where: { groupId: roundRobin.groupId, status: "ACTIVE" }, select: { userId: true } });
+      const memberIds = new Set(members.map((membership) => membership.userId));
+      if (playerIds.some((id) => !memberIds.has(id))) return NextResponse.json({ error: "Every selected player must be a member of the group." }, { status: 400 });
     } else {
-      playerIds = [...joinedIds];
+      // No explicit selection was sent (the room page's "Generate matches" button) -- fall back
+      // to whoever has self-RSVP'd JOINED.
+      const joined = await prisma.roundRobinRSVP.findMany({ where: { roundRobinId, status: "JOINED" }, select: { userId: true } });
+      playerIds = joined.map((rsvp) => rsvp.userId);
     }
   }
 
