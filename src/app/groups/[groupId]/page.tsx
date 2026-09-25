@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Copy, Lock, Mail, MapPin, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, Copy, Crown, Lock, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -289,7 +289,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <tbody>
                     {group.leaderboard.map((entry) => (
                       <tr key={entry.id} className="border-b border-[var(--line)] last:border-0">
-                        <td className="py-3 font-bold text-[var(--ink-soft)]">{entry.rank}</td>
+                        <td className="py-3 font-bold text-[var(--ink-soft)]">
+                          <span className="flex items-center gap-1.5">
+                            {entry.rank === 1 && <Crown size={14} className="text-[var(--lime-deep)]" />}
+                            {entry.rank === 2 && <Medal size={14} className="text-[#c7d0d8]" />}
+                            {entry.rank === 3 && <Medal size={14} className="text-[#d69a63]" />}
+                            {entry.rank}
+                          </span>
+                        </td>
                         <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>{entry.name}</span></td>
                         <td className="py-3 text-center font-semibold">{entry.wins}</td>
                         <td className="py-3 text-center font-semibold">{entry.losses}</td>
