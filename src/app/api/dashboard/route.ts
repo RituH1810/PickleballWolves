@@ -15,7 +15,13 @@ export async function GET() {
   let myRoundRobins: { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: Date | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null }[] = [];
   if (user) {
     const myLiveRoundRobins = await prisma.roundRobin.findMany({
-      where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ createdById: user.id }, { rsvps: { some: { userId: user.id, status: "JOINED" } } }] },
+      where: {
+        status: { in: ["SETUP", "LIVE"] },
+        AND: [
+          { OR: [{ createdById: user.id }, { rsvps: { some: { userId: user.id, status: "JOINED" } } }] },
+          { OR: [{ scheduledAt: null }, { scheduledAt: { gte: new Date() } }] },
+        ],
+      },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
       take: 8,
       include: { group: { select: { name: true } }, rsvps: { where: { userId: user.id } } },
@@ -35,7 +41,7 @@ export async function GET() {
     const myGroupIds = (await prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { groupId: true } })).map((membership) => membership.groupId);
     if (myGroupIds.length) {
       const roundRobins = await prisma.roundRobin.findMany({
-        where: { groupId: { in: myGroupIds }, status: "SETUP" },
+        where: { groupId: { in: myGroupIds }, status: "SETUP", OR: [{ scheduledAt: null }, { scheduledAt: { gte: new Date() } }] },
         orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         include: { group: { select: { name: true } }, rsvps: true },
       });

@@ -83,3 +83,26 @@ export async function PATCH(request: Request, context: { params: Promise<{ round
   });
   return NextResponse.json({ roundRobin: updated });
 }
+
+export async function DELETE(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
+  const { roundRobinId } = await context.params;
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Sign in to delete this round robin." }, { status: 401 });
+  const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
+  if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+  if (roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can delete this round robin." }, { status: 403 });
+  const scoreCount = await prisma.gameScore.count({ where: { match: { roundRobinId } } });
+  if (scoreCount > 0) return NextResponse.json({ error: "Matches already have scores entered; end the round robin instead of deleting it." }, { status: 400 });
+
+  // Match.roundRobinId/roundId are onDelete: SetNull, not Cascade, so matches (and their
+  // players) have to be cleaned up explicitly before the round robin itself is removed.
+  const matches = await prisma.match.findMany({ where: { roundRobinId }, select: { id: true } });
+  const matchIds = matches.map((match) => match.id);
+  await prisma.$transaction([
+    prisma.matchPlayer.deleteMany({ where: { matchId: { in: matchIds } } }),
+    prisma.match.deleteMany({ where: { id: { in: matchIds } } }),
+    prisma.roundRobin.delete({ where: { id: roundRobinId } }),
+  ]);
+  return NextResponse.json({ success: true });
+}

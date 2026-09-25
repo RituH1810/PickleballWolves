@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trophy, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
@@ -16,12 +17,14 @@ const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners
 
 export default function RoundRobinRoomPage({ params }: { params: Promise<{ roundRobinId: string }> }) {
   const { roundRobinId } = use(params);
+  const router = useRouter();
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
   const [ending, setEnding] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [teams, setTeams] = useState<[string, string][]>([]);
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -76,6 +79,14 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     setRoom((current) => current ? { ...current, status: "COMPLETED" } : current);
     showNotice("Round robin ended.", "success");
     setEnding(false);
+  }
+
+  async function deleteRoundRobin() {
+    if (!window.confirm("Delete this round robin? This can't be undone.")) return;
+    setDeleting(true);
+    const response = await fetch(`/api/round-robin/${roundRobinId}`, { method: "DELETE" });
+    if (!response.ok) { const data = await response.json(); showNotice(data.error ?? "Unable to delete this round robin.", "error"); setDeleting(false); return; }
+    router.push("/round-robin");
   }
 
   async function respondRsvp(status: "JOINED" | "DECLINED") {
@@ -172,6 +183,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <button onClick={toggleShare} className="flex items-center gap-2 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
             {room.isOwner && !room.hasScores && <Link href={`/round-robin/${roundRobinId}/edit`} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Edit round robin</Link>}
             {room.isOwner && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
+            {room.isOwner && !room.hasScores && <button onClick={deleteRoundRobin} disabled={deleting} className="rounded-full border border-[var(--coral)] px-4 py-2 text-xs font-bold text-[var(--coral)] transition-colors hover:bg-[#2e1a16] disabled:cursor-not-allowed disabled:opacity-60">{deleting ? "Deleting..." : "Delete round robin"}</button>}
           </div>
         </div>
         {notice && (
