@@ -94,6 +94,12 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   }
 
   await prisma.$transaction(async (transaction) => {
+    // Match.roundRobinId/roundId are onDelete: SetNull, not Cascade, so deleting rounds alone
+    // orphans their matches (and match players) instead of removing them -- clean those up first.
+    const staleMatches = await transaction.match.findMany({ where: { roundRobinId }, select: { id: true } });
+    const staleMatchIds = staleMatches.map((match) => match.id);
+    await transaction.matchPlayer.deleteMany({ where: { matchId: { in: staleMatchIds } } });
+    await transaction.match.deleteMany({ where: { id: { in: staleMatchIds } } });
     await transaction.round.deleteMany({ where: { roundRobinId } });
     for (const round of rounds) await transaction.round.create({ data: { roundRobinId, roundNumber: round.roundNumber, matches: { create: round.matches } } });
     await transaction.roundRobin.update({ where: { id: roundRobinId }, data: { status: "LIVE" } });
