@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trophy, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trash2, Trophy, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 
 type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
@@ -69,6 +69,13 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     const response = await fetch(`/api/matches/${matchId}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sideAScore: Number(sideAScore), sideBScore: Number(sideBScore), gameNumber: 1 }) });
     if (response.ok) { showNotice("Score saved and standings updated.", "success"); loadRoom(); }
     else showNotice((await response.json()).error ?? "Unable to save score.", "error");
+  }
+
+  async function deleteMatch(matchId: string) {
+    if (!window.confirm("Delete this match?")) return;
+    const response = await fetch(`/api/matches/${matchId}`, { method: "DELETE" });
+    if (response.ok) { showNotice("Match deleted.", "success"); loadRoom(); }
+    else showNotice((await response.json()).error ?? "Unable to delete this match.", "error");
   }
 
   async function endRoundRobin() {
@@ -288,7 +295,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                   <span className="text-xs text-[var(--ink-soft)]">{round.matches.length} courts active</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {round.matches.map((match) => <MatchCard key={match.id} match={match} onSave={saveScore} canEdit={room.isOwner || room.myRsvpStatus === "JOINED"} />)}
+                  {round.matches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canEdit={room.isOwner || room.myRsvpStatus === "JOINED"} />)}
                 </div>
               </section>
             ))}
@@ -312,14 +319,18 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   );
 }
 
-function MatchCard({ match, onSave, canEdit }: { match: Match; onSave: (matchId: string, sideA: string, sideB: string) => void; canEdit: boolean }) {
+function MatchCard({ match, onSave, onDelete, canEdit }: { match: Match; onSave: (matchId: string, sideA: string, sideB: string) => void; onDelete: (matchId: string) => void; canEdit: boolean }) {
   const [sideA, setSideA] = useState(match.scores[0]?.sideAScore?.toString() ?? "");
   const [sideB, setSideB] = useState(match.scores[0]?.sideBScore?.toString() ?? "");
+  const hasScore = match.scores.length > 0;
   return (
     <article className="rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Court {match.courtNumber}</span>
-        {match.scores.length > 0 ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
+        <div className="flex items-center gap-2">
+          {hasScore ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
+          {canEdit && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[#2e1a16] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
+        </div>
       </div>
       <div className="space-y-2 text-sm font-bold text-[var(--foreground)]">
         <p>{match.players.filter((player) => player.side === "A").map((player) => player.name).join(" / ")}</p>
@@ -331,7 +342,7 @@ function MatchCard({ match, onSave, canEdit }: { match: Match; onSave: (matchId:
           <input value={sideA} onChange={(event) => setSideA(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
           <span className="text-[var(--ink-soft)]">-</span>
           <input value={sideB} onChange={(event) => setSideB(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
-          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold text-[#1b211e]">Save score</button>
+          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold text-[#1b211e]">{hasScore ? "Update score" : "Save score"}</button>
         </div>
       ) : (
         <div className="mt-4 flex items-center justify-between rounded-lg bg-[#131f19] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
