@@ -85,6 +85,7 @@ export function DashboardPage() {
     { label: "My games", icon: CalendarDays, count: eventList.filter((event) => event.attending).length, href: "/events" },
     { label: "Groups", icon: Users, href: "/groups" },
     { label: "Round robin", icon: Repeat, href: "/round-robin" },
+    { label: "Tournaments", icon: Award, href: "/tournaments" },
     { label: "Leaderboards", icon: Trophy, href: "/leaderboards" },
     { label: "Match history", icon: Activity, href: "/matches" },
   ];
