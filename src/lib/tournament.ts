@@ -127,6 +127,100 @@ export function assignGroupsSeeded(teamsBySeed: { id: string; seed: number }[], 
   return groups;
 }
 
+export type PoolMatchResult = { tournamentTeamAId: string | null; tournamentTeamBId: string | null; scores: { sideAScore: number; sideBScore: number }[] };
+export type PoolTeamStanding = { teamId: string; wins: number; losses: number; scored: number; conceded: number; differential: number; rank: number };
+
+/** Shared win/loss/points math for a pool's teams, used by both the standings endpoint and bracket seeding so they can never disagree. */
+export function computeTeamStandings(teamIds: string[], matches: PoolMatchResult[]): PoolTeamStanding[] {
+  const stats = new Map(teamIds.map((teamId) => [teamId, { teamId, wins: 0, losses: 0, scored: 0, conceded: 0 }]));
+  for (const match of matches) {
+    if (!match.tournamentTeamAId || !match.tournamentTeamBId) continue;
+    const teamA = stats.get(match.tournamentTeamAId);
+    const teamB = stats.get(match.tournamentTeamBId);
+    if (!teamA || !teamB) continue;
+    for (const score of match.scores) {
+      teamA.scored += score.sideAScore;
+      teamA.conceded += score.sideBScore;
+      teamB.scored += score.sideBScore;
+      teamB.conceded += score.sideAScore;
+      if (score.sideAScore > score.sideBScore) { teamA.wins += 1; teamB.losses += 1; } else { teamB.wins += 1; teamA.losses += 1; }
+    }
+  }
+  return [...stats.values()]
+    .sort((a, b) => b.wins - a.wins || (b.scored - b.conceded) - (a.scored - a.conceded))
+    .map((entry, index) => ({ ...entry, differential: entry.scored - entry.conceded, rank: index + 1 }));
+}
+
+export type BracketQualifier = { teamId: string; seed: number };
+export type BracketMatchPlan = { round: number; position: number; teamAId: string | null; teamBId: string | null; nextRound: number | null; nextPosition: number | null; nextSlot: "A" | "B" | null };
+
+export function nextPowerOfTwo(n: number): number {
+  let power = 1;
+  while (power < n) power *= 2;
+  return power;
+}
+
+/** Standard bracket seed placement (1v4/2v3 for 4, 1v8/4v5/2v7/3v6 for 8, ...) so top seeds meet as late as possible and any byes land on the strongest seeds. */
+export function standardSeedOrder(bracketSize: number): number[] {
+  let seeds = [1];
+  while (seeds.length < bracketSize) {
+    const size = seeds.length * 2;
+    const next: number[] = [];
+    for (const seed of seeds) { next.push(seed); next.push(size + 1 - seed); }
+    seeds = next;
+  }
+  return seeds;
+}
+
+/** Ranks each pool's advancing teams into a single global seed order: all 1st-place finishers first (tiebroken by wins then differential), then all 2nd-place finishers, and so on. */
+export function seedQualifiers(qualifiers: { teamId: string; poolRank: number; wins: number; differential: number }[]): BracketQualifier[] {
+  return [...qualifiers]
+    .sort((a, b) => a.poolRank - b.poolRank || b.wins - a.wins || b.differential - a.differential)
+    .map((qualifier, index) => ({ teamId: qualifier.teamId, seed: index + 1 }));
+}
+
+/**
+ * Builds a full single-elimination bracket from a seeded qualifier list. Byes only ever occur in
+ * round 1 (a well-formed bracket derived from nextPowerOfTwo never needs a bye later) and are
+ * resolved immediately -- the bye recipient advances with no match played, sometimes landing
+ * directly opposite another bye recipient in round 2, which is a real, immediately playable
+ * match rather than a further bye.
+ */
+export function buildBracket(qualifiers: BracketQualifier[]): BracketMatchPlan[] {
+  if (qualifiers.length < 2) return [];
+  const bracketSize = nextPowerOfTwo(qualifiers.length);
+  const seedOrder = standardSeedOrder(bracketSize);
+  const teamBySeed = new Map(qualifiers.map((qualifier) => [qualifier.seed, qualifier.teamId]));
+  let slotTeams: (string | null)[] = seedOrder.map((seed) => teamBySeed.get(seed) ?? null);
+  const totalRounds = Math.log2(bracketSize);
+  const plans: BracketMatchPlan[] = [];
+
+  for (let round = 1; round <= totalRounds; round++) {
+    const isLastRound = round === totalRounds;
+    const nextSlotTeams: (string | null)[] = [];
+    for (let i = 0; i < slotTeams.length / 2; i++) {
+      const teamA = slotTeams[i * 2];
+      const teamB = slotTeams[i * 2 + 1];
+      if (round === 1 && (!teamA || !teamB)) {
+        nextSlotTeams.push(teamA ?? teamB ?? null); // true bye: advance with no match
+        continue;
+      }
+      plans.push({ round, position: i, teamAId: teamA, teamBId: teamB, nextRound: isLastRound ? null : round + 1, nextPosition: isLastRound ? null : Math.floor(i / 2), nextSlot: isLastRound ? null : (i % 2 === 0 ? "A" : "B") });
+      nextSlotTeams.push(null); // winner unknown until this match is scored
+    }
+    slotTeams = nextSlotTeams;
+  }
+  return plans;
+}
+
+export function bracketRoundLabel(round: number, totalRounds: number): string {
+  const roundsFromEnd = totalRounds - round;
+  if (roundsFromEnd === 0) return "Final";
+  if (roundsFromEnd === 1) return "Semifinal";
+  if (roundsFromEnd === 2) return "Quarterfinal";
+  return `Round of ${2 ** (roundsFromEnd + 1)}`;
+}
+
 /**
  * Full round-robin schedule for a fixed set of team units within one pool: every team plays
  * every other team in the pool exactly once. Same circle-method rotation used for fixed-partner

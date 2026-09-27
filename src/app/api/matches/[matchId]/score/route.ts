@@ -13,7 +13,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const sideBScore = Number(body.sideBScore);
   if (!Number.isInteger(sideAScore) || !Number.isInteger(sideBScore) || sideAScore < 0 || sideBScore < 0 || sideAScore === sideBScore) return NextResponse.json({ error: "Enter two different non-negative scores." }, { status: 400 });
   const winnerSide = sideAScore > sideBScore ? Side.A : Side.B;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: true, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: true, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } } } });
   if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 });
   if (match.roundRobin) {
     // The organizer can always score; for group round robins, any member who has actually
@@ -27,6 +27,12 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   }
   if (match.tournamentGroup) {
     const isOrganizer = match.tournamentGroup.tournament.createdById === user.id;
+    const isPlaying = match.players.some((player) => player.userId === user.id);
+    if (!isOrganizer && !isPlaying) return NextResponse.json({ error: "Only the organizer or a player in this match can update the score." }, { status: 403 });
+  }
+  if (match.bracketMatch) {
+    const bracketTournament = await prisma.tournament.findUnique({ where: { id: match.bracketMatch.tournamentId }, select: { createdById: true } });
+    const isOrganizer = bracketTournament?.createdById === user.id;
     const isPlaying = match.players.some((player) => player.userId === user.id);
     if (!isOrganizer && !isPlaying) return NextResponse.json({ error: "Only the organizer or a player in this match can update the score." }, { status: 403 });
   }
@@ -64,5 +70,32 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
       prisma.ratingHistory.create({ data: { userId: id, matchId, ratingBefore: before, ratingAfter: after, ratingDelta: after - before } }),
     ]));
   }
+
+  if (match.bracketMatch && match.tournamentTeamAId && match.tournamentTeamBId) {
+    const winningTeamId = winnerSide === Side.A ? match.tournamentTeamAId : match.tournamentTeamBId;
+    const { nextMatchId, nextSlot, tournamentId } = match.bracketMatch;
+    if (nextMatchId && nextSlot) {
+      const nextBracketMatch = await prisma.tournamentBracketMatch.update({ where: { id: nextMatchId }, data: nextSlot === "A" ? { teamAId: winningTeamId } : { teamBId: winningTeamId } });
+      if (nextBracketMatch.teamAId && nextBracketMatch.teamBId && !nextBracketMatch.matchId) {
+        const [teamA, teamB] = await Promise.all([
+          prisma.tournamentTeam.findUnique({ where: { id: nextBracketMatch.teamAId }, include: { members: true } }),
+          prisma.tournamentTeam.findUnique({ where: { id: nextBracketMatch.teamBId }, include: { members: true } }),
+        ]);
+        const nextMatch = await prisma.match.create({
+          data: {
+            courtNumber: 1,
+            tournamentTeamAId: nextBracketMatch.teamAId,
+            tournamentTeamBId: nextBracketMatch.teamBId,
+            players: { create: [...teamA!.members.map((member) => ({ userId: member.userId, side: "A" as const })), ...teamB!.members.map((member) => ({ userId: member.userId, side: "B" as const }))] },
+          },
+        });
+        await prisma.tournamentBracketMatch.update({ where: { id: nextBracketMatch.id }, data: { matchId: nextMatch.id } });
+      }
+    } else {
+      // No next match -- this was the final.
+      await prisma.tournament.update({ where: { id: tournamentId }, data: { status: "COMPLETED" } });
+    }
+  }
+
   return NextResponse.json({ score, winnerSide });
 }

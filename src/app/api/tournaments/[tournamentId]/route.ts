@@ -21,11 +21,19 @@ export async function GET(_request: Request, context: { params: Promise<{ tourna
         },
         orderBy: { name: "asc" },
       },
+      bracketMatches: {
+        orderBy: [{ round: "asc" }, { position: "asc" }],
+        include: {
+          teamA: { include: { members: { include: { user: { select: { id: true, name: true } } } } } },
+          teamB: { include: { members: { include: { user: { select: { id: true, name: true } } } } } },
+          match: { include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } },
+        },
+      },
     },
   });
   if (!tournament) return NextResponse.json({ error: "Tournament not found." }, { status: 404 });
 
-  const hasScores = await prisma.gameScore.count({ where: { match: { tournamentGroup: { tournamentId } } } }) > 0;
+  const hasScores = await prisma.gameScore.count({ where: { match: { OR: [{ tournamentGroup: { tournamentId } }, { bracketMatch: { tournamentId } }] } } }) > 0;
   const myEntrant = user ? tournament.entrants.find((entrant) => entrant.userId === user.id) : undefined;
 
   return NextResponse.json({
@@ -54,7 +62,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ tourn
   const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) return NextResponse.json({ error: "Tournament not found." }, { status: 404 });
   if (tournament.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can edit this tournament." }, { status: 403 });
-  const hasScores = await prisma.gameScore.count({ where: { match: { tournamentGroup: { tournamentId } } } }) > 0;
+  const hasScores = await prisma.gameScore.count({ where: { match: { OR: [{ tournamentGroup: { tournamentId } }, { bracketMatch: { tournamentId } }] } } }) > 0;
   if (hasScores) return NextResponse.json({ error: "Scores have already been entered; this tournament can no longer be edited." }, { status: 400 });
 
   const body = await request.json();
@@ -81,10 +89,10 @@ export async function DELETE(_request: Request, context: { params: Promise<{ tou
   const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) return NextResponse.json({ error: "Tournament not found." }, { status: 404 });
   if (tournament.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can delete this tournament." }, { status: 403 });
-  const hasScores = await prisma.gameScore.count({ where: { match: { tournamentGroup: { tournamentId } } } }) > 0;
+  const hasScores = await prisma.gameScore.count({ where: { match: { OR: [{ tournamentGroup: { tournamentId } }, { bracketMatch: { tournamentId } }] } } }) > 0;
   if (hasScores) return NextResponse.json({ error: "Scores have already been entered; this tournament can no longer be deleted." }, { status: 400 });
 
-  const matches = await prisma.match.findMany({ where: { tournamentGroup: { tournamentId } }, select: { id: true } });
+  const matches = await prisma.match.findMany({ where: { OR: [{ tournamentGroup: { tournamentId } }, { bracketMatch: { tournamentId } }] }, select: { id: true } });
   const matchIds = matches.map((match) => match.id);
   await prisma.$transaction([
     prisma.matchPlayer.deleteMany({ where: { matchId: { in: matchIds } } }),

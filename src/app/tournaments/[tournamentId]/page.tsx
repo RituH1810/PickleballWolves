@@ -4,18 +4,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, Award, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Plus, Share2, Trash2, Trophy, Users, X } from "lucide-react";
+import { bracketRoundLabel } from "@/lib/tournament";
 
 type MatchPlayerT = { userId: string; name: string; side: "A" | "B" };
 type MatchT = { id: string; courtNumber: number | null; players: MatchPlayerT[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type TeamT = { id: string; poolId: string | null; seed: number | null; members: { user: { id: string; name: string } }[] };
 type PoolT = { id: string; name: string; teams: TeamT[]; matches: MatchT[] };
 type EntrantT = { id: string; name: string; skillRating: string; gender: string | null; status: string; matchesSkillLevel: boolean };
+type BracketMatchT = { id: string; round: number; position: number; teamA: TeamT | null; teamB: TeamT | null; match: MatchT | null };
 type TournamentT = {
   id: string; name: string; description: string | null; location: string; courtCount: number; startDate: string; endDate: string | null;
   skillLevel: string; eventType: string; groupCount: number; teamFormationMethod: string; groupAssignmentMethod: string;
   registrationMode: string; registrationDeadline: string | null; pointsToWin: number; winBy: number; status: string;
   createdBy: { id: string; name: string }; isOwner: boolean; hasScores: boolean; myEntrantStatus: string | null;
-  entrants: EntrantT[]; teams: TeamT[]; pools: PoolT[];
+  entrants: EntrantT[]; teams: TeamT[]; pools: PoolT[]; bracketMatches: BracketMatchT[];
 };
 type PoolStanding = { poolId: string; poolName: string; standings: { rank: number; teamId: string; teamName: string; wins: number; losses: number; scored: number; conceded: number; differential: number }[] };
 
@@ -75,6 +77,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
   const [manualPairs, setManualPairs] = useState<[string, string][]>([]);
   const [manualPoolByTeam, setManualPoolByTeam] = useState<Record<string, number>>({});
+  const [advancePerPool, setAdvancePerPool] = useState(1);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -180,6 +183,16 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
     setBusy(false);
   }
 
+  async function generateBracket() {
+    setBusy(true);
+    const response = await fetch(`/api/tournaments/${tournamentId}/bracket`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ advancePerPool }) });
+    const data = await response.json();
+    if (!response.ok) { showNotice(data.error ?? "Unable to generate the bracket.", "error"); setBusy(false); return; }
+    showNotice(`Bracket generated: ${data.bracketMatches} matches across ${data.totalRounds} rounds.`, "success");
+    await loadAll();
+    setBusy(false);
+  }
+
   async function saveScore(matchId: string, sideA: string, sideB: string) {
     const response = await fetch(`/api/matches/${matchId}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sideAScore: Number(sideA), sideBScore: Number(sideB), gameNumber: 1 }) });
     if (response.ok) { showNotice("Score saved and standings updated.", "success"); await loadAll(); }
@@ -243,6 +256,9 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
   const manuallyPairedIds = new Set(manualPairs.flat());
   const unassignedTeams = tournament.teams.filter((team) => !team.poolId);
   const canRegisterOpenly = tournament.registrationMode === "OPEN" && tournament.status === "REGISTRATION_OPEN" && (!tournament.registrationDeadline || new Date(tournament.registrationDeadline) > new Date());
+  const allPoolsScored = tournament.pools.length > 0 && tournament.pools.every((pool) => pool.matches.length > 0 && pool.matches.every((match) => match.scores.length > 0));
+  const bracketRounds = [...new Set(tournament.bracketMatches.map((bracketMatch) => bracketMatch.round))].sort((a, b) => a - b);
+  const totalBracketRounds = bracketRounds.length;
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
@@ -372,6 +388,46 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
               <button onClick={generateSchedule} disabled={busy || unassignedTeams.length > 0} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate matches"}</button>
             </div>
             {unassignedTeams.length > 0 && <p className="mt-2 text-xs font-semibold text-[#f2a08c]">{unassignedTeams.length} team{unassignedTeams.length === 1 ? "" : "s"} not yet assigned to a group.</p>}
+          </section>
+        )}
+
+        {/* Knockout bracket */}
+        {canManage && allPoolsScored && tournament.bracketMatches.length === 0 && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+            <h2 className="font-extrabold">Generate knockout bracket</h2>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Group play is complete. Pick how many teams advance from each pool.</p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="text-xs font-bold text-[#c3d0c5]">Advance per group
+                <input type="number" min="1" value={advancePerPool} onChange={(event) => setAdvancePerPool(Math.max(1, Number(event.target.value)))} className="mt-2 h-11 w-24 rounded-xl border border-[var(--line)] px-3 text-sm" />
+              </label>
+              <button onClick={generateBracket} disabled={busy} className="mt-6 rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate bracket"}</button>
+            </div>
+          </section>
+        )}
+
+        {tournament.bracketMatches.length > 0 && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+            <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Knockout bracket</h2></div>
+            <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
+              {bracketRounds.map((round) => (
+                <div key={round} className="w-64 shrink-0 space-y-3">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{bracketRoundLabel(round, totalBracketRounds)}</p>
+                  {tournament.bracketMatches.filter((bracketMatch) => bracketMatch.round === round).map((bracketMatch) => (
+                    <div key={bracketMatch.id} className="rounded-xl border border-[var(--line)] p-3">
+                      {bracketMatch.match ? (
+                        <MatchCard match={bracketMatch.match} onSave={saveScore} onDelete={deleteMatchFn} canScore={isOwner || (Boolean(myUserId) && bracketMatch.match.players.some((player) => player.userId === myUserId))} canDelete={isOwner} />
+                      ) : (
+                        <div className="space-y-2 text-sm font-bold text-[var(--ink-soft)]">
+                          <p>{bracketMatch.teamA ? teamName(bracketMatch.teamA) : "TBD"}</p>
+                          <p className="text-xs">vs</p>
+                          <p>{bracketMatch.teamB ? teamName(bracketMatch.teamB) : "TBD"}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </section>
         )}
 
