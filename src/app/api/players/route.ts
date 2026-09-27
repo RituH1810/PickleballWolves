@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
-  const players = await prisma.user.findMany({ orderBy: { name: "asc" }, take: 100, select: { id: true, name: true, preferredHand: true } });
+  const players = await prisma.user.findMany({ orderBy: { name: "asc" }, take: 100, select: { id: true, name: true, preferredHand: true, skillRating: true, gender: true } });
   const completed = await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null }, include: { players: true, scores: true } });
 
   // Rank must match the community leaderboard's algorithm (win % then point differential), not raw skill rating.
@@ -25,5 +25,5 @@ export async function GET() {
     .sort((a, b) => b.winPct - a.winPct || b.differential - a.differential);
   const rankById = new Map(standings.map((entry, index) => [entry.id, index + 1]));
 
-  return NextResponse.json({ players: players.map((player) => ({ ...player, rank: rankById.get(player.id) ?? null })) });
+  return NextResponse.json({ players: players.map((player) => ({ ...player, skillRating: player.skillRating.toString(), rank: rankById.get(player.id) ?? null })) });
 }

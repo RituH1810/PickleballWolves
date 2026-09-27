@@ -14,7 +14,13 @@ export async function GET(_request: Request, context: { params: Promise<{ tourna
       createdBy: { select: { id: true, name: true } },
       entrants: { include: { user: { select: { id: true, name: true, skillRating: true, gender: true } } } },
       teams: { include: { members: { include: { user: { select: { id: true, name: true } } } } }, orderBy: { seed: "asc" } },
-      pools: { include: { teams: { include: { members: { include: { user: { select: { id: true, name: true } } } } } } }, orderBy: { name: "asc" } },
+      pools: {
+        include: {
+          teams: { include: { members: { include: { user: { select: { id: true, name: true } } } } } },
+          matches: { where: { deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } },
+        },
+        orderBy: { name: "asc" },
+      },
     },
   });
   if (!tournament) return NextResponse.json({ error: "Tournament not found." }, { status: 404 });
