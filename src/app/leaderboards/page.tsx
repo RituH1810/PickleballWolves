@@ -49,6 +49,7 @@ export default function LeaderboardsPage() {
                 <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">
                   <th className="pb-3">#</th>
                   <th className="pb-3">Player</th>
+                  <th className="pb-3 text-center">Matches</th>
                   <th className="w-14 pb-3 text-center">W</th>
                   <th className="w-14 pb-3 text-center">L</th>
                   <th className="pb-3 text-center">Win%</th>
@@ -61,7 +62,8 @@ export default function LeaderboardsPage() {
                 {leaders.map((leader) => (
                   <tr key={leader.name} className="border-b border-[var(--line)] last:border-0">
                     <td className={`py-4 font-black ${leader.rank <= 3 ? "text-[var(--lime-deep)]" : "text-[var(--ink-soft)]"}`}>{leader.rank}</td>
-                    <td className="py-4 font-bold text-[var(--foreground)]">{leader.name}<small className="ml-2 font-normal text-[var(--ink-soft)]">{leader.matches} matches</small></td>
+                    <td className="py-4 font-bold text-[var(--foreground)]">{leader.name}</td>
+                    <td className="py-4 text-center font-semibold text-[var(--ink-soft)]">{leader.matches}</td>
                     <td className="w-14 py-4 text-center font-semibold">{leader.wins}</td>
                     <td className="w-14 py-4 text-center font-semibold">{leader.losses}</td>
                     <td className="py-4 text-center font-semibold">{leader.winPct}%</td>

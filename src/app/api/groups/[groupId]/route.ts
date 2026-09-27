@@ -59,7 +59,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       });
       const losses = Math.max(0, matches.length - wins);
       const totalDiff = scored - conceded;
-      return { id: membership.user.id, name: membership.user.name, rating: membership.user.skillRating.toString(), wins, losses, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, scored, conceded, avgPointDiff: matches.length ? Number((totalDiff / matches.length).toFixed(1)) : 0 };
+      return { id: membership.user.id, name: membership.user.name, rating: membership.user.skillRating.toString(), matches: matches.length, wins, losses, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, scored, conceded, avgPointDiff: matches.length ? Number((totalDiff / matches.length).toFixed(1)) : 0 };
     })
     .sort((a, b) => b.winPct - a.winPct || b.avgPointDiff - a.avgPointDiff)
     .map((entry, index) => ({ rank: index + 1, ...entry }));

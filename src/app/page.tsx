@@ -9,7 +9,7 @@ import { LivePulse, PaddleIcon, PickleballIcon } from "@/components/pickleball-a
 
 type DashboardEvent = { id: string; title: string; startsAt: string; dateLabel: string; timeLabel: string; location: string; format: string; spotsLeft: number; totalSpots: number; group: string; accent: "lime" | "coral" | "blue"; attending?: boolean };
 type DashboardGroup = { id: string; name: string; members: number; next: string; mark: string; color?: string };
-type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number };
+type LeaderboardEntry = { rank: number; name: string; initials: string; rating: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number };
 type RecentResult = { opponent: string; event: string; score: string; result: string; points: string; date: string };
 type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: string | null };
 type MyRoundRobin = { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: string | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null };
@@ -115,7 +115,7 @@ export function DashboardPage() {
         return { opponent: `${myLabel} vs ${theirLabel}`, event: match.event, score: scoreText, result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", points: "", date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
       }));
     }).finally(() => setLoadingMatches(false));
-    fetch("/api/leaderboard").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.leaderboard) setLeaderboardList(data.leaderboard.map((entry: { rank: number; name: string; rating: string; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number }) => ({ ...entry, initials: entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() }))); }).finally(() => setLoadingLeaderboard(false));
+    fetch("/api/leaderboard").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.leaderboard) setLeaderboardList(data.leaderboard.map((entry: { rank: number; name: string; rating: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number }) => ({ ...entry, initials: entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() }))); }).finally(() => setLoadingLeaderboard(false));
     fetch("/api/profile").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.profile) { const name = data.profile.name; setProfileSummary({ name, rating: data.profile.skillRating, initials: name.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase(), record: data.profile.record, winRate: data.profile.winRate, rank: data.profile.rank }); } });
   }, []);
   const toggleEvent = async (id: string) => { const event = eventList.find((item) => item.id === id); if (!event || event.id.length < 20) return; const response = await fetch(`/api/events/${id}/rsvp`, { method: event.attending ? "DELETE" : "POST" }); if (response.ok) setEventList((items) => items.map((item) => item.id === id ? { ...item, attending: !item.attending, spotsLeft: item.attending ? item.spotsLeft + 1 : Math.max(0, item.spotsLeft - 1) } : item)); };
@@ -194,12 +194,13 @@ export function DashboardPage() {
             <div className="space-y-3 py-2">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>
           ) : leaderboardList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">Play a match to appear on the leaderboard.</p> : (
             <table className="w-full min-w-[680px] text-left text-sm">
-              <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
+              <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">Matches</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
               <tbody>
                 {leaderboardList.map((player) => (
                   <tr key={player.name} className={`border-b border-[var(--line)] last:border-0 ${player.name === profileSummary.name ? "bg-[#1e2b17]" : ""}`}>
                     <td className="py-3 font-bold text-[var(--ink-soft)]">{player.rank}</td>
                     <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{player.initials}</span>{player.name}</span></td>
+                    <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{player.matches}</td>
                     <td className="w-14 py-3 text-center font-semibold">{player.wins}</td>
                     <td className="w-14 py-3 text-center font-semibold">{player.losses}</td>
                     <td className="py-3 text-center font-semibold">{player.winPct}%</td>
