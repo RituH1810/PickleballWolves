@@ -13,11 +13,14 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       group: { select: { id: true, name: true } },
       rsvps: { include: { user: { select: { id: true, name: true } } } },
       rounds: { orderBy: { roundNumber: "asc" }, include: { matches: { where: { deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } } },
+      // Matches created one-off via "Create match" instead of through generate/add-round --
+      // they belong to the round robin directly but aren't attached to any numbered Round.
+      matches: { where: { roundId: null, deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } },
     },
   });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
   const organizer = await prisma.user.findUnique({ where: { id: roundRobin.createdById }, select: { name: true } });
-  const hasScores = roundRobin.rounds.some((round) => round.matches.some((match) => match.scores.length > 0));
+  const hasScores = roundRobin.rounds.some((round) => round.matches.some((match) => match.scores.length > 0)) || roundRobin.matches.some((match) => match.scores.length > 0);
 
   const joinedPlayers = roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED").map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name }));
   const myRsvpStatus = user ? roundRobin.rsvps.find((rsvp) => rsvp.userId === user.id)?.status ?? null : null;
@@ -40,6 +43,7 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       myRsvpStatus,
       isGroupMember,
       rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })),
+      manualMatches: roundRobin.matches.map((match) => ({ ...match, players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })),
     },
   });
 }

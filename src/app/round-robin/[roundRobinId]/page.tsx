@@ -20,6 +20,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const router = useRouter();
   const [room, setRoom] = useState<RoomInfo | null>(null);
   const [rounds, setRounds] = useState<Round[]>([]);
+  const [manualMatches, setManualMatches] = useState<Match[]>([]);
   const [standings, setStandings] = useState<Standing[]>([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -32,6 +33,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [showShare, setShowShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [loadingShare, setLoadingShare] = useState(false);
+  const [matchAssignment, setMatchAssignment] = useState<Record<string, "A" | "B">>({});
+  const [creatingMatch, setCreatingMatch] = useState(false);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -44,6 +47,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
       const room = await roomResponse.json();
       setRoom(room.roundRobin ?? null);
       setRounds(room.roundRobin?.rounds ?? []);
+      setManualMatches(room.roundRobin?.manualMatches ?? []);
     }
     if (standingsResponse.ok) {
       const table = await standingsResponse.json();
@@ -57,6 +61,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         const room = await roomResponse.json();
         setRoom(room.roundRobin ?? null);
         setRounds(room.roundRobin?.rounds ?? []);
+        setManualMatches(room.roundRobin?.manualMatches ?? []);
       }
       if (standingsResponse.ok) {
         const table = await standingsResponse.json();
@@ -135,6 +140,29 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     await loadRoom();
     showNotice(`Round ${data.roundNumber} added!`, "success");
     setAddingRound(false);
+  }
+
+  function toggleMatchAssignment(playerId: string) {
+    setMatchAssignment((current) => {
+      const next = { ...current };
+      if (next[playerId] === undefined) next[playerId] = "A";
+      else if (next[playerId] === "A") next[playerId] = "B";
+      else delete next[playerId];
+      return next;
+    });
+  }
+
+  async function createManualMatch() {
+    const teamA = Object.entries(matchAssignment).filter(([, side]) => side === "A").map(([id]) => id);
+    const teamB = Object.entries(matchAssignment).filter(([, side]) => side === "B").map(([id]) => id);
+    setCreatingMatch(true);
+    const response = await fetch(`/api/round-robin/${roundRobinId}/matches`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ teamA, teamB }) });
+    const data = await response.json();
+    if (!response.ok) { showNotice(data.error ?? "Unable to create this match.", "error"); setCreatingMatch(false); return; }
+    setMatchAssignment({});
+    showNotice("Match created!", "success");
+    await loadRoom();
+    setCreatingMatch(false);
   }
 
   async function toggleShare() {
@@ -278,6 +306,44 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
         )}
 
+        {room.groupId && room.status !== "COMPLETED" && (room.isOwner || room.isGroupMember) && (
+          <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+            <h2 className="font-extrabold">Create a match</h2>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Pick players from who&apos;s joined to set up a specific match by hand -- tap a player to cycle Team A &rarr; Team B &rarr; unassigned.</p>
+            {room.joinedPlayers.length === 0 ? <p className="mt-4 text-sm text-[var(--ink-soft)]">Wait for members to join first.</p> : (
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {room.joinedPlayers.map((player) => {
+                    const side = matchAssignment[player.id];
+                    return (
+                      <button key={player.id} onClick={() => toggleMatchAssignment(player.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${side === "A" ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : side === "B" ? "border-[var(--coral)] bg-[#2e1a16] text-[#f2a08c]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
+                        {player.name}{side ? ` · Team ${side}` : ""}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl bg-[#131f19] p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Team A</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "A").map(([id]) => joinedPlayerName(id)).join(" & ") || "—"}</p>
+                  </div>
+                  <div className="rounded-xl bg-[#131f19] p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--coral)]">Team B</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "B").map(([id]) => joinedPlayerName(id)).join(" & ") || "—"}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={createManualMatch}
+                  disabled={creatingMatch || Object.values(matchAssignment).filter((side) => side === "A").length !== (room.playFormat === "SINGLES" ? 1 : 2) || Object.values(matchAssignment).filter((side) => side === "B").length !== (room.playFormat === "SINGLES" ? 1 : 2)}
+                  className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {creatingMatch ? "Creating..." : "Create match"} <ArrowRight size={16} />
+                </button>
+              </>
+            )}
+          </section>
+        )}
+
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
           <section className="space-y-4">
             <div className="flex items-center justify-between">
@@ -287,7 +353,18 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                 <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
               </div>
             </div>
-            {rounds.length === 0 && <p className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)]">No matches yet.</p>}
+            {rounds.length === 0 && manualMatches.length === 0 && <p className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)]">No matches yet.</p>}
+            {manualMatches.length > 0 && (
+              <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="font-extrabold">Manual matches</h3>
+                  <span className="text-xs text-[var(--ink-soft)]">{manualMatches.length} match{manualMatches.length === 1 ? "" : "es"}</span>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {manualMatches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canEdit={room.isOwner || room.myRsvpStatus === "JOINED"} />)}
+                </div>
+              </section>
+            )}
             {rounds.map((round) => (
               <section key={round.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
                 <div className="mb-4 flex items-center justify-between">
