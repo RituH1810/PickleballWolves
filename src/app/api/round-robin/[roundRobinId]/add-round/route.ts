@@ -65,14 +65,25 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
       matches.push({ roundRobinId, courtNumber: (index % roundRobin.courtCount) + 1, scheduledAt, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
     }
   } else {
-    const playerIds = [...new Set(existingRounds.flatMap((round) => round.matches.flatMap((match) => match.players.map((player) => player.userId))))];
-    const shuffled = shuffle(playerIds);
-    if (shuffled.length % 2) shuffled.pop();
-    const teams = Array.from({ length: Math.floor(shuffled.length / 2) }, (_, i) => [shuffled[i * 2], shuffled[i * 2 + 1]]);
-    for (let index = 0; index < Math.floor(teams.length / 2); index++) {
-      const teamA = teams[index * 2];
-      const teamB = teams[index * 2 + 1];
-      matches.push({ roundRobinId, courtNumber: (index % roundRobin.courtCount) + 1, scheduledAt, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
+    // Balance the new round the same way generation does: whoever has played the fewest
+    // matches so far across the whole event gets priority for a court this round.
+    const matchesPlayed = new Map<string, number>();
+    for (const round of existingRounds) {
+      for (const match of round.matches) {
+        for (const player of match.players) matchesPlayed.set(player.userId, (matchesPlayed.get(player.userId) ?? 0) + 1);
+      }
+    }
+    const playerIds = [...matchesPlayed.keys()];
+    const matchesPerRound = Math.min(Math.floor(playerIds.length / 4), roundRobin.courtCount);
+    const playersPerRound = matchesPerRound * 4;
+    if (matchesPerRound > 0) {
+      const playing = shuffle(playerIds).sort((a, b) => matchesPlayed.get(a)! - matchesPlayed.get(b)!).slice(0, playersPerRound);
+      const teams = Array.from({ length: matchesPerRound * 2 }, (_, i) => [playing[i * 2], playing[i * 2 + 1]]);
+      for (let index = 0; index < matchesPerRound; index++) {
+        const teamA = teams[index * 2];
+        const teamB = teams[index * 2 + 1];
+        matches.push({ roundRobinId, courtNumber: index + 1, scheduledAt, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
+      }
     }
   }
 
