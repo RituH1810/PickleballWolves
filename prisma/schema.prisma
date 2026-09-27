@@ -68,6 +68,50 @@ enum Side {
   B
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  UNSPECIFIED
+}
+
+enum TournamentSkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum TournamentEventType {
+  SINGLES
+  DOUBLES
+  MIXED
+}
+
+enum TournamentStatus {
+  DRAFT
+  REGISTRATION_OPEN
+  TEAMS_LOCKED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum TeamFormationMethod {
+  MANUAL
+  AUTO_RANDOM
+  AUTO_BALANCED
+}
+
+enum GroupAssignmentMethod {
+  MANUAL
+  RANDOM
+  SEEDED
+}
+
+enum RegistrationMode {
+  ROSTER
+  OPEN
+}
+
 model User {
   id              String       @id @default(cuid())
   email           String       @unique
@@ -77,6 +121,7 @@ model User {
   skillRating     Decimal      @db.Decimal(3, 1)
   preferredHand   Hand         @default(RIGHT)
   homeCourt       String?
+  gender          Gender?
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   memberships     Membership[]
@@ -89,6 +134,9 @@ model User {
   confirmedMatches Match[]     @relation("MatchConfirmedBy")
   matchPlayers    MatchPlayer[]
   auditLogs       AuditLog[]
+  createdTournaments        Tournament[]            @relation("TournamentCreator")
+  tournamentEntries         TournamentEntrant[]
+  tournamentTeamMemberships TournamentTeamMember[]
 }
 
 model Group {
@@ -242,6 +290,9 @@ model Match {
   eventId        String?
   roundRobinId   String?
   roundId        String?
+  tournamentGroupId String?
+  tournamentTeamAId String?
+  tournamentTeamBId String?
   courtNumber    Int?
   scheduledAt    DateTime?
   status         MatchStatus @default(SCHEDULED)
@@ -254,6 +305,9 @@ model Match {
   event          Event?      @relation(fields: [eventId], references: [id], onDelete: SetNull)
   roundRobin     RoundRobin? @relation(fields: [roundRobinId], references: [id], onDelete: SetNull)
   round          Round?      @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  tournamentGroup TournamentGroup? @relation(fields: [tournamentGroupId], references: [id], onDelete: SetNull)
+  tournamentTeamA TournamentTeam?  @relation("MatchTournamentTeamA", fields: [tournamentTeamAId], references: [id], onDelete: SetNull)
+  tournamentTeamB TournamentTeam?  @relation("MatchTournamentTeamB", fields: [tournamentTeamBId], references: [id], onDelete: SetNull)
   enteredBy      User?       @relation("MatchEnteredBy", fields: [enteredById], references: [id])
   confirmedBy    User?       @relation("MatchConfirmedBy", fields: [confirmedById], references: [id])
   players        MatchPlayer[]
@@ -425,4 +479,73 @@ model NotificationPreference {
   inAppReminders    Boolean @default(true)
   scoreDisputeAlerts Boolean @default(true)
   challengeAlerts   Boolean @default(true)
+}
+
+model Tournament {
+  id                    String                 @id @default(cuid())
+  createdById           String
+  name                  String
+  description           String?
+  location              String
+  courtCount            Int                    @default(2)
+  startDate             DateTime
+  endDate               DateTime?
+  skillLevel            TournamentSkillLevel
+  eventType             TournamentEventType
+  groupCount            Int
+  teamFormationMethod   TeamFormationMethod    @default(AUTO_RANDOM)
+  groupAssignmentMethod GroupAssignmentMethod  @default(RANDOM)
+  registrationMode      RegistrationMode       @default(ROSTER)
+  registrationDeadline  DateTime?
+  pointsToWin           Int                    @default(11)
+  winBy                 Int                    @default(1)
+  status                TournamentStatus       @default(DRAFT)
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  createdBy             User                   @relation("TournamentCreator", fields: [createdById], references: [id])
+  entrants              TournamentEntrant[]
+  teams                 TournamentTeam[]
+  pools                 TournamentGroup[]
+}
+
+model TournamentEntrant {
+  id           String     @id @default(cuid())
+  tournamentId String
+  userId       String
+  status       String     @default("REGISTERED")
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([tournamentId, userId])
+}
+
+model TournamentTeam {
+  id           String     @id @default(cuid())
+  tournamentId String
+  poolId       String?
+  seed         Int?
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  pool         TournamentGroup? @relation(fields: [poolId], references: [id], onDelete: SetNull)
+  members      TournamentTeamMember[]
+  matchesAsTeamA Match[] @relation("MatchTournamentTeamA")
+  matchesAsTeamB Match[] @relation("MatchTournamentTeamB")
+}
+
+model TournamentTeamMember {
+  id     String         @id @default(cuid())
+  teamId String
+  userId String
+  team   TournamentTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([teamId, userId])
+}
+
+model TournamentGroup {
+  id           String     @id @default(cuid())
+  tournamentId String
+  name         String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teams        TournamentTeam[]
+  matches      Match[]
 }
