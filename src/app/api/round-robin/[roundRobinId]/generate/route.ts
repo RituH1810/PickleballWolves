@@ -31,6 +31,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     canGenerate = membership?.status === MembershipStatus.ACTIVE;
   }
   if (!canGenerate) return NextResponse.json({ error: "Only the organizer or a group member can start this round robin." }, { status: 403 });
+  if (roundRobin.partnerFormat === "MANUAL") return NextResponse.json({ error: "This round robin uses manual scheduling; use Create a match instead of generating a schedule." }, { status: 400 });
 
   const existingScoreCount = await prisma.gameScore.count({ where: { match: { roundRobinId } } });
   if (existingScoreCount > 0) return NextResponse.json({ error: "Matches already have scores entered; the schedule can no longer be regenerated." }, { status: 400 });

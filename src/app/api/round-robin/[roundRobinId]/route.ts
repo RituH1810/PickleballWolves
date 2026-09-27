@@ -60,7 +60,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ round
   if (existingScoreCount > 0) return NextResponse.json({ error: "Matches already have scores entered; this round robin can no longer be edited." }, { status: 400 });
 
   const body = await request.json();
-  const partnerFormat = ["ROTATE", "FIXED"].includes(body.partnerFormat) ? body.partnerFormat : roundRobin.partnerFormat;
+  const partnerFormat = ["ROTATE", "FIXED", "MANUAL"].includes(body.partnerFormat) && (body.partnerFormat !== "MANUAL" || roundRobin.groupId) ? body.partnerFormat : roundRobin.partnerFormat;
   const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : roundRobin.playFormat;
   let scheduledAt = roundRobin.scheduledAt;
   if (typeof body.scheduledAt === "string" && body.scheduledAt) {

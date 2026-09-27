@@ -10,7 +10,7 @@ type Player = { id: string; name: string; rank: number | null };
 type MyRoundRobin = { id: string; name: string; format: string; partnerFormat: string; playFormat: string; status: string; matchCount: number; isOwner: boolean; organizerName: string; scheduledAt: string | null };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
-const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
+const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
 
 const playFormats = [
   { id: "SINGLES", label: "Singles", detail: "1 vs 1, no partner." },
@@ -21,6 +21,7 @@ const playFormats = [
 const partnerFormats = [
   { id: "ROTATE", label: "Rotate", detail: "Get a new partner every round." },
   { id: "FIXED", label: "Fixed", detail: "Keep the same partner all event.", badge: "NEW" },
+  { id: "MANUAL", label: "Dink Draft", detail: "Skip auto-scheduling -- build every matchup yourself.", badge: "NEW", groupOnly: true },
 ];
 
 const gameFormats = [
@@ -276,7 +277,7 @@ function RoundRobinBuilder() {
             <>
               <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Partner format</p>
               <div className="mt-2 flex gap-2">
-                {partnerFormats.map((option) => (
+                {partnerFormats.filter((option) => !option.groupOnly || groupId).map((option) => (
                   <button key={option.id} onClick={() => { setForm({ ...form, partnerFormat: option.id }); setTeams([]); setPendingPartner(null); }} className={`relative flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.partnerFormat === option.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
                     {option.badge && <span className="absolute -top-2 right-2 rounded-full bg-[var(--lime)] px-2 py-0.5 text-[9px] font-black text-[#0f1712]">{option.badge}</span>}
                     <span className="block text-sm font-bold">{option.label}</span>

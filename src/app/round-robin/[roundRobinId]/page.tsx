@@ -13,7 +13,7 @@ type JoinedPlayer = { id: string; name: string };
 type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
-const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
+const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
 
 export default function RoundRobinRoomPage({ params }: { params: Promise<{ roundRobinId: string }> }) {
   const { roundRobinId } = use(params);
@@ -270,7 +270,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
         )}
 
-        {room.groupId && room.status === "SETUP" && (
+        {room.groupId && (room.status === "SETUP" || (room.partnerFormat === "MANUAL" && room.status === "LIVE")) && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -288,7 +288,9 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
               {room.joinedPlayers.map((player) => <span key={player.id} className="rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[#c7e572]">{player.name}</span>)}
             </div>
-            {(room.isOwner || room.isGroupMember) && (
+            {room.partnerFormat === "MANUAL" ? (
+              <p className="mt-5 border-t border-[var(--line)] pt-5 text-sm text-[var(--ink-soft)]">This round robin is set to Dink Draft -- build the schedule yourself with Create a match below instead of generating one.</p>
+            ) : (room.isOwner || room.isGroupMember) && (
               <div className="mt-5 border-t border-[var(--line)] pt-5">
                 {needsFixedTeams ? (
                   <>
@@ -370,7 +372,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
               <div className="flex items-center gap-4">
-                {rounds.length > 0 && (room.isOwner || room.isGroupMember) && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
+                {rounds.length > 0 && room.partnerFormat !== "MANUAL" && (room.isOwner || room.isGroupMember) && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
                 <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
               </div>
             </div>

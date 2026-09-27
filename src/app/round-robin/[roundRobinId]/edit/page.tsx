@@ -43,6 +43,7 @@ const playFormats = [
 const partnerFormats = [
   { id: "ROTATE", label: "Rotate", detail: "Get a new partner every round." },
   { id: "FIXED", label: "Fixed", detail: "Keep the same partner all event." },
+  { id: "MANUAL", label: "Dink Draft", detail: "Skip auto-scheduling -- build every matchup yourself." },
 ];
 
 const gameFormats = [
@@ -71,10 +72,11 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
   const [step, setStep] = useState(0);
 
   const minPlayers = form.playFormat === "SINGLES" ? 2 : 4;
+  const isManual = form.partnerFormat === "MANUAL";
   const needsFixedTeams = form.playFormat !== "SINGLES" && form.partnerFormat === "FIXED";
   const pairedPlayerIds = new Set(teams.flat());
   // Step wizard is mobile-only (see sm:hidden / sm:block below); desktop always shows every section at once.
-  const stepLabels = needsFixedTeams ? ["Format", "Players", "Teams"] : ["Format", "Players"];
+  const stepLabels = isManual ? ["Format"] : needsFixedTeams ? ["Format", "Players", "Teams"] : ["Format", "Players"];
   const totalSteps = stepLabels.length;
   const clampedStep = Math.min(step, totalSteps - 1);
 
@@ -179,7 +181,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
   }, [roundRobinId]);
 
   async function saveAndRegenerate() {
-    if (selected.length < minPlayers) { showNotice(`Select at least ${minPlayers} players.`, "error"); return; }
+    if (!isManual && selected.length < minPlayers) { showNotice(`Select at least ${minPlayers} players.`, "error"); return; }
     if (needsFixedTeams) {
       if (teams.length < 2) { showNotice("Pair up at least two teams.", "error"); return; }
       if (selected.some((id) => !pairedPlayerIds.has(id))) { showNotice("Every selected player must be paired into a team.", "error"); return; }
@@ -189,6 +191,8 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
     const patched = await fetch(`/api/round-robin/${roundRobinId}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced, scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : undefined }) });
     const patchedData = await patched.json();
     if (!patched.ok) { showNotice(patchedData.error ?? "Unable to save changes.", "error"); setSaving(false); return; }
+    // Dink Draft round robins are built match-by-match by hand -- nothing to auto-generate.
+    if (isManual) { router.push(`/round-robin/${roundRobinId}`); return; }
     const generateBody = needsFixedTeams ? { teams } : { playerIds: selected };
     const generated = await fetch(`/api/round-robin/${roundRobinId}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(generateBody) });
     if (!generated.ok) { showNotice((await generated.json()).error ?? "Unable to regenerate schedule.", "error"); setSaving(false); return; }
@@ -308,9 +312,14 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
             <input type="checkbox" checked={form.skillBalanced} onChange={(event) => setForm({ ...form, skillBalanced: event.target.checked })} className="h-5 w-5 accent-[var(--lime)]" />
             Skill-balanced matchups
           </label>
-          <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Players <ArrowRight size={16} /></button>
+          {isManual ? (
+            <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save changes"} <ArrowRight size={16} /></button>
+          ) : (
+            <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Players <ArrowRight size={16} /></button>
+          )}
         </section>
 
+        {!isManual && (
         <section className={`${clampedStep === 1 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">2. Players</h2></div>
@@ -327,6 +336,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
           {!needsFixedTeams && <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save & regenerate schedule"} <ArrowRight size={16} /></button>}
           {needsFixedTeams && <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Teams <ArrowRight size={16} /></button>}
         </section>
+        )}
 
         {needsFixedTeams && (
           <section className={`${clampedStep === 2 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>

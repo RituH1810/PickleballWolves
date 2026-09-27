@@ -30,6 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     canManage = membership?.status === MembershipStatus.ACTIVE;
   }
   if (!canManage) return NextResponse.json({ error: "Only the organizer or a group member can add a round." }, { status: 403 });
+  if (roundRobin.partnerFormat === "MANUAL") return NextResponse.json({ error: "This round robin uses manual scheduling; use Create a match instead of adding a generated round." }, { status: 400 });
 
   const existingRounds = await prisma.round.findMany({
     where: { roundRobinId },

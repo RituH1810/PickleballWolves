@@ -52,7 +52,8 @@ export async function POST(request: Request) {
   if (scheduledAt && Number.isNaN(scheduledAt.getTime())) return NextResponse.json({ error: "Enter a valid date and time." }, { status: 400 });
   if (groupId && !scheduledAt) return NextResponse.json({ error: "Pick a date and time so the group knows when to show up." }, { status: 400 });
 
-  const partnerFormat = ["ROTATE", "FIXED"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
+  const partnerFormat = ["ROTATE", "FIXED", "MANUAL"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
+  if (partnerFormat === "MANUAL" && !groupId) return NextResponse.json({ error: "Manual scheduling is only available for group round robins." }, { status: 400 });
   const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : "DOUBLES";
   // Group round robins are named after the group and the day they're scheduled to be played,
   // rather than a freeform title, so the group's list stays consistent regardless of who
