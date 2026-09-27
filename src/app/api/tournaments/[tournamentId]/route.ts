@@ -76,6 +76,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ tourn
       startDate: typeof body.startDate === "string" && !Number.isNaN(new Date(body.startDate).getTime()) ? new Date(body.startDate) : tournament.startDate,
       pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : tournament.pointsToWin,
       winBy: Number(body.winBy) === 2 ? 2 : tournament.winBy,
+      maxTeamsPerGroup: Number.isInteger(Number(body.maxTeamsPerGroup)) && Number(body.maxTeamsPerGroup) > 0 ? Number(body.maxTeamsPerGroup) : tournament.maxTeamsPerGroup,
     },
   });
   return NextResponse.json({ tournament: updated });

@@ -78,6 +78,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
   const [manualPairs, setManualPairs] = useState<[string, string][]>([]);
   const [manualPoolByTeam, setManualPoolByTeam] = useState<Record<string, number>>({});
   const [advancePerPool, setAdvancePerPool] = useState(1);
+  const [groupCountInput, setGroupCountInput] = useState(2);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -164,7 +165,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
 
   async function assignGroups(method: string, groups?: string[][]) {
     setBusy(true);
-    const response = await fetch(`/api/tournaments/${tournamentId}/groups`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method, groupCount: tournament?.groupCount, groups }) });
+    const response = await fetch(`/api/tournaments/${tournamentId}/groups`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method, groupCount: groupCountInput, groups }) });
     const data = await response.json();
     if (!response.ok) { showNotice(data.error ?? "Unable to assign groups.", "error"); setBusy(false); return; }
     setManualPoolByTeam({});
@@ -232,7 +233,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
   function cycleManualPool(teamId: string) {
     setManualPoolByTeam((current) => {
       const next = { ...current };
-      const groupCount = tournament?.groupCount ?? 1;
+      const groupCount = groupCountInput;
       const currentValue = next[teamId];
       if (currentValue === undefined) next[teamId] = 0;
       else if (currentValue + 1 >= groupCount) delete next[teamId];
@@ -356,13 +357,16 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
         {canManage && tournament.teams.length > 0 && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <h2 className="font-extrabold">Assign groups</h2>
-            <p className="mt-1 text-xs text-[var(--ink-soft)]">{tournament.pools.length} of {tournament.groupCount} group{tournament.groupCount === 1 ? "" : "s"} set up.</p>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">{tournament.teams.length} team{tournament.teams.length === 1 ? "" : "s"} registered{tournament.pools.length > 0 ? ` · ${tournament.pools.length} group${tournament.pools.length === 1 ? "" : "s"} set up` : ""}. Decide how many groups (A, B, C...) to split them into.</p>
+            <label className="mt-3 block w-40 text-xs font-bold text-[#c3d0c5]">Number of groups
+              <input type="number" min="1" value={groupCountInput} onChange={(event) => setGroupCountInput(Math.max(1, Number(event.target.value)))} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
+            </label>
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => assignGroups("RANDOM")} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">Random</button>
               <button onClick={() => assignGroups("SEEDED")} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">Seeded</button>
             </div>
             <div className="mt-4 border-t border-[var(--line)] pt-4">
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Or assign manually -- tap a team to cycle its group</p>
+              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Or assign manually -- tap a team to cycle through the {groupCountInput} group{groupCountInput === 1 ? "" : "s"} above</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {tournament.teams.map((team) => {
                   const assigned = manualPoolByTeam[team.id];
@@ -371,7 +375,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
               </div>
               {Object.keys(manualPoolByTeam).length > 0 && (
                 <button onClick={() => {
-                  const groups: string[][] = Array.from({ length: tournament.groupCount }, () => []);
+                  const groups: string[][] = Array.from({ length: groupCountInput }, () => []);
                   for (const [teamId, poolIndex] of Object.entries(manualPoolByTeam)) groups[poolIndex]?.push(teamId);
                   assignGroups("MANUAL", groups);
                 }} disabled={busy} className="mt-3 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Save manual groups</button>

@@ -22,19 +22,13 @@ const teamFormationOptions = [
   { id: "AUTO_RANDOM", label: "Auto: random", detail: "Pairs players randomly." },
   { id: "MANUAL", label: "Manual", detail: "Pair teams yourself from the tournament page after creating it." },
 ];
-const groupAssignmentOptions = [
-  { id: "RANDOM", label: "Random", detail: "Teams are shuffled into groups." },
-  { id: "SEEDED", label: "Seeded", detail: "Snake-drafts teams so strength spreads evenly across groups." },
-  { id: "MANUAL", label: "Manual", detail: "Assign groups yourself from the tournament page after creating it." },
-];
-
 function skillLevelForRating(rating: number) {
   if (rating < 3.5) return "BEGINNER";
   if (rating < 4.0) return "INTERMEDIATE";
   return "ADVANCED";
 }
 
-const stepLabels = ["Details", "Level & type", "Players", "Teams & groups", "Review"];
+const stepLabels = ["Details", "Level & type", "Players", "Teams", "Review"];
 
 export default function NewTournamentPage() {
   const router = useRouter();
@@ -52,11 +46,9 @@ export default function NewTournamentPage() {
     endDate: "",
     skillLevel: "INTERMEDIATE",
     eventType: "DOUBLES",
-    groupCount: "2",
     registrationMode: "ROSTER" as "ROSTER" | "OPEN",
     registrationDeadline: "",
     teamFormationMethod: "AUTO_BALANCED",
-    groupAssignmentMethod: "RANDOM",
     pointsToWin: "11",
     winBy: "1",
   });
@@ -102,9 +94,7 @@ export default function NewTournamentPage() {
         endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
         skillLevel: form.skillLevel,
         eventType: form.eventType,
-        groupCount: Number(form.groupCount),
         teamFormationMethod: form.teamFormationMethod,
-        groupAssignmentMethod: form.groupAssignmentMethod,
         registrationMode: form.registrationMode,
         registrationDeadline: !isRoster ? new Date(form.registrationDeadline).toISOString() : undefined,
         pointsToWin: Number(form.pointsToWin),
@@ -119,11 +109,11 @@ export default function NewTournamentPage() {
       for (const userId of selected) {
         await fetch(`/api/tournaments/${tournamentId}/entrants`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, override: true }) });
       }
+      // Teams can be formed right away, but grouping always happens later on the tournament
+      // page once the organizer can see the real registration count and decide how many groups
+      // to split into.
       if (selected.length >= minPlayers && form.teamFormationMethod !== "MANUAL") {
-        const teamsResponse = await fetch(`/api/tournaments/${tournamentId}/teams`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: form.teamFormationMethod, override: true }) });
-        if (teamsResponse.ok && form.groupAssignmentMethod !== "MANUAL") {
-          await fetch(`/api/tournaments/${tournamentId}/groups`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: form.groupAssignmentMethod, groupCount: Number(form.groupCount) }) });
-        }
+        await fetch(`/api/tournaments/${tournamentId}/teams`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ method: form.teamFormationMethod, override: true }) });
       }
     }
 
@@ -198,9 +188,6 @@ export default function NewTournamentPage() {
               </div>
 
               <div className="mt-6 grid gap-5 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
-                <label className="text-xs font-bold text-[#c3d0c5]">Number of groups
-                  <input type="number" min="1" value={form.groupCount} onChange={(event) => setForm({ ...form, groupCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
-                </label>
                 <label className="text-xs font-bold text-[#c3d0c5]">Points to win
                   <select value={form.pointsToWin} onChange={(event) => setForm({ ...form, pointsToWin: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm">
                     <option value="11">11</option>
@@ -261,7 +248,7 @@ export default function NewTournamentPage() {
 
           {clampedStep === 3 && (
             <div>
-              <h2 className="font-extrabold">4. Teams & groups</h2>
+              <h2 className="font-extrabold">4. Teams</h2>
               {form.eventType === "SINGLES" ? (
                 <p className="mt-2 text-sm text-[var(--ink-soft)]">Singles has no team pairing -- every registered player is their own entry.</p>
               ) : (
@@ -277,16 +264,7 @@ export default function NewTournamentPage() {
                   </div>
                 </>
               )}
-              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">How should groups be assigned?</p>
-              <div className="mt-2 grid gap-2">
-                {groupAssignmentOptions.map((option) => (
-                  <button key={option.id} onClick={() => setForm({ ...form, groupAssignmentMethod: option.id })} className={`rounded-xl border px-4 py-3 text-left transition-colors ${form.groupAssignmentMethod === option.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
-                    <span className="block text-sm font-bold">{option.label}</span>
-                    <span className="block text-[11px] text-[var(--ink-soft)]">{option.detail}</span>
-                  </button>
-                ))}
-              </div>
-              {!isRoster && <p className="mt-4 text-xs text-[var(--ink-soft)]">Since registration is open, teams and groups form once you close registration and run them from the tournament page -- these are just the default methods.</p>}
+              <p className="mt-6 rounded-xl border border-[var(--line)] bg-[#131f19] px-4 py-3 text-xs text-[var(--ink-soft)]">Groups (A, B, C...) are set up later from the tournament page, once you can see how many players actually registered -- you&apos;ll pick how many groups to split into then.</p>
             </div>
           )}
 
@@ -298,13 +276,11 @@ export default function NewTournamentPage() {
                 <div className="flex justify-between border-b border-[var(--line)] pb-2"><span className="text-[var(--ink-soft)]">Location</span><span className="font-bold">{form.location || "--"}</span></div>
                 <div className="flex justify-between border-b border-[var(--line)] pb-2"><span className="text-[var(--ink-soft)]">Starts</span><span className="font-bold">{form.startDate ? new Date(form.startDate).toLocaleString() : "--"}</span></div>
                 <div className="flex justify-between border-b border-[var(--line)] pb-2"><span className="text-[var(--ink-soft)]">Level & type</span><span className="font-bold">{skillLevels.find((l) => l.id === form.skillLevel)?.label} · {eventTypes.find((t) => t.id === form.eventType)?.label}</span></div>
-                <div className="flex justify-between border-b border-[var(--line)] pb-2"><span className="text-[var(--ink-soft)]">Groups</span><span className="font-bold">{form.groupCount}</span></div>
                 <div className="flex justify-between border-b border-[var(--line)] pb-2"><span className="text-[var(--ink-soft)]">Registration</span><span className="font-bold">{isRoster ? `Picking players (${selected.length} selected)` : `Open until ${form.registrationDeadline ? new Date(form.registrationDeadline).toLocaleString() : "--"}`}</span></div>
-                <div className="flex justify-between border-b border-[var(--line)] pb-2"><span className="text-[var(--ink-soft)]">Team formation</span><span className="font-bold">{form.eventType === "SINGLES" ? "N/A (singles)" : teamFormationOptions.find((o) => o.id === form.teamFormationMethod)?.label}</span></div>
-                <div className="flex justify-between pb-2"><span className="text-[var(--ink-soft)]">Group assignment</span><span className="font-bold">{groupAssignmentOptions.find((o) => o.id === form.groupAssignmentMethod)?.label}</span></div>
+                <div className="flex justify-between pb-2"><span className="text-[var(--ink-soft)]">Team formation</span><span className="font-bold">{form.eventType === "SINGLES" ? "N/A (singles)" : teamFormationOptions.find((o) => o.id === form.teamFormationMethod)?.label}</span></div>
               </div>
-              {isRoster && selected.length > 0 && selected.length >= minPlayers && form.teamFormationMethod !== "MANUAL" && form.groupAssignmentMethod !== "MANUAL" && (
-                <p className="mt-4 rounded-xl bg-[#1e2b17] px-4 py-3 text-xs font-semibold text-[#c7e572]">Since you picked auto methods for both, teams and groups will be formed automatically right after creating this tournament.</p>
+              {isRoster && selected.length > 0 && selected.length >= minPlayers && form.teamFormationMethod !== "MANUAL" && (
+                <p className="mt-4 rounded-xl bg-[#1e2b17] px-4 py-3 text-xs font-semibold text-[#c7e572]">Teams will be formed automatically right after creating this tournament. You&apos;ll assign groups from the tournament page afterward.</p>
               )}
               <button onClick={createTournament} disabled={creating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{creating ? "Creating..." : "Create tournament"} <ArrowRight size={16} /></button>
             </div>

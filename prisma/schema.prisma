@@ -493,7 +493,8 @@ model Tournament {
   endDate               DateTime?
   skillLevel            TournamentSkillLevel
   eventType             TournamentEventType
-  groupCount            Int
+  groupCount            Int                    @default(1)
+  maxTeamsPerGroup      Int                    @default(4)
   teamFormationMethod   TeamFormationMethod    @default(AUTO_RANDOM)
   groupAssignmentMethod GroupAssignmentMethod  @default(RANDOM)
   registrationMode      RegistrationMode       @default(ROSTER)

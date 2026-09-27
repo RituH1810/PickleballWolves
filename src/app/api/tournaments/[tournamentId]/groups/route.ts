@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { assignGroupsRandom, assignGroupsSeeded, distributeIntoGroups } from "@/lib/tournament";
+import { assignGroupsRandom, assignGroupsSeeded, distributeIntoGroups, groupCountFromTargetSize } from "@/lib/tournament";
 
 export async function POST(request: Request, context: { params: Promise<{ tournamentId: string }> }) {
   const { tournamentId } = await context.params;
@@ -17,7 +17,10 @@ export async function POST(request: Request, context: { params: Promise<{ tourna
   if (teams.length === 0) return NextResponse.json({ error: "Form teams before assigning groups." }, { status: 400 });
 
   const body = await request.json().catch(() => ({}));
-  const groupCount = Number.isInteger(Number(body.groupCount)) && Number(body.groupCount) > 0 ? Number(body.groupCount) : tournament.groupCount;
+  // groupCount is derived from the organizer's "max teams per group" preference and the real
+  // team count, rather than a fixed number picked before teams even existed -- callers can still
+  // override it explicitly (e.g. a manual assignment already implies its own count).
+  const groupCount = Number.isInteger(Number(body.groupCount)) && Number(body.groupCount) > 0 ? Number(body.groupCount) : groupCountFromTargetSize(teams.length, tournament.maxTeamsPerGroup);
   const method: string = ["MANUAL", "RANDOM", "SEEDED"].includes(body.method) ? body.method : tournament.groupAssignmentMethod;
   const preview = Boolean(body.preview);
 

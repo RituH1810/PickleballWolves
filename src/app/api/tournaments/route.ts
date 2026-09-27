@@ -44,14 +44,16 @@ export async function POST(request: Request) {
   const location = typeof body.location === "string" ? body.location.trim() : "";
   const skillLevel = SKILL_LEVELS.includes(body.skillLevel) ? body.skillLevel : null;
   const eventType = EVENT_TYPES.includes(body.eventType) ? body.eventType : null;
-  const groupCount = Number(body.groupCount);
+  const maxTeamsPerGroup = Number.isInteger(Number(body.maxTeamsPerGroup)) && Number(body.maxTeamsPerGroup) > 0 ? Number(body.maxTeamsPerGroup) : 4;
+  // groupCount is just an initial estimate (the wizard computes it from however many players it
+  // already knows about); it gets recalculated for real once teams exist and groups are assigned.
+  const groupCount = Number.isInteger(Number(body.groupCount)) && Number(body.groupCount) > 0 ? Number(body.groupCount) : 1;
   const startDate = new Date(body.startDate);
 
   if (!name || !location) return NextResponse.json({ error: "Enter a tournament name and location." }, { status: 400 });
   if (!skillLevel) return NextResponse.json({ error: "Choose a skill level." }, { status: 400 });
   if (!eventType) return NextResponse.json({ error: "Choose an event type." }, { status: 400 });
   if (Number.isNaN(startDate.getTime())) return NextResponse.json({ error: "Enter a valid start date." }, { status: 400 });
-  if (!Number.isInteger(groupCount) || groupCount < 1) return NextResponse.json({ error: "Enter at least 1 group." }, { status: 400 });
 
   let endDate: Date | null = null;
   if (typeof body.endDate === "string" && body.endDate) {
@@ -79,6 +81,7 @@ export async function POST(request: Request) {
       skillLevel,
       eventType,
       groupCount,
+      maxTeamsPerGroup,
       teamFormationMethod: TEAM_FORMATION_METHODS.includes(body.teamFormationMethod) ? body.teamFormationMethod : "AUTO_RANDOM",
       groupAssignmentMethod: GROUP_ASSIGNMENT_METHODS.includes(body.groupAssignmentMethod) ? body.groupAssignmentMethod : "RANDOM",
       registrationMode,
