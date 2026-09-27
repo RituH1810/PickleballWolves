@@ -33,9 +33,11 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const allIds = [...teamA, ...teamB];
   if (new Set(allIds).size !== allIds.length) return NextResponse.json({ error: "A player can't be on both sides." }, { status: 400 });
 
-  const joined = await prisma.roundRobinRSVP.findMany({ where: { roundRobinId, status: "JOINED" }, select: { userId: true } });
-  const joinedIds = new Set(joined.map((rsvp) => rsvp.userId));
-  if (allIds.some((id) => !joinedIds.has(id))) return NextResponse.json({ error: "Every player must have joined this round robin first." }, { status: 400 });
+  // Trust the organizer/group member's picks the same way generating a schedule does -- players
+  // don't need to have separately RSVP'd JOINED, just be active members of the group.
+  const members = await prisma.membership.findMany({ where: { groupId: roundRobin.groupId, status: MembershipStatus.ACTIVE }, select: { userId: true } });
+  const memberIds = new Set(members.map((membership) => membership.userId));
+  if (allIds.some((id) => !memberIds.has(id))) return NextResponse.json({ error: "Every selected player must be a member of the group." }, { status: 400 });
 
   const courtNumber = Number.isInteger(Number(body.courtNumber)) && Number(body.courtNumber) > 0 ? Number(body.courtNumber) : 1;
   const match = await prisma.match.create({
