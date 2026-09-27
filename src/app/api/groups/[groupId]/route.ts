@@ -77,7 +77,8 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       leaderboard,
       recentResults,
       events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: event.location, format: event.format })),
-      roundRobins: group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })),
+      // Round robins are private to the group -- don't list them for non-members browsing the group page.
+      roundRobins: myMembership?.status === MembershipStatus.ACTIVE ? group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })) : [],
       isMember: Boolean(myMembership),
       myRole: myMembership?.role ?? null,
       myStatus: myAnyMembership?.status ?? null,

@@ -19,16 +19,22 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
     },
   });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+
+  // Group round robins are private to the group -- non-members (including logged-out
+  // visitors) get the same "not found" response as a bad id, so we don't leak that a
+  // group-only round robin exists to people outside the group.
+  let isGroupMember = false;
+  if (roundRobin.groupId) {
+    const membership = user ? await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } }) : null;
+    isGroupMember = Boolean(membership && membership.status === MembershipStatus.ACTIVE);
+    if (!isGroupMember && roundRobin.createdById !== user?.id) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+  }
+
   const organizer = await prisma.user.findUnique({ where: { id: roundRobin.createdById }, select: { name: true } });
   const hasScores = roundRobin.rounds.some((round) => round.matches.some((match) => match.scores.length > 0)) || roundRobin.matches.some((match) => match.scores.length > 0);
 
   const joinedPlayers = roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED").map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name }));
   const myRsvpStatus = user ? roundRobin.rsvps.find((rsvp) => rsvp.userId === user.id)?.status ?? null : null;
-  let isGroupMember = false;
-  if (user && roundRobin.groupId) {
-    const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } });
-    isGroupMember = Boolean(membership && membership.status === MembershipStatus.ACTIVE);
-  }
 
   return NextResponse.json({
     roundRobin: {
