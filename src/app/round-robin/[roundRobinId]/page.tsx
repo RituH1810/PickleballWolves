@@ -35,7 +35,6 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [loadingShare, setLoadingShare] = useState(false);
   const [matchAssignment, setMatchAssignment] = useState<Record<string, "A" | "B">>({});
   const [creatingMatch, setCreatingMatch] = useState(false);
-  const [groupMembers, setGroupMembers] = useState<JoinedPlayer[]>([]);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -63,14 +62,6 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         setRoom(room.roundRobin ?? null);
         setRounds(room.roundRobin?.rounds ?? []);
         setManualMatches(room.roundRobin?.manualMatches ?? []);
-        const groupId = room.roundRobin?.groupId;
-        if (groupId) {
-          const groupResponse = await fetch(`/api/groups/${groupId}`);
-          if (groupResponse.ok) {
-            const groupData = await groupResponse.json();
-            setGroupMembers((groupData.group?.members ?? []).map((member: { id: string; name: string }) => ({ id: member.id, name: member.name })));
-          }
-        }
       }
       if (standingsResponse.ok) {
         const table = await standingsResponse.json();
@@ -154,9 +145,19 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   function toggleMatchAssignment(playerId: string) {
     setMatchAssignment((current) => {
       const next = { ...current };
-      if (next[playerId] === undefined) next[playerId] = "A";
-      else if (next[playerId] === "A") next[playerId] = "B";
-      else delete next[playerId];
+      const expectedSize = room?.playFormat === "SINGLES" ? 1 : 2;
+      const countOf = (side: "A" | "B") => Object.values(next).filter((value) => value === side).length;
+      if (next[playerId] === undefined) {
+        // Fill Team A first; once it's full, further picks go straight to Team B instead of
+        // needing an extra click to cycle past a team that's already complete.
+        if (countOf("A") < expectedSize) next[playerId] = "A";
+        else if (countOf("B") < expectedSize) next[playerId] = "B";
+      } else if (next[playerId] === "A") {
+        if (countOf("B") < expectedSize) next[playerId] = "B";
+        else delete next[playerId];
+      } else {
+        delete next[playerId];
+      }
       return next;
     });
   }
@@ -210,7 +211,17 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const needsFixedTeams = room.playFormat !== "SINGLES" && room.partnerFormat === "FIXED";
   const pairedPlayerIds = new Set(teams.flat());
   function joinedPlayerName(id: string) { return room?.joinedPlayers.find((player) => player.id === id)?.name ?? "Unknown"; }
-  function groupMemberName(id: string) { return groupMembers.find((member) => member.id === id)?.name ?? "Unknown"; }
+
+  // Eligible for the manual "Create a match" picker: anyone who's RSVP'd JOINED, plus anyone
+  // already in an existing match (the organizer may have added them directly, without an RSVP).
+  // Not the whole group -- someone brand new to this round robin needs to join or be scheduled
+  // first before they can be picked here.
+  const eligibleMatchPlayersById = new Map<string, string>();
+  for (const player of room.joinedPlayers) eligibleMatchPlayersById.set(player.id, player.name);
+  for (const round of rounds) for (const match of round.matches) for (const player of match.players) eligibleMatchPlayersById.set(player.userId, player.name);
+  for (const match of manualMatches) for (const player of match.players) eligibleMatchPlayersById.set(player.userId, player.name);
+  const eligibleMatchPlayers = [...eligibleMatchPlayersById.entries()].map(([id, name]) => ({ id, name }));
+  function eligiblePlayerName(id: string) { return eligibleMatchPlayersById.get(id) ?? "Unknown"; }
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
@@ -319,11 +330,11 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         {room.groupId && room.status !== "COMPLETED" && (room.isOwner || room.isGroupMember) && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <h2 className="font-extrabold">Create a match</h2>
-            <p className="mt-1 text-xs text-[var(--ink-soft)]">Pick any {room.groupName ?? "group"} member to set up a specific match by hand -- tap a player to cycle Team A &rarr; Team B &rarr; unassigned.</p>
-            {groupMembers.length === 0 ? <p className="mt-4 text-sm text-[var(--ink-soft)]">No group members found.</p> : (
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Pick from players who&apos;ve joined or already have a match -- tap to assign; once a team fills up, the next tap goes to the other side.</p>
+            {eligibleMatchPlayers.length === 0 ? <p className="mt-4 text-sm text-[var(--ink-soft)]">No joined or scheduled players yet.</p> : (
               <>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {groupMembers.map((player) => {
+                  {eligibleMatchPlayers.map((player) => {
                     const side = matchAssignment[player.id];
                     return (
                       <button key={player.id} onClick={() => toggleMatchAssignment(player.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${side === "A" ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : side === "B" ? "border-[var(--coral)] bg-[#2e1a16] text-[#f2a08c]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
@@ -335,11 +346,11 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-xl bg-[#131f19] p-3">
                     <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Team A</p>
-                    <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "A").map(([id]) => groupMemberName(id)).join(" & ") || "—"}</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "A").map(([id]) => eligiblePlayerName(id)).join(" & ") || "—"}</p>
                   </div>
                   <div className="rounded-xl bg-[#131f19] p-3">
                     <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--coral)]">Team B</p>
-                    <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "B").map(([id]) => groupMemberName(id)).join(" & ") || "—"}</p>
+                    <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "B").map(([id]) => eligiblePlayerName(id)).join(" & ") || "—"}</p>
                   </div>
                 </div>
                 <button

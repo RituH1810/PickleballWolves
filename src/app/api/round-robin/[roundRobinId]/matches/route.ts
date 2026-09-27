@@ -33,11 +33,16 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const allIds = [...teamA, ...teamB];
   if (new Set(allIds).size !== allIds.length) return NextResponse.json({ error: "A player can't be on both sides." }, { status: 400 });
 
-  // Trust the organizer/group member's picks the same way generating a schedule does -- players
-  // don't need to have separately RSVP'd JOINED, just be active members of the group.
-  const members = await prisma.membership.findMany({ where: { groupId: roundRobin.groupId, status: MembershipStatus.ACTIVE }, select: { userId: true } });
-  const memberIds = new Set(members.map((membership) => membership.userId));
-  if (allIds.some((id) => !memberIds.has(id))) return NextResponse.json({ error: "Every selected player must be a member of the group." }, { status: 400 });
+  // Eligible players are the same set the picker shows: anyone who's RSVP'd JOINED, plus anyone
+  // already in an existing match for this round robin (the organizer may have added them
+  // directly without an RSVP). Not the whole group -- someone brand new needs to join or be
+  // scheduled first before they can be picked here.
+  const [joined, priorPlayers] = await Promise.all([
+    prisma.roundRobinRSVP.findMany({ where: { roundRobinId, status: "JOINED" }, select: { userId: true } }),
+    prisma.matchPlayer.findMany({ where: { match: { roundRobinId } }, select: { userId: true } }),
+  ]);
+  const eligibleIds = new Set([...joined.map((rsvp) => rsvp.userId), ...priorPlayers.map((player) => player.userId)]);
+  if (allIds.some((id) => !eligibleIds.has(id))) return NextResponse.json({ error: "Every selected player must have joined this round robin or already be in a match." }, { status: 400 });
 
   const courtNumber = Number.isInteger(Number(body.courtNumber)) && Number(body.courtNumber) > 0 ? Number(body.courtNumber) : 1;
   const match = await prisma.match.create({
