@@ -6,6 +6,11 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  // Round robins should stay visible for the whole day they're scheduled on, not vanish the
+  // instant their start time passes (they may still be live), and only drop off starting the
+  // next calendar day -- unless already COMPLETED, which hides them immediately regardless.
+  const now = new Date();
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const [events, groups] = await Promise.all([
     prisma.event.findMany({ where: { status: "PUBLISHED", startsAt: { gte: new Date() } }, orderBy: { startsAt: "asc" }, take: 6, include: { group: true, rsvps: { select: { userId: true, status: true } } } }),
     prisma.group.findMany({ where: { visibility: "PUBLIC" }, orderBy: { createdAt: "asc" }, take: 6, include: { _count: { select: { memberships: { where: { status: MembershipStatus.ACTIVE } } } }, events: { where: { status: "PUBLISHED" }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true } } } }),
@@ -19,7 +24,7 @@ export async function GET() {
         status: { in: ["SETUP", "LIVE"] },
         AND: [
           { OR: [{ createdById: user.id }, { rsvps: { some: { userId: user.id, status: "JOINED" } } }] },
-          { OR: [{ scheduledAt: null }, { scheduledAt: { gte: new Date() } }] },
+          { OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] },
         ],
       },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
@@ -41,7 +46,7 @@ export async function GET() {
     const myGroupIds = (await prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { groupId: true } })).map((membership) => membership.groupId);
     if (myGroupIds.length) {
       const roundRobins = await prisma.roundRobin.findMany({
-        where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: new Date() } }] },
+        where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] },
         orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         include: { group: { select: { name: true } }, rsvps: true },
       });
