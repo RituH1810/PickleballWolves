@@ -46,6 +46,7 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       groupName: roundRobin.group?.name ?? null,
       joinedPlayers,
       joinedCount: joinedPlayers.length,
+      myUserId: user?.id ?? null,
       myRsvpStatus,
       isGroupMember,
       rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })),

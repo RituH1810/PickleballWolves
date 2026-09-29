@@ -13,10 +13,12 @@ export async function DELETE(_request: Request, context: { params: Promise<{ mat
 
   let canManage = false;
   if (match.roundRobin) {
-    // Same permission model as entering a score: the organizer can always manage matches; for
-    // group round robins, any member who has actually joined can too.
+    // Same permission model as entering a score: the organizer can always manage matches, and
+    // so can any member who's joined the round robin -- group and non-group alike. Deleting is
+    // more destructive than scoring, so unlike scoring this doesn't extend to mere match
+    // participants who haven't actually joined.
     canManage = match.roundRobin.createdById === user.id;
-    if (!canManage && match.roundRobin.groupId) {
+    if (!canManage) {
       const myRsvp = await prisma.roundRobinRSVP.findUnique({ where: { roundRobinId_userId: { roundRobinId: match.roundRobin.id, userId: user.id } } });
       canManage = myRsvp?.status === "JOINED";
     }

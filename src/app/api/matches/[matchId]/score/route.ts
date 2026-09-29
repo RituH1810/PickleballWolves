@@ -16,10 +16,11 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: true, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } } } });
   if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 });
   if (match.roundRobin) {
-    // The organizer can always score; for group round robins, any member who has actually
-    // joined can enter scores too, not just the organizer.
-    let canEnterScore = match.roundRobin.createdById === user.id;
-    if (!canEnterScore && match.roundRobin.groupId) {
+    // The organizer can always score. So can anyone actually playing in this match (added by
+    // the organizer or self-RSVP'd), and any member who's joined the round robin overall --
+    // this applies to group and non-group round robins alike.
+    let canEnterScore = match.roundRobin.createdById === user.id || match.players.some((player) => player.userId === user.id);
+    if (!canEnterScore) {
       const myRsvp = await prisma.roundRobinRSVP.findUnique({ where: { roundRobinId_userId: { roundRobinId: match.roundRobinId!, userId: user.id } } });
       canEnterScore = myRsvp?.status === "JOINED";
     }
