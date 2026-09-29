@@ -139,6 +139,7 @@ function RoundRobinBuilder() {
   const [loadingMine, setLoadingMine] = useState(true);
   const [step, setStep] = useState(0);
 
+  const upcomingRoundRobins = myRoundRobins.filter((roundRobin) => roundRobin.status !== "COMPLETED");
   const activeGameFormat = gameFormats.find((format) => format.id === form.gameFormat) ?? gameFormats[0];
   const minPlayers = form.playFormat === "SINGLES" ? 2 : 4;
   const needsFixedTeams = form.playFormat !== "SINGLES" && form.partnerFormat === "FIXED";
@@ -227,19 +228,19 @@ function RoundRobinBuilder() {
           </p>
         )}
 
-        {!loadingMine && myRoundRobins.length > 0 && (
+        {!loadingMine && upcomingRoundRobins.length > 0 && (
           <section className="mt-8 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
             <h2 className="font-extrabold">Your round robins</h2>
-            <p className="mt-1 text-xs text-[var(--ink-soft)]">Every round robin you&apos;ve created or played in, saved to your account.</p>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Round robins you&apos;re setting up or currently playing.</p>
             <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {myRoundRobins.map((roundRobin) => (
-                <Link key={roundRobin.id} href={`/round-robin/${roundRobin.id}`} className="flex items-center gap-3 rounded-xl border border-[var(--line)] px-4 py-3 transition-colors hover:border-[var(--lime-deep)] hover:bg-[#1e2b17]">
+              {upcomingRoundRobins.map((roundRobin) => (
+                <Link key={roundRobin.id} href={`/round-robin/${roundRobin.id}`} className="flex items-center gap-2 rounded-xl border border-[var(--line)] px-4 py-3 transition-colors hover:border-[var(--lime-deep)] hover:bg-[#1e2b17] sm:gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold text-[var(--foreground)]">{roundRobin.name}</p>
                     <p className="mt-1 truncate text-xs text-[var(--ink-soft)]">{partnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {playFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat} · {roundRobin.matchCount} matches{!roundRobin.isOwner ? ` · Organized by ${roundRobin.organizerName}` : ""}{roundRobin.scheduledAt ? ` · ${new Date(roundRobin.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}` : ""}</p>
                   </div>
-                  <span className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{roundRobin.status === "LIVE" && <LivePulse color="#c7e572" size={6} />}{roundRobin.status === "LIVE" ? "Live" : roundRobin.status === "COMPLETED" ? "Completed" : "Setup"}</span>
-                  <ChevronRight size={16} className="text-[var(--ink-soft)]" />
+                  <span className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{roundRobin.status === "LIVE" && <LivePulse color="#c7e572" size={6} />}{roundRobin.status === "LIVE" ? "Live" : "Setup"}</span>
+                  <ChevronRight size={16} className="shrink-0 text-[var(--ink-soft)]" />
                 </Link>
               ))}
             </div>
