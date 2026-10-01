@@ -38,6 +38,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     if (!isOrganizer && !isPlaying) return NextResponse.json({ error: "Only the organizer or a player in this match can update the score." }, { status: 403 });
   }
   const score = await prisma.gameScore.upsert({ where: { matchId_gameNumber: { matchId, gameNumber: Number(body.gameNumber) || 1 } }, update: { sideAScore, sideBScore, enteredById: user.id }, create: { matchId, gameNumber: Number(body.gameNumber) || 1, sideAScore, sideBScore, enteredById: user.id } });
+  const wasAlreadyCompleted = match.status === MatchStatus.COMPLETED;
   await prisma.match.update({ where: { id: matchId }, data: { status: MatchStatus.COMPLETED, winnerSide } });
   await prisma.auditLog.create({ data: { actorId: user.id, entityType: "GameScore", entityId: score.id, action: "SCORE_ENTERED", afterData: { matchId, gameNumber: score.gameNumber, sideAScore, sideBScore }, matchId } });
   const playerIds = match.players.map((player) => player.userId);
@@ -47,13 +48,22 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const sideBIds = match.players.filter((player) => player.side === Side.B).map((player) => player.userId).filter((id) => ratingById.has(id));
   const MIN_RATING = 2;
   const MAX_RATING = 6;
-  if (sideAIds.length && sideBIds.length) {
+  // Rating scale only spans 4 points (2.0-6.0), not the ~thousands chess Elo assumes -- using
+  // chess's 400-point divisor made the rating gap between any two players on this scale
+  // negligible, so expectedA was always ~0.5 regardless of actual skill gap, and the 32
+  // K-factor produced swings several times larger than the whole scale, clamping ratings to
+  // 2.0 or 6.0 after a single match. Scale both to the actual rating span instead.
+  const RATING_SPAN = MAX_RATING - MIN_RATING;
+  const K_FACTOR = 0.5;
+  // Only adjust ratings the first time a match is scored -- re-saving a corrected score would
+  // otherwise re-apply a full delta on top of the one already applied.
+  if (!wasAlreadyCompleted && sideAIds.length && sideBIds.length) {
     const avg = (ids: string[]) => ids.reduce((total, id) => total + ratingById.get(id)!, 0) / ids.length;
     const avgA = avg(sideAIds);
     const avgB = avg(sideBIds);
-    const expectedA = 1 / (1 + 10 ** ((avgB - avgA) / 400));
+    const expectedA = 1 / (1 + 10 ** ((avgB - avgA) / RATING_SPAN));
     const actualA = winnerSide === Side.A ? 1 : 0;
-    const delta = Math.round(32 * (actualA - expectedA) * 100) / 100;
+    const delta = Math.round(K_FACTOR * (actualA - expectedA) * 100) / 100;
     const updates = [
       ...sideAIds.map((id) => {
         const before = ratingById.get(id)!;
