@@ -35,6 +35,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [loadingShare, setLoadingShare] = useState(false);
   const [matchAssignment, setMatchAssignment] = useState<Record<string, "A" | "B">>({});
   const [creatingMatch, setCreatingMatch] = useState(false);
+  const [groupMembers, setGroupMembers] = useState<{ id: string; name: string }[]>([]);
+  const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -69,6 +71,23 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
       }
     }).finally(() => setLoading(false));
   }, [roundRobinId]);
+
+  useEffect(() => {
+    if (!room?.isOwner || !room.groupId) return;
+    fetch(`/api/groups/${room.groupId}`).then((response) => response.ok ? response.json() : null).then((data) => {
+      const members = data?.group?.members as { id: string; name: string }[] | undefined;
+      setGroupMembers(members?.map((member) => ({ id: member.id, name: member.name })) ?? []);
+    });
+  }, [room?.isOwner, room?.groupId]);
+
+  async function addPlayerToRoster(userId: string) {
+    setAddingPlayerId(userId);
+    const response = await fetch(`/api/round-robin/${roundRobinId}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "JOINED", userId }) });
+    const data = await response.json();
+    if (!response.ok) { showNotice(data.error ?? "Unable to add this player.", "error"); setAddingPlayerId(null); return; }
+    await loadRoom();
+    setAddingPlayerId(null);
+  }
 
   async function saveScore(matchId: string, sideAScore: string, sideBScore: string) {
     const response = await fetch(`/api/matches/${matchId}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sideAScore: Number(sideAScore), sideBScore: Number(sideBScore), gameNumber: 1 }) });
@@ -288,6 +307,26 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
               {room.joinedPlayers.map((player) => <span key={player.id} className="rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[#c7e572]">{player.name}</span>)}
             </div>
+            {room.isOwner && (() => {
+              const notYetJoined = groupMembers.filter((member) => !room.joinedPlayers.some((player) => player.id === member.id));
+              return (
+                <div className="mt-4 border-t border-[var(--line)] pt-4">
+                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Add players directly</p>
+                  <p className="mt-1 text-xs text-[var(--ink-soft)]">Skip waiting on an RSVP -- add anyone from the group straight to the roster.</p>
+                  {notYetJoined.length === 0 ? (
+                    <p className="mt-2 text-sm text-[var(--ink-soft)]">Everyone in the group has already joined.</p>
+                  ) : (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {notYetJoined.map((member) => (
+                        <button key={member.id} onClick={() => addPlayerToRoster(member.id)} disabled={addingPlayerId === member.id} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold text-[var(--foreground)] transition-colors hover:border-[var(--lime-deep)] hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">
+                          {addingPlayerId === member.id ? "Adding..." : `+ ${member.name}`}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {room.partnerFormat === "MANUAL" ? (
               <p className="mt-5 border-t border-[var(--line)] pt-5 text-sm text-[var(--ink-soft)]">This round robin is set to Dink Draft -- build the schedule yourself with Create a match below instead of generating one.</p>
             ) : (room.isOwner || room.isGroupMember) && (
