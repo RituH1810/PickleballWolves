@@ -7,12 +7,17 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   const { groupId } = await context.params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  // Round robins should stay visible for their whole scheduled day, not vanish the instant
+  // their start time passes (they're often still live and being played/scored at that point),
+  // only dropping off starting the next calendar day. See /api/dashboard and /api/groups.
+  const now = new Date();
+  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const group = await prisma.group.findUnique({
     where: { id: groupId },
     include: {
       memberships: { where: { status: MembershipStatus.ACTIVE }, orderBy: { joinedAt: "asc" }, include: { user: { select: { id: true, name: true, skillRating: true } } } },
-      events: { where: { status: "PUBLISHED", startsAt: { gte: new Date() } }, orderBy: { startsAt: "asc" }, take: 6 },
-      roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, scheduledAt: { gte: new Date() } }, orderBy: { scheduledAt: "asc" }, take: 6 },
+      events: { where: { status: "PUBLISHED", startsAt: { gte: now } }, orderBy: { startsAt: "asc" }, take: 6 },
+      roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] }, orderBy: { scheduledAt: "asc" }, take: 6 },
     },
   });
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
