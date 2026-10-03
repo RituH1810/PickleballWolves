@@ -239,7 +239,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                     <span className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{member.name}</p>
-                      <p className="text-[11px] text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"}</p>
+                      <p className="text-[11px] text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"} · {member.skillRating} rating</p>
                     </div>
                     {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
                   </div>
