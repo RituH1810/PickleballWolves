@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, Copy, Crown, Lock, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, Lock, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
+import { LivePulse } from "@/components/pickleball-art";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -10,11 +11,12 @@ type LeaderboardEntry = { rank: number; id: string; name: string; rating: string
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
 type GroupRoundRobin = { id: string; name: string; scheduledAt: string | null; playFormat: string; partnerFormat: string };
+type RecentRoundRobin = { id: string; name: string; status: string; scheduledAt: string | null; playFormat: string; partnerFormat: string; matchCount: number };
 type PendingRequest = { id: string; name: string };
-type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; isMember: boolean; myRole: string | null; myStatus: "ACTIVE" | "PENDING" | "DECLINED" | null; pendingRequests: PendingRequest[] };
+type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; recentRoundRobins: RecentRoundRobin[]; isMember: boolean; myRole: string | null; myStatus: "ACTIVE" | "PENDING" | "DECLINED" | null; pendingRequests: PendingRequest[] };
 
 const groupPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
-const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
+const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
@@ -276,6 +278,27 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
           </section>
         </div>
+
+        {group.isMember && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
+            <div className="flex items-center gap-2"><Repeat size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Round robins</h2></div>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Last 5, completed and upcoming.</p>
+            <div className="mt-4 space-y-3">
+              {group.recentRoundRobins.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No round robins yet.</p>}
+              {group.recentRoundRobins.map((roundRobin) => (
+                <Link key={roundRobin.id} href={`/round-robin/${roundRobin.id}`} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 transition-colors last:border-0 last:pb-0 hover:text-[var(--lime-deep)]">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><Repeat size={16} /></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">{roundRobin.name}</p>
+                    <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{roundRobin.scheduledAt ? new Date(roundRobin.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "No date"} · {groupPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {groupPlayFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat} · {roundRobin.matchCount} match{roundRobin.matchCount === 1 ? "" : "es"}</p>
+                  </div>
+                  <span className={`flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold ${roundRobin.status === "LIVE" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{roundRobin.status === "LIVE" && <LivePulse color="#c7e572" size={6} />}{roundRobin.status === "LIVE" ? "Live" : roundRobin.status === "COMPLETED" ? "Completed" : "Setup"}</span>
+                  <ChevronRight size={16} className="shrink-0 text-[var(--ink-soft)]" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
           <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group leaderboard</h2></div>

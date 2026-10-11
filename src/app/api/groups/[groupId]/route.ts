@@ -23,6 +23,18 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
   const myMembership = user ? group.memberships.find((membership) => membership.userId === user.id) : undefined;
   const myAnyMembership = user ? await prisma.membership.findUnique({ where: { groupId_userId: { groupId, userId: user.id } } }) : null;
+  const isActiveMember = myMembership?.status === MembershipStatus.ACTIVE;
+
+  // Last 5 round robins for this group, completed or upcoming alike. A few legacy round
+  // robins predate the "group round robins require a date" rule and have a null scheduledAt --
+  // Postgres defaults to NULLS FIRST on DESC, which would otherwise shove a dateless legacy
+  // entry to the very top, so sort those last explicitly.
+  const recentRoundRobins = isActiveMember ? await prisma.roundRobin.findMany({
+    where: { groupId },
+    orderBy: { scheduledAt: { sort: "desc", nulls: "last" } },
+    take: 5,
+    include: { _count: { select: { matches: true } } },
+  }) : [];
 
   let pendingRequests: { id: string; name: string }[] = [];
   if (myMembership && myMembership.status === MembershipStatus.ACTIVE) {
@@ -83,7 +95,8 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       recentResults,
       events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: event.location, format: event.format })),
       // Round robins are private to the group -- don't list them for non-members browsing the group page.
-      roundRobins: myMembership?.status === MembershipStatus.ACTIVE ? group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })) : [],
+      roundRobins: isActiveMember ? group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })) : [],
+      recentRoundRobins: recentRoundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, status: roundRobin.status, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat, matchCount: roundRobin._count.matches })),
       isMember: Boolean(myMembership),
       myRole: myMembership?.role ?? null,
       myStatus: myAnyMembership?.status ?? null,
