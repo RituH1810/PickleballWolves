@@ -17,7 +17,7 @@ export async function GET() {
   const profile = await prisma.user.upsert({
     where: { id: user.id },
     update: { email: user.email ?? "" },
-    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player", skillRating: 3.0 },
+    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player", skillRating: 2.0 },
   });
   const matches = await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null, players: { some: { userId: user.id } } }, include: { players: true, scores: true } });
   const wins = matches.filter((match) => { const player = match.players.find((matchPlayer) => matchPlayer.userId === user.id); return match.scores.reduce((total, score) => total + (player?.side === "A" ? score.sideAScore - score.sideBScore : score.sideBScore - score.sideAScore), 0) > 0; }).length;
