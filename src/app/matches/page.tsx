@@ -4,8 +4,22 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, MapPin, PawPrint } from "lucide-react";
 
-type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: { id: string; name: string; side: "A" | "B" }[]; myRatingDelta: number | null };
+type MatchPlayer = { id: string; name: string; side: "A" | "B"; ratingDelta: number | null; ratingAfter: number | null };
+type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: MatchPlayer[] };
 type Profile = { id: string; record: string; winRate: string; rank: number };
+
+function PlayerRatingChip({ player, isMe }: { player: MatchPlayer; isMe: boolean }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={isMe ? "font-bold text-[var(--foreground)]" : "font-semibold text-[var(--ink-soft)]"}>{isMe ? "You" : player.name}</span>
+      {player.ratingDelta != null && player.ratingAfter != null && (
+        <span className={`text-[11px] font-bold ${player.ratingDelta > 0 ? "text-[var(--lime-deep)]" : player.ratingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>
+          {player.ratingAfter.toFixed(2)} ({player.ratingDelta > 0 ? "+" : ""}{player.ratingDelta.toFixed(2)})
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -38,10 +52,8 @@ export default function MatchesPage() {
         <div className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-8 text-center"><PawPrint size={22} className="mx-auto text-[var(--lime-deep)]" /><p className="mt-3 font-bold text-[var(--foreground)]">No matches recorded yet.</p><p className="mt-2 text-sm text-[var(--ink-soft)]">Record your first result after a game to start your history.</p></div>
       ) : matches.map((match) => {
         const mine = match.players.find((player) => player.id === myUserId);
-        const teammates = match.players.filter((player) => player.id !== myUserId && player.side === mine?.side).map((player) => player.name);
-        const opposingSide = match.players.filter((player) => player.side !== mine?.side).map((player) => player.name);
-        const myLabel = teammates.length ? `You & ${teammates.join(" & ")}` : "You";
-        const theirLabel = opposingSide.length ? opposingSide.join(" & ") : (match.players.filter((player) => player.id !== myUserId).map((player) => player.name).join(" & ") || "Unknown");
+        const mySide = mine ? match.players.filter((player) => player.side === mine.side) : [];
+        const theirSide = mine ? match.players.filter((player) => player.side !== mine.side) : match.players;
         const myScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideAScore : score.sideBScore), 0);
         const theirScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideBScore : score.sideAScore), 0);
         const result: "W" | "L" | "-" = match.scores.length ? (myScore > theirScore ? "W" : myScore < theirScore ? "L" : "-") : "-";
@@ -59,14 +71,11 @@ export default function MatchesPage() {
                 {result !== "-" && <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${result === "W" ? "bg-[var(--lime)] text-[#0f1712]" : "bg-[var(--coral)] text-[#2e1a16]"}`}>{result}</span>}
               </div>
             </div>
-            <p className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3 text-xs">
-              <span>
-                <span className={result === "W" ? "font-bold text-[var(--lime-deep)]" : "font-semibold text-[var(--foreground)]"}>{myLabel}</span>
-                <span className="mx-2 text-[var(--ink-soft)]">vs</span>
-                <span className={result === "L" ? "font-bold text-[var(--coral)]" : "font-semibold text-[var(--foreground)]"}>{theirLabel}</span>
-              </span>
-              {match.myRatingDelta != null && <span className={`font-bold ${match.myRatingDelta > 0 ? "text-[var(--lime-deep)]" : match.myRatingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{match.myRatingDelta > 0 ? "+" : ""}{match.myRatingDelta.toFixed(2)} rating</span>}
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-[var(--line)] pt-3 text-xs">
+              {mySide.map((player, index) => <span key={player.id} className="flex items-center gap-1.5">{index > 0 && <span className="text-[var(--ink-soft)]">&</span>}<PlayerRatingChip player={player} isMe={player.id === myUserId} /></span>)}
+              <span className="mx-1 text-[var(--ink-soft)]">vs</span>
+              {theirSide.map((player, index) => <span key={player.id} className="flex items-center gap-1.5">{index > 0 && <span className="text-[var(--ink-soft)]">&</span>}<PlayerRatingChip player={player} isMe={player.id === myUserId} /></span>)}
+            </div>
           </article>
         );
       })}

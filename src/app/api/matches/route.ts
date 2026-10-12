@@ -12,12 +12,17 @@ export async function GET() {
   // touched every time a score is saved (see matches/[matchId]/score), so it reflects that.
   const matches = await prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null }, orderBy: { updatedAt: "desc" }, take: 50, include: { scores: true, players: { include: { user: { select: { id: true, name: true } } } }, event: { select: { title: true, location: true } } } });
   const visible = user ? matches.filter((match) => match.players.some((player) => player.userId === user.id)) : matches;
-  const myRatingDeltaByMatchId = new Map<string, number>();
-  if (user) {
-    const myRatingHistory = await prisma.ratingHistory.findMany({ where: { userId: user.id, matchId: { in: visible.map((match) => match.id) } }, select: { matchId: true, ratingDelta: true } });
-    for (const row of myRatingHistory) if (row.matchId) myRatingDeltaByMatchId.set(row.matchId, Number(row.ratingDelta));
-  }
-  return NextResponse.json({ matches: visible.map((match) => ({ id: match.id, status: match.status, scheduledAt: match.scheduledAt, event: match.event?.title ?? "Recorded match", location: match.event?.location ?? "Court", scores: match.scores.map((score) => ({ gameNumber: score.gameNumber, sideAScore: score.sideAScore, sideBScore: score.sideBScore })), players: match.players.map((player) => ({ id: player.user.id, name: player.user.name, side: player.side })), myRatingDelta: myRatingDeltaByMatchId.has(match.id) ? myRatingDeltaByMatchId.get(match.id) : null })) });
+  // Doubles ratings move as a team (the formula can only see the team's combined result, not
+  // each partner's individual contribution, same reason DUPR predicts from team averages too),
+  // but each player still has their own before/after rating -- show that per person rather
+  // than a single shared number.
+  const ratingByKey = new Map<string, { delta: number; after: number }>();
+  const ratingHistory = await prisma.ratingHistory.findMany({ where: { matchId: { in: visible.map((match) => match.id) } }, select: { matchId: true, userId: true, ratingDelta: true, ratingAfter: true } });
+  for (const row of ratingHistory) if (row.matchId) ratingByKey.set(`${row.matchId}:${row.userId}`, { delta: Number(row.ratingDelta), after: Number(row.ratingAfter) });
+  return NextResponse.json({ matches: visible.map((match) => ({ id: match.id, status: match.status, scheduledAt: match.scheduledAt, event: match.event?.title ?? "Recorded match", location: match.event?.location ?? "Court", scores: match.scores.map((score) => ({ gameNumber: score.gameNumber, sideAScore: score.sideAScore, sideBScore: score.sideBScore })), players: match.players.map((player) => {
+    const rating = ratingByKey.get(`${match.id}:${player.user.id}`);
+    return { id: player.user.id, name: player.user.name, side: player.side, ratingDelta: rating?.delta ?? null, ratingAfter: rating?.after ?? null };
+  }) })) });
 }
 
 export async function POST(request: Request) {
