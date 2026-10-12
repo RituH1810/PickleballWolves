@@ -102,7 +102,7 @@ export function DashboardPage() {
     Promise.all([dashboardPromise, matchesPromise]).then(([dashboardData, matchData]) => {
       if (!matchData?.matches) return;
       const userId: string | null = dashboardData?.userId ?? null;
-      setRecentResultsList(matchData.matches.slice(0, 3).map((match: { players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[]; scheduledAt: string | null }) => {
+      setRecentResultsList(matchData.matches.slice(0, 3).map((match: { players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[]; scheduledAt: string | null; myRatingDelta: number | null }) => {
         const mine = match.players.find((player) => player.id === userId);
         const teammates = match.players.filter((player) => player.id !== userId && player.side === mine?.side).map((player) => player.name);
         const opposingSide = match.players.filter((player) => player.side !== mine?.side).map((player) => player.name);
@@ -112,7 +112,8 @@ export function DashboardPage() {
         const theirScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideBScore : score.sideAScore), 0);
         const margin = myScore - theirScore;
         const scoreText = match.scores.map((score) => `${mine?.side === "A" ? score.sideAScore : score.sideBScore} - ${mine?.side === "A" ? score.sideBScore : score.sideAScore}`).join(", ") || "No score";
-        return { opponent: `${myLabel} vs ${theirLabel}`, event: match.event, score: scoreText, result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", points: "", date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
+        const points = match.myRatingDelta == null ? "" : `${match.myRatingDelta > 0 ? "+" : ""}${match.myRatingDelta.toFixed(2)}`;
+        return { opponent: `${myLabel} vs ${theirLabel}`, event: match.event, score: scoreText, result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", points, date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
       }));
     }).finally(() => setLoadingMatches(false));
     fetch("/api/leaderboard").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.leaderboard) setLeaderboardList(data.leaderboard.map((entry: { rank: number; name: string; rating: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number; movement: number }) => ({ ...entry, initials: entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase() }))); }).finally(() => setLoadingLeaderboard(false));

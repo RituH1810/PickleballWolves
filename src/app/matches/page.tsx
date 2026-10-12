@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, MapPin, PawPrint } from "lucide-react";
 
-type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: { id: string; name: string; side: "A" | "B" }[] };
+type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: { id: string; name: string; side: "A" | "B" }[]; myRatingDelta: number | null };
 type Profile = { id: string; record: string; winRate: string; rank: number };
 
 export default function MatchesPage() {
@@ -59,10 +59,13 @@ export default function MatchesPage() {
                 {result !== "-" && <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${result === "W" ? "bg-[var(--lime)] text-[#0f1712]" : "bg-[var(--coral)] text-[#2e1a16]"}`}>{result}</span>}
               </div>
             </div>
-            <p className="mt-4 border-t border-[var(--line)] pt-3 text-xs">
-              <span className={result === "W" ? "font-bold text-[var(--lime-deep)]" : "font-semibold text-[var(--foreground)]"}>{myLabel}</span>
-              <span className="mx-2 text-[var(--ink-soft)]">vs</span>
-              <span className={result === "L" ? "font-bold text-[var(--coral)]" : "font-semibold text-[var(--foreground)]"}>{theirLabel}</span>
+            <p className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-[var(--line)] pt-3 text-xs">
+              <span>
+                <span className={result === "W" ? "font-bold text-[var(--lime-deep)]" : "font-semibold text-[var(--foreground)]"}>{myLabel}</span>
+                <span className="mx-2 text-[var(--ink-soft)]">vs</span>
+                <span className={result === "L" ? "font-bold text-[var(--coral)]" : "font-semibold text-[var(--foreground)]"}>{theirLabel}</span>
+              </span>
+              {match.myRatingDelta != null && <span className={`font-bold ${match.myRatingDelta > 0 ? "text-[var(--lime-deep)]" : match.myRatingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{match.myRatingDelta > 0 ? "+" : ""}{match.myRatingDelta.toFixed(2)} rating</span>}
             </p>
           </article>
         );

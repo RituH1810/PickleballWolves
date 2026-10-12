@@ -91,8 +91,13 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
 
   async function saveScore(matchId: string, sideAScore: string, sideBScore: string) {
     const response = await fetch(`/api/matches/${matchId}/score`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sideAScore: Number(sideAScore), sideBScore: Number(sideBScore), gameNumber: 1 }) });
-    if (response.ok) { showNotice("Score saved and standings updated.", "success"); loadRoom(); }
-    else showNotice((await response.json()).error ?? "Unable to save score.", "error");
+    const data = await response.json();
+    if (!response.ok) { showNotice(data.error ?? "Unable to save score.", "error"); return; }
+    const ratingChanges: { userId: string; ratingDelta: number; ratingAfter: number }[] = data.ratingChanges ?? [];
+    const mine = ratingChanges.find((change) => change.userId === room?.myUserId);
+    const ratingText = mine ? ` Your rating: ${mine.ratingDelta > 0 ? "+" : ""}${mine.ratingDelta.toFixed(2)} (now ${mine.ratingAfter.toFixed(2)}).` : "";
+    showNotice(`Score saved and standings updated.${ratingText}`, "success");
+    loadRoom();
   }
 
   async function deleteMatch(matchId: string) {

@@ -13,7 +13,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const sideBScore = Number(body.sideBScore);
   if (!Number.isInteger(sideAScore) || !Number.isInteger(sideBScore) || sideAScore < 0 || sideBScore < 0 || sideAScore === sideBScore) return NextResponse.json({ error: "Enter two different non-negative scores." }, { status: 400 });
   const winnerSide = sideAScore > sideBScore ? Side.A : Side.B;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: true, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: { include: { user: { select: { name: true } } } }, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } } } });
   if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 });
   if (match.roundRobin) {
     // The organizer can always score. So can anyone actually playing in this match (added by
@@ -55,12 +55,16 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   // 2.0 or 6.0 after a single match. Scale both to the actual rating span instead.
   const RATING_SPAN = MAX_RATING - MIN_RATING;
   const K_FACTOR = 0.5;
+  const nameById = new Map(match.players.map((player) => [player.userId, player.user.name]));
+  let ratingChanges: { userId: string; name: string; side: "A" | "B"; ratingBefore: number; ratingAfter: number; ratingDelta: number }[] = [];
+  let opponentAvgRating: { A: number; B: number } | null = null;
   // Only adjust ratings the first time a match is scored -- re-saving a corrected score would
   // otherwise re-apply a full delta on top of the one already applied.
   if (!wasAlreadyCompleted && sideAIds.length && sideBIds.length) {
     const avg = (ids: string[]) => ids.reduce((total, id) => total + ratingById.get(id)!, 0) / ids.length;
     const avgA = avg(sideAIds);
     const avgB = avg(sideBIds);
+    opponentAvgRating = { A: Math.round(avgA * 100) / 100, B: Math.round(avgB * 100) / 100 };
     const expectedA = 1 / (1 + 10 ** ((avgB - avgA) / RATING_SPAN));
     const actualA = winnerSide === Side.A ? 1 : 0;
     const delta = Math.round(K_FACTOR * (actualA - expectedA) * 100) / 100;
@@ -68,18 +72,19 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
       ...sideAIds.map((id) => {
         const before = ratingById.get(id)!;
         const after = Math.min(MAX_RATING, Math.max(MIN_RATING, before + delta));
-        return { id, before, after };
+        return { id, before, after, side: "A" as const };
       }),
       ...sideBIds.map((id) => {
         const before = ratingById.get(id)!;
         const after = Math.min(MAX_RATING, Math.max(MIN_RATING, before - delta));
-        return { id, before, after };
+        return { id, before, after, side: "B" as const };
       }),
     ];
     await prisma.$transaction(updates.flatMap(({ id, before, after }) => [
       prisma.user.update({ where: { id }, data: { skillRating: after } }),
       prisma.ratingHistory.create({ data: { userId: id, matchId, ratingBefore: before, ratingAfter: after, ratingDelta: after - before } }),
     ]));
+    ratingChanges = updates.map(({ id, before, after, side }) => ({ userId: id, name: nameById.get(id) ?? "Unknown", side, ratingBefore: before, ratingAfter: after, ratingDelta: Math.round((after - before) * 100) / 100 }));
   }
 
   if (match.bracketMatch && match.tournamentTeamAId && match.tournamentTeamBId) {
@@ -108,5 +113,5 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     }
   }
 
-  return NextResponse.json({ score, winnerSide });
+  return NextResponse.json({ score, winnerSide, ratingChanges, opponentAvgRating });
 }
