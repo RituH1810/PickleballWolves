@@ -43,7 +43,7 @@ export default function LeaderboardsPage() {
           </section>
         )}
         <section className="mt-8 overflow-x-auto rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-          {leaders.length === 0 ? <div className="py-10 text-center"><PawPrint size={22} className="mx-auto text-[var(--lime-deep)]" /><p className="mt-3 text-sm text-[var(--ink-soft)]">Play a match to appear on the leaderboard.</p></div> : (
+          {leaders.length === 0 ? <div className="py-10 text-center"><PawPrint size={22} className="mx-auto text-[var(--lime-deep)]" /><p className="mt-3 text-sm text-[var(--ink-soft)]">Play 20 matches to appear on the leaderboard.</p></div> : (
             <table className="w-full min-w-[560px] text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">

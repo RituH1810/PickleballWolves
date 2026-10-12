@@ -197,7 +197,7 @@ export function DashboardPage() {
           <div className="mb-5 flex items-start justify-between"><div><h2 className="text-xl font-extrabold tracking-tight">Community leaderboard</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Ranked by win % and point differential across every recorded match.</p></div></div>
           {loadingLeaderboard ? (
             <div className="space-y-3 py-2">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>
-          ) : leaderboardList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">Play a match to appear on the leaderboard.</p> : (
+          ) : leaderboardList.length === 0 ? <p className="py-6 text-sm text-[var(--ink-soft)]">Play 20 matches to appear on the leaderboard.</p> : (
             <table className="w-full min-w-[680px] text-left text-sm">
               <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">Matches</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
               <tbody>

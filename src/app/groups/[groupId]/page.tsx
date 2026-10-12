@@ -304,7 +304,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
           <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
           {group.isMember ? (
             group.leaderboard.length === 0 ? (
-              <p className="mt-4 text-sm text-[var(--ink-soft)]">No members yet.</p>
+              <p className="mt-4 text-sm text-[var(--ink-soft)]">No one has played 20 matches in this group yet.</p>
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[640px] text-left text-sm">
