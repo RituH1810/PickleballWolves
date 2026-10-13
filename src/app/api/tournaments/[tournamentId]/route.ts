@@ -36,6 +36,11 @@ export async function GET(_request: Request, context: { params: Promise<{ tourna
   const hasScores = await prisma.gameScore.count({ where: { match: { OR: [{ tournamentGroup: { tournamentId } }, { bracketMatch: { tournamentId } }] } } }) > 0;
   const myEntrant = user ? tournament.entrants.find((entrant) => entrant.userId === user.id) : undefined;
 
+  // Match.players come back from Prisma as { userId, side, user: { id, name } } -- the UI reads
+  // player.name directly, so flatten user.name onto each player instead of leaving it nested.
+  const flattenPlayers = (players: { userId: string; side: string; user: { id: string; name: string } }[]) =>
+    players.map((player) => ({ userId: player.userId, side: player.side, name: player.user.name }));
+
   return NextResponse.json({
     tournament: {
       ...tournament,
@@ -50,6 +55,8 @@ export async function GET(_request: Request, context: { params: Promise<{ tourna
         status: entrant.status,
         matchesSkillLevel: skillLevelForRating(Number(entrant.user.skillRating)) === tournament.skillLevel,
       })),
+      pools: tournament.pools.map((pool) => ({ ...pool, matches: pool.matches.map((match) => ({ ...match, players: flattenPlayers(match.players) })) })),
+      bracketMatches: tournament.bracketMatches.map((bracketMatch) => ({ ...bracketMatch, match: bracketMatch.match ? { ...bracketMatch.match, players: flattenPlayers(bracketMatch.match.players) } : null })),
     },
   });
 }
