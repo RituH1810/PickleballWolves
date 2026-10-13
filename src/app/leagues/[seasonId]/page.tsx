@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, Award, CalendarDays, Check, Plus, Trash2, Trophy, Users, X } from "lucide-react";
+import { ArrowLeft, Award, CalendarDays, Check, Copy, Mail, MessageCircle, Plus, Share2, Trash2, Trophy, Users, X } from "lucide-react";
 
 type MatchPlayerT = { userId: string; name: string; side: "A" | "B" };
 type MatchT = { id: string; courtNumber: number | null; players: MatchPlayerT[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type WeekMatch = { weekNumber: number; scheduledAt: string; matchId: string; courtNumber: number | null; leagueTeamAId: string | null; leagueTeamBId: string | null; players: MatchPlayerT[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type RegistrationT = { id: string; name: string; skillRating: string; status: string };
+type PlatformPlayer = { id: string; name: string; skillRating: string };
 type TeamT = { id: string; members: { id: string; name: string }[] };
 type DivisionT = { id: string; name: string; minSkillRating: string | null; maxSkillRating: string | null; registrations: RegistrationT[]; teams: TeamT[]; weeks: WeekMatch[] };
 type SeasonT = {
@@ -70,6 +71,11 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
   const [pendingPartnerByDivision, setPendingPartnerByDivision] = useState<Record<string, string | null>>({});
   const [manualPairsByDivision, setManualPairsByDivision] = useState<Record<string, [string, string][]>>({});
   const [matchesPerPairingByDivision, setMatchesPerPairingByDivision] = useState<Record<string, number>>({});
+  const [players, setPlayers] = useState<PlatformPlayer[]>([]);
+  const [pickerOpenByDivision, setPickerOpenByDivision] = useState<Record<string, boolean>>({});
+  const [selectedByDivision, setSelectedByDivision] = useState<Record<string, string[]>>({});
+  const [showShare, setShowShare] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -88,6 +94,11 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
     }).finally(() => setLoading(false));
   }, [seasonId]);
   useEffect(() => { fetch("/api/profile").then((response) => response.ok ? response.json() : null).then((data) => setMyUserId(data?.profile?.id ?? null)); }, []);
+  const isOwnerForPlayers = season?.isOwner;
+  useEffect(() => {
+    if (!isOwnerForPlayers) return;
+    fetch("/api/players").then((response) => response.ok ? response.json() : null).then((data) => setPlayers(data?.players ?? []));
+  }, [isOwnerForPlayers]);
 
   // Keep other viewers' screens live while scores are still being entered, same pattern as the
   // round robin room and tournament pages. Stops once the season is over.
@@ -154,6 +165,37 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
     showNotice("Player added.", "success");
     await loadAll();
     setBusy(false);
+  }
+
+  function togglePlayerSelected(divisionId: string, userId: string) {
+    setSelectedByDivision((current) => {
+      const selected = current[divisionId] ?? [];
+      return { ...current, [divisionId]: selected.includes(userId) ? selected.filter((id) => id !== userId) : [...selected, userId] };
+    });
+  }
+
+  async function addSelectedPlayers(divisionId: string) {
+    const selected = selectedByDivision[divisionId] ?? [];
+    if (!selected.length) return;
+    setBusy(true);
+    let added = 0;
+    for (const userId of selected) {
+      const response = await fetch(`/api/leagues/divisions/${divisionId}/registrations`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, override: true }) });
+      if (response.ok) added += 1;
+    }
+    setSelectedByDivision((current) => ({ ...current, [divisionId]: [] }));
+    setPickerOpenByDivision((current) => ({ ...current, [divisionId]: false }));
+    showNotice(`Added ${added} player${added === 1 ? "" : "s"}.`, "success");
+    await loadAll();
+    setBusy(false);
+  }
+
+  function toggleShare() {
+    setShowShare((current) => !current);
+    if (!shareUrl) setShareUrl(`${window.location.origin}/leagues/${seasonId}`);
+  }
+  async function copyShareUrl() {
+    try { await navigator.clipboard.writeText(shareUrl); showNotice("Link copied!", "success"); } catch { showNotice("Unable to copy the link.", "error"); }
   }
 
   async function removeRegistration(divisionId: string, userId: string) {
@@ -237,10 +279,28 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{isOwner ? "you" : season.league.createdBy.name}</span></p>
             <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-[var(--lime-deep)]"><CalendarDays size={15} />{new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()}</p>
           </div>
-          <span className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#1e2b17] px-4 text-xs font-bold text-[#c7e572]"><Trophy size={13} />{statusLabels[season.status] ?? season.status}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#1e2b17] px-4 text-xs font-bold text-[#c7e572]"><Trophy size={13} />{statusLabels[season.status] ?? season.status}</span>
+            <button onClick={toggleShare} className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
+          </div>
         </div>
 
         {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}
+
+        {showShare && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Share this season</p>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Anyone signed in can follow this link to view divisions and register themselves while registration is open.</p>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
+              <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a href={`https://wa.me/?text=${encodeURIComponent(`Join ${season.name} on PickleballWolves: ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
+              <a href={`mailto:?subject=${encodeURIComponent(`Join ${season.name}`)}&body=${encodeURIComponent(`Join ${season.name} on PickleballWolves: ${shareUrl}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+            </div>
+          </section>
+        )}
 
         {isOwner && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
@@ -293,6 +353,30 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                     <input value={addEmailByDivision[division.id] ?? ""} onChange={(event) => setAddEmailByDivision((current) => ({ ...current, [division.id]: event.target.value }))} placeholder="player@email.com" type="email" className="h-11 flex-1 rounded-xl border border-[var(--line)] px-4 text-sm" />
                     <button onClick={() => addRegistration(division.id)} disabled={busy || !addEmailByDivision[division.id]?.trim()} className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />Add player</button>
+                  </div>
+                )}
+                {isOwner && !hasSchedule && (
+                  <div className="mt-3">
+                    <button onClick={() => setPickerOpenByDivision((current) => ({ ...current, [division.id]: !current[division.id] }))} className="text-xs font-bold text-[var(--lime-deep)]">{pickerOpenByDivision[division.id] ? "Hide player list" : "Or pick from all players"}</button>
+                    {pickerOpenByDivision[division.id] && (() => {
+                      const registeredIds = new Set(registered.map((registration) => registration.id));
+                      const candidates = players.filter((player) => !registeredIds.has(player.id));
+                      const selected = selectedByDivision[division.id] ?? [];
+                      if (candidates.length === 0) return <p className="mt-2 text-sm text-[var(--ink-soft)]">Everyone on the platform is already registered.</p>;
+                      return (
+                        <>
+                          <div className="mt-2 grid max-h-56 gap-2 overflow-y-auto sm:grid-cols-2">
+                            {candidates.map((player) => (
+                              <button key={player.id} onClick={() => togglePlayerSelected(division.id, player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                                <span><span className="font-bold">{player.name}</span><span className="ml-2 text-xs text-[var(--ink-soft)]">{player.skillRating}</span></span>
+                                {selected.includes(player.id) && <Check size={15} className="text-[var(--lime-deep)]" />}
+                              </button>
+                            ))}
+                          </div>
+                          <button onClick={() => addSelectedPlayers(division.id)} disabled={busy || selected.length === 0} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{`Add ${selected.length || ""} to division`.trim()}</button>
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
                 <div className="mt-3 flex flex-wrap gap-2">
