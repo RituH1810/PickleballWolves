@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { computeLeagueStandings } from "@/lib/league";
 
 export async function GET(_request: Request, context: { params: Promise<{ seasonId: string }> }) {
   const { seasonId } = await context.params;
-  const divisions = await prisma.division.findMany({ where: { seasonId }, select: { id: true } });
-  const registrations = await prisma.leagueRegistration.findMany({ where: { divisionId: { in: divisions.map((division) => division.id) } }, orderBy: { createdAt: "asc" } });
-  const users = await prisma.user.findMany({ orderBy: { skillRating: "desc" }, take: 50, select: { id: true, name: true, skillRating: true } });
-  return NextResponse.json({ standings: (registrations.length ? registrations.map((registration, index) => ({ rank: index + 1, userId: registration.userId, name: users.find((user) => user.id === registration.userId)?.name ?? "Player", played: 0, wins: 0, losses: 0, points: 0 })) : users.map((user, index) => ({ rank: index + 1, userId: user.id, name: user.name, played: 0, wins: 0, losses: 0, points: 0 }))) });
+  const divisions = await prisma.division.findMany({
+    where: { seasonId },
+    orderBy: { name: "asc" },
+    include: {
+      teams: { include: { members: { include: { user: { select: { name: true } } } } } },
+      matches: { where: { deletedAt: null }, include: { scores: true } },
+    },
+  });
+
+  const standingsByDivision = divisions.map((division) => {
+    const nameByTeamId = new Map(division.teams.map((team) => [team.id, team.members.map((member) => member.user.name).join(" / ") || "TBD"]));
+    const matches = division.matches.map((match) => ({ teamAId: match.leagueTeamAId, teamBId: match.leagueTeamBId, scores: match.scores }));
+    const standings = computeLeagueStandings(division.teams.map((team) => team.id), matches).map((entry) => ({ ...entry, teamName: nameByTeamId.get(entry.teamId) ?? "TBD" }));
+    return { divisionId: division.id, divisionName: division.name, standings };
+  });
+
+  return NextResponse.json({ divisions: standingsByDivision });
 }

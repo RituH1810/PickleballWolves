@@ -137,6 +137,9 @@ model User {
   createdTournaments        Tournament[]            @relation("TournamentCreator")
   tournamentEntries         TournamentEntrant[]
   tournamentTeamMemberships TournamentTeamMember[]
+  createdLeagues            League[]                @relation("LeagueCreatedBy")
+  leagueRegistrations       LeagueRegistration[]
+  leagueTeamMemberships     LeagueTeamMember[]
 }
 
 model Group {
@@ -156,6 +159,7 @@ model Group {
   invites     GroupInvite[]
   announcements Announcement[]
   roundRobins RoundRobin[]
+  leagues     League[]
 }
 
 model Membership {
@@ -293,6 +297,9 @@ model Match {
   tournamentGroupId String?
   tournamentTeamAId String?
   tournamentTeamBId String?
+  leagueDivisionId String?
+  leagueTeamAId  String?
+  leagueTeamBId  String?
   courtNumber    Int?
   scheduledAt    DateTime?
   status         MatchStatus @default(SCHEDULED)
@@ -308,12 +315,16 @@ model Match {
   tournamentGroup TournamentGroup? @relation(fields: [tournamentGroupId], references: [id], onDelete: SetNull)
   tournamentTeamA TournamentTeam?  @relation("MatchTournamentTeamA", fields: [tournamentTeamAId], references: [id], onDelete: SetNull)
   tournamentTeamB TournamentTeam?  @relation("MatchTournamentTeamB", fields: [tournamentTeamBId], references: [id], onDelete: SetNull)
+  leagueDivision  Division?   @relation("MatchLeagueDivision", fields: [leagueDivisionId], references: [id], onDelete: SetNull)
+  leagueTeamA    LeagueTeam? @relation("MatchLeagueTeamA", fields: [leagueTeamAId], references: [id], onDelete: SetNull)
+  leagueTeamB    LeagueTeam? @relation("MatchLeagueTeamB", fields: [leagueTeamBId], references: [id], onDelete: SetNull)
   enteredBy      User?       @relation("MatchEnteredBy", fields: [enteredById], references: [id])
   confirmedBy    User?       @relation("MatchConfirmedBy", fields: [confirmedById], references: [id])
   players        MatchPlayer[]
   scores         GameScore[]
   auditLogs      AuditLog[]
   bracketMatch   TournamentBracketMatch?
+  leagueMatch    LeagueMatch?
 }
 
 model MatchPlayer {
@@ -376,6 +387,9 @@ model League {
   format      String
   createdById String
   createdAt   DateTime @default(now())
+  group       Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  createdBy   User     @relation("LeagueCreatedBy", fields: [createdById], references: [id])
+  seasons     Season[]
 }
 
 model Season {
@@ -388,6 +402,9 @@ model Season {
   registrationClosesAt DateTime
   status               String   @default("UPCOMING")
   playoffsEnabled      Boolean  @default(false)
+  league               League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  divisions            Division[]
+  leagueMatches        LeagueMatch[]
 }
 
 model Division {
@@ -396,6 +413,11 @@ model Division {
   name           String
   minSkillRating Decimal? @db.Decimal(3, 1)
   maxSkillRating Decimal? @db.Decimal(3, 1)
+  season         Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  registrations  LeagueRegistration[]
+  teams          LeagueTeam[]
+  matches        Match[]  @relation("MatchLeagueDivision")
+  leagueMatches  LeagueMatch[]
 }
 
 model LeagueRegistration {
@@ -404,16 +426,41 @@ model LeagueRegistration {
   userId     String
   status     String @default("REGISTERED")
   createdAt  DateTime @default(now())
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([divisionId, userId])
+}
+
+model LeagueTeam {
+  id         String @id @default(cuid())
+  divisionId String
+  seed       Int?
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  members    LeagueTeamMember[]
+  matchesA   Match[] @relation("MatchLeagueTeamA")
+  matchesB   Match[] @relation("MatchLeagueTeamB")
+}
+
+model LeagueTeamMember {
+  id     String @id @default(cuid())
+  teamId String
+  userId String
+  team   LeagueTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([teamId, userId])
 }
 
 model LeagueMatch {
   id         String   @id @default(cuid())
   seasonId   String
   divisionId String
-  matchId    String
+  matchId    String   @unique
   weekNumber Int
   scheduledAt DateTime
   status     String   @default("SCHEDULED")
+  season     Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  division   Division @relation(fields: [divisionId], references: [id], onDelete: Cascade)
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
 }
 
 model Ladder {

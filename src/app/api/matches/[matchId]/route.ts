@@ -7,9 +7,9 @@ export async function DELETE(_request: Request, context: { params: Promise<{ mat
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to delete this match." }, { status: 401 });
   const { matchId } = await context.params;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { roundRobin: { select: { id: true, createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { roundRobin: { select: { id: true, createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
   if (!match || match.deletedAt) return NextResponse.json({ error: "Match not found." }, { status: 404 });
-  if (!match.roundRobin && !match.tournamentGroup) return NextResponse.json({ error: "This match isn't part of a round robin or tournament." }, { status: 400 });
+  if (!match.roundRobin && !match.tournamentGroup && !match.leagueMatch) return NextResponse.json({ error: "This match isn't part of a round robin, tournament, or league." }, { status: 400 });
 
   let canManage = false;
   if (match.roundRobin) {
@@ -26,6 +26,9 @@ export async function DELETE(_request: Request, context: { params: Promise<{ mat
     // Deleting a match is more destructive than scoring it, so tournaments keep this
     // organizer-only rather than extending it to playing teams.
     canManage = match.tournamentGroup.tournament.createdById === user.id;
+  } else if (match.leagueMatch) {
+    // Same reasoning as tournaments: organizer-only for deletion.
+    canManage = match.leagueMatch.division.season.league.createdById === user.id;
   }
   if (!canManage) return NextResponse.json({ error: "Only the organizer or a joined member can delete matches." }, { status: 403 });
 

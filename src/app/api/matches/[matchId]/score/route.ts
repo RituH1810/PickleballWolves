@@ -13,7 +13,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const sideBScore = Number(body.sideBScore);
   if (!Number.isInteger(sideAScore) || !Number.isInteger(sideBScore) || sideAScore < 0 || sideBScore < 0 || sideAScore === sideBScore) return NextResponse.json({ error: "Enter two different non-negative scores." }, { status: 400 });
   const winnerSide = sideAScore > sideBScore ? Side.A : Side.B;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: { include: { user: { select: { name: true } } } }, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: { include: { user: { select: { name: true } } } }, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
   if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 });
   if (match.roundRobin) {
     // The organizer can always score. So can anyone actually playing in this match (added by
@@ -34,6 +34,11 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   if (match.bracketMatch) {
     const bracketTournament = await prisma.tournament.findUnique({ where: { id: match.bracketMatch.tournamentId }, select: { createdById: true } });
     const isOrganizer = bracketTournament?.createdById === user.id;
+    const isPlaying = match.players.some((player) => player.userId === user.id);
+    if (!isOrganizer && !isPlaying) return NextResponse.json({ error: "Only the organizer or a player in this match can update the score." }, { status: 403 });
+  }
+  if (match.leagueMatch) {
+    const isOrganizer = match.leagueMatch.division.season.league.createdById === user.id;
     const isPlaying = match.players.some((player) => player.userId === user.id);
     if (!isOrganizer && !isPlaying) return NextResponse.json({ error: "Only the organizer or a player in this match can update the score." }, { status: 403 });
   }
