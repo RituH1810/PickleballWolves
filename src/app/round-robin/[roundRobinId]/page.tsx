@@ -8,7 +8,7 @@ import { LivePulse } from "@/components/pickleball-art";
 
 type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
-type Standing = { rank: number; name: string; wins: number; losses: number; differential: number };
+type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string };
 type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null };
 
@@ -449,10 +449,20 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <div className="mt-4 space-y-2">
               {standings.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No results yet.</p>}
               {standings.map((player) => (
-                <div key={player.name} className="flex items-center gap-2 rounded-xl bg-[#131f19] px-3 py-3">
-                  <span className="w-5 text-xs font-black text-[var(--lime-deep)]">{player.rank}</span>
-                  <span className="flex-1 text-xs font-bold">{player.name}</span>
-                  <span className="text-xs font-black">{player.wins}W</span>
+                <div key={player.name} className="rounded-xl bg-[#131f19] px-3 py-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 text-xs font-black text-[var(--lime-deep)]">{player.rank}</span>
+                    <span className="flex-1 truncate text-xs font-bold">{player.name}</span>
+                    <span className="text-xs font-black text-[var(--lime-deep)]">{player.winPct}%</span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-[var(--ink-soft)]">
+                    <span>{player.matches} match{player.matches === 1 ? "" : "es"}</span>
+                    <span>{player.wins}W &ndash; {player.losses}L</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[10px] font-semibold text-[var(--ink-soft)]">
+                    <span>{player.scored} earned</span>
+                    <span>{player.conceded} against</span>
+                  </div>
                 </div>
               ))}
             </div>
