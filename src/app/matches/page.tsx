@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarDays, MapPin, PawPrint } from "lucide-react";
 type MatchPlayer = { id: string; name: string; side: "A" | "B"; ratingDelta: number | null; ratingAfter: number | null };
 type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: MatchPlayer[] };
 type Profile = { id: string; record: string; winRate: string; rank: number };
+type Opponent = { id: string; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 
 function PlayerRatingChip({ player, isMe }: { player: MatchPlayer; isMe: boolean }) {
   return (
@@ -25,9 +26,12 @@ export default function MatchesPage() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [opponents, setOpponents] = useState<Opponent[]>([]);
+  const [loadingH2H, setLoadingH2H] = useState(true);
 
   useEffect(() => { fetch("/api/matches").then((response) => response.json()).then((data) => setMatches(data.matches ?? [])).finally(() => setLoading(false)); }, []);
   useEffect(() => { fetch("/api/profile").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.profile) setProfile(data.profile); }); }, []);
+  useEffect(() => { fetch("/api/matches/head-to-head").then((response) => response.ok ? response.json() : null).then((data) => setOpponents(data?.opponents ?? [])).finally(() => setLoadingH2H(false)); }, []);
 
   const myUserId = profile?.id ?? null;
 
@@ -44,6 +48,43 @@ export default function MatchesPage() {
         <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">#{profile.rank}</p></div>
       </section>
     )}
+
+    <section className="mt-8">
+      <h2 className="text-xl font-extrabold tracking-tight">Head to head</h2>
+      <p className="mt-1 text-sm text-[var(--ink-soft)]">Your record against everyone you&apos;ve played.</p>
+      <div className="mt-4 overflow-x-auto rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+        {loadingH2H ? (
+          <div className="space-y-3">{Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>
+        ) : opponents.length === 0 ? (
+          <p className="text-sm text-[var(--ink-soft)]">Play a match to see your head-to-head record.</p>
+        ) : (
+          <table className="w-full min-w-[520px] text-left text-sm">
+            <thead>
+              <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">
+                <th className="pb-3">Opponent</th>
+                <th className="pb-3 text-center">Matches</th>
+                <th className="w-14 pb-3 text-center">W</th>
+                <th className="w-14 pb-3 text-center">L</th>
+                <th className="pb-3 text-center">Win%</th>
+                <th className="pb-3 text-right">Diff</th>
+              </tr>
+            </thead>
+            <tbody>
+              {opponents.map((opponent) => (
+                <tr key={opponent.id} className="border-b border-[var(--line)] last:border-0">
+                  <td className="py-3 font-bold text-[var(--foreground)]">{opponent.name}</td>
+                  <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{opponent.matches}</td>
+                  <td className="w-14 py-3 text-center font-semibold">{opponent.wins}</td>
+                  <td className="w-14 py-3 text-center font-semibold">{opponent.losses}</td>
+                  <td className="py-3 text-center font-semibold">{opponent.winPct}%</td>
+                  <td className={`py-3 text-right font-black ${opponent.differential > 0 ? "text-[var(--lime-deep)]" : opponent.differential < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{opponent.differential > 0 ? "+" : ""}{opponent.differential}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </section>
 
     <section className="mt-8 space-y-3">
       {loading ? (
