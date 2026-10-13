@@ -111,7 +111,7 @@ export default function EventsPage() {
       <p className="mt-1 text-sm text-[var(--ink-soft)]">Your completed matches, most recent first.</p>
       <div className="mt-4 space-y-2">
         {loadingHistory ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-14 rounded-xl" />) : history.length === 0 ? <div className="flex items-center gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)]"><PawPrint size={18} className="shrink-0 text-[var(--lime-deep)]" /><p>No completed matches yet.</p></div> : history.map((result) => (
-          <div key={result.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#131f19] px-4 py-3">
+          <div key={result.id} className={`flex flex-wrap items-center justify-between gap-2 rounded-xl border-l-4 px-4 py-3 ${result.result === "W" ? "border-l-[var(--lime)] bg-[#1e2b17]" : result.result === "L" ? "border-l-[var(--coral)] bg-[#2e1a16]" : "border-l-transparent bg-[#131f19]"}`}>
             <div>
               <p className="text-sm font-bold text-[var(--foreground)]">{result.opponent}</p>
               <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{result.date}</p>
