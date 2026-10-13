@@ -98,6 +98,21 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
   }, [tournamentId]);
   useEffect(() => { fetch("/api/profile").then((response) => response.ok ? response.json() : null).then((data) => setMyUserId(data?.profile?.id ?? null)); }, []);
 
+  // Keep other viewers' screens live while scores are still being entered -- someone scoring a
+  // match court-side shouldn't be the only one who sees it update. Stops once the tournament is
+  // over, since nothing more will change.
+  const tournamentStatus = tournament?.status;
+  useEffect(() => {
+    if (!tournamentStatus || tournamentStatus === "COMPLETED" || tournamentStatus === "CANCELLED") return;
+    const interval = setInterval(() => {
+      Promise.all([fetch(`/api/tournaments/${tournamentId}`), fetch(`/api/tournaments/${tournamentId}/standings`)]).then(async ([tournamentResponse, standingsResponse]) => {
+        if (tournamentResponse.ok) setTournament((await tournamentResponse.json()).tournament);
+        if (standingsResponse.ok) setStandings((await standingsResponse.json()).pools);
+      });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [tournamentId, tournamentStatus]);
+
   async function registerSelf(override = false) {
     setBusy(true);
     const response = await fetch(`/api/tournaments/${tournamentId}/register`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ override }) });
@@ -419,7 +434,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
                   {tournament.bracketMatches.filter((bracketMatch) => bracketMatch.round === round).map((bracketMatch) => (
                     <div key={bracketMatch.id} className="rounded-xl border border-[var(--line)] p-3">
                       {bracketMatch.match ? (
-                        <MatchCard match={bracketMatch.match} onSave={saveScore} onDelete={deleteMatchFn} canScore={isOwner || (Boolean(myUserId) && bracketMatch.match.players.some((player) => player.userId === myUserId))} canDelete={isOwner} />
+                        <MatchCard key={`${bracketMatch.match.id}:${bracketMatch.match.scores[0]?.sideAScore ?? ""}:${bracketMatch.match.scores[0]?.sideBScore ?? ""}`} match={bracketMatch.match} onSave={saveScore} onDelete={deleteMatchFn} canScore={isOwner || (Boolean(myUserId) && bracketMatch.match.players.some((player) => player.userId === myUserId))} canDelete={isOwner} />
                       ) : (
                         <div className="space-y-2 text-sm font-bold text-[var(--ink-soft)]">
                           <p>{bracketMatch.teamA ? teamName(bracketMatch.teamA) : "TBD"}</p>
@@ -449,7 +464,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
                       <div className="grid gap-3 sm:grid-cols-2">
                         {pool.matches.map((match) => {
                           const isPlaying = Boolean(myUserId) && match.players.some((player) => player.userId === myUserId);
-                          return <MatchCard key={match.id} match={match} onSave={saveScore} onDelete={deleteMatchFn} canScore={isOwner || isPlaying} canDelete={isOwner} />;
+                          return <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatchFn} canScore={isOwner || isPlaying} canDelete={isOwner} />;
                         })}
                       </div>
                       {poolStandings && (

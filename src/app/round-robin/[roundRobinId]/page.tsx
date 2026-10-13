@@ -80,6 +80,29 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     });
   }, [room?.isOwner, room?.groupId]);
 
+  // Keep other viewers' screens live while scores are still being entered -- someone scoring a
+  // match court-side shouldn't be the only one who sees it update. Stops once completed, since
+  // nothing more will change.
+  const roomStatus = room?.status;
+  useEffect(() => {
+    if (!roomStatus || roomStatus === "COMPLETED") return;
+    const interval = setInterval(() => {
+      Promise.all([fetch(`/api/round-robin/${roundRobinId}`), fetch(`/api/round-robin/${roundRobinId}/standings`)]).then(async ([roomResponse, standingsResponse]) => {
+        if (roomResponse.ok) {
+          const data = await roomResponse.json();
+          setRoom(data.roundRobin ?? null);
+          setRounds(data.roundRobin?.rounds ?? []);
+          setManualMatches(data.roundRobin?.manualMatches ?? []);
+        }
+        if (standingsResponse.ok) {
+          const table = await standingsResponse.json();
+          setStandings(table.standings ?? []);
+        }
+      });
+    }, 15000);
+    return () => clearInterval(interval);
+  }, [roundRobinId, roomStatus]);
+
   async function addPlayerToRoster(userId: string) {
     setAddingPlayerId(userId);
     const response = await fetch(`/api/round-robin/${roundRobinId}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "JOINED", userId }) });
