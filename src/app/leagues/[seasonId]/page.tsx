@@ -76,6 +76,7 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
   const [selectedByDivision, setSelectedByDivision] = useState<Record<string, string[]>>({});
   const [showShare, setShowShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -192,7 +193,10 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
 
   function toggleShare() {
     setShowShare((current) => !current);
-    if (!shareUrl) setShareUrl(`${window.location.origin}/leagues/${seasonId}`);
+    if (shareUrl) return;
+    const url = `${window.location.origin}/leagues/${seasonId}`;
+    setShareUrl(url);
+    setShareMessage(`Join ${season?.name} on PickleballWolves: ${url}`);
   }
   async function copyShareUrl() {
     try { await navigator.clipboard.writeText(shareUrl); showNotice("Link copied!", "success"); } catch { showNotice("Unable to copy the link.", "error"); }
@@ -295,9 +299,13 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
               <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
               <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
             </div>
+            <label className="mt-3 block text-xs font-bold text-[#c3d0c5]">Message -- edit freely, send whenever you like
+              <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
+            </label>
             <div className="mt-3 flex flex-wrap gap-2">
-              <a href={`https://wa.me/?text=${encodeURIComponent(`Join ${season.name} on PickleballWolves: ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
-              <a href={`mailto:?subject=${encodeURIComponent(`Join ${season.name}`)}&body=${encodeURIComponent(`Join ${season.name} on PickleballWolves: ${shareUrl}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+              <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
+              <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
+              <a href={`mailto:?subject=${encodeURIComponent(`${season.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
             </div>
           </section>
         )}

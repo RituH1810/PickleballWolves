@@ -21,6 +21,7 @@ const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating par
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
   const [group, setGroup] = useState<Group | null>(null);
+  const groupName = group?.name ?? "";
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [notice, setNotice] = useState<{ text: string; type: "success" | "error" } | null>(null);
@@ -33,6 +34,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   const [sendingEmailInvite, setSendingEmailInvite] = useState(false);
   const [inviteLink, setInviteLink] = useState("");
   const [loadingInviteLink, setLoadingInviteLink] = useState(true);
+  const [inviteMessage, setInviteMessage] = useState("");
 
   async function loadGroup() {
     const response = await fetch(`/api/groups/${groupId}`);
@@ -53,8 +55,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
   useEffect(() => { if (showInvite && players.length === 0) fetch("/api/players").then((response) => response.json()).then((data) => setPlayers(data.players ?? [])); }, [showInvite, players.length]);
   useEffect(() => {
     if (!showInvite || inviteLink) return;
-    fetch(`/api/groups/${groupId}/invite-link`, { method: "POST" }).then((response) => response.ok ? response.json() : null).then((data) => { if (data?.url) setInviteLink(data.url); }).finally(() => setLoadingInviteLink(false));
-  }, [showInvite, inviteLink, groupId]);
+    fetch(`/api/groups/${groupId}/invite-link`, { method: "POST" }).then((response) => response.ok ? response.json() : null).then((data) => {
+      if (data?.url) {
+        setInviteLink(data.url);
+        setInviteMessage(`Join ${groupName} on PickleballWolves: ${data.url}`);
+      }
+    }).finally(() => setLoadingInviteLink(false));
+  }, [showInvite, inviteLink, groupId, groupName]);
 
   async function copyInviteLink() {
     try { await navigator.clipboard.writeText(inviteLink); setNotice({ text: "Invite link copied!", type: "success" }); } catch { setNotice({ text: "Unable to copy the link.", type: "error" }); }
@@ -167,10 +174,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                     <input readOnly value={inviteLink} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
                     <button onClick={copyInviteLink} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
                   </div>
+                  <label className="mt-3 block text-xs font-bold text-[#c3d0c5]">Message -- edit freely, send whenever you like
+                    <textarea value={inviteMessage} onChange={(event) => setInviteMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
+                  </label>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <a href={`https://wa.me/?text=${encodeURIComponent(`Join ${group.name} on PickleballWolves: ${inviteLink}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
-                    <a href={`sms:?body=${encodeURIComponent(`Join ${group.name} on PickleballWolves: ${inviteLink}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
-                    <a href={`mailto:?subject=${encodeURIComponent(`Join ${group.name} on PickleballWolves`)}&body=${encodeURIComponent(`Join ${group.name} on PickleballWolves: ${inviteLink}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
+                    <a href={`sms:?body=${encodeURIComponent(inviteMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
+                    <a href={`mailto:?subject=${encodeURIComponent(`${groupName} on PickleballWolves`)}&body=${encodeURIComponent(inviteMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
                   </div>
                 </>
               ) : (

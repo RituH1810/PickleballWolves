@@ -32,6 +32,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [addingRound, setAddingRound] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
   const [loadingShare, setLoadingShare] = useState(false);
   const [matchAssignment, setMatchAssignment] = useState<Record<string, "A" | "B">>({});
   const [creatingMatch, setCreatingMatch] = useState(false);
@@ -226,14 +227,17 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     setShowShare((current) => !current);
     if (shareUrl) return;
     setLoadingShare(true);
+    let url = "";
     if (room?.groupId) {
       const response = await fetch(`/api/groups/${room.groupId}/invite-link`, { method: "POST" });
       const data = await response.json();
-      if (response.ok && data.url) setShareUrl(`${data.url}&next=${encodeURIComponent(`/round-robin/${roundRobinId}`)}`);
+      if (response.ok && data.url) url = `${data.url}&next=${encodeURIComponent(`/round-robin/${roundRobinId}`)}`;
       else showNotice(data.error ?? "Unable to generate a share link.", "error");
     } else {
-      setShareUrl(`${window.location.origin}/round-robin/${roundRobinId}`);
+      url = `${window.location.origin}/round-robin/${roundRobinId}`;
     }
+    setShareUrl(url);
+    if (url) setShareMessage(`Join us for ${room?.name} on PickleballWolves: ${url}`);
     setLoadingShare(false);
   }
 
@@ -305,10 +309,13 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                   <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
                   <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
                 </div>
+                <label className="mt-3 block text-xs font-bold text-[#c3d0c5]">Message -- edit freely, send whenever you like
+                  <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
+                </label>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(`Join us for ${room.name} on PickleballWolves: ${shareUrl}`)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
-                  <a href={`sms:?body=${encodeURIComponent(`Join us for ${room.name} on PickleballWolves: ${shareUrl}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
-                  <a href={`mailto:?subject=${encodeURIComponent(`Join us for ${room.name}`)}&body=${encodeURIComponent(`Join us for ${room.name} on PickleballWolves: ${shareUrl}`)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+                  <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
+                  <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
+                  <a href={`mailto:?subject=${encodeURIComponent(`${room.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
                 </div>
               </>
             ) : (
