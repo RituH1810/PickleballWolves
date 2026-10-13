@@ -79,6 +79,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
   const [manualPoolByTeam, setManualPoolByTeam] = useState<Record<string, number>>({});
   const [advancePerPool, setAdvancePerPool] = useState(1);
   const [groupCountInput, setGroupCountInput] = useState(2);
+  const [matchesPerPairing, setMatchesPerPairing] = useState(1);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -191,7 +192,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
 
   async function generateSchedule() {
     setBusy(true);
-    const response = await fetch(`/api/tournaments/${tournamentId}/generate`, { method: "POST" });
+    const response = await fetch(`/api/tournaments/${tournamentId}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ matchesPerPairing }) });
     const data = await response.json();
     if (!response.ok) { showNotice(data.error ?? "Unable to generate the schedule.", "error"); setBusy(false); return; }
     showNotice(`Generated ${data.matches} matches across ${data.pools} pools.`, "success");
@@ -403,8 +404,15 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
         {canManage && tournament.pools.length > 0 && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div><h2 className="font-extrabold">Generate schedule</h2><p className="mt-1 text-xs text-[var(--ink-soft)]">Builds a full round robin within each group.</p></div>
-              <button onClick={generateSchedule} disabled={busy || unassignedTeams.length > 0} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate matches"}</button>
+              <div><h2 className="font-extrabold">Generate schedule</h2><p className="mt-1 text-xs text-[var(--ink-soft)]">Builds a full round robin within each group. Small groups can play each pairing more than once.</p></div>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1 rounded-full bg-[#1a2a1c] p-1">
+                  {[1, 2, 3].map((count) => (
+                    <button key={count} onClick={() => setMatchesPerPairing(count)} className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${matchesPerPairing === count ? "bg-[var(--panel)] text-[var(--foreground)] shadow-sm" : "text-[var(--ink-soft)]"}`}>{count}&times;</button>
+                  ))}
+                </div>
+                <button onClick={generateSchedule} disabled={busy || unassignedTeams.length > 0} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate matches"}</button>
+              </div>
             </div>
             {unassignedTeams.length > 0 && <p className="mt-2 text-xs font-semibold text-[#f2a08c]">{unassignedTeams.length} team{unassignedTeams.length === 1 ? "" : "s"} not yet assigned to a group.</p>}
           </section>

@@ -3,11 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { generatePoolRounds } from "@/lib/tournament";
 
-export async function POST(_request: Request, context: { params: Promise<{ tournamentId: string }> }) {
+export async function POST(request: Request, context: { params: Promise<{ tournamentId: string }> }) {
   const { tournamentId } = await context.params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to generate the schedule." }, { status: 401 });
+  const body = await request.json().catch(() => ({}));
+  // How many times each pairing within a pool plays -- small pools (e.g. 3 teams only has 3
+  // possible pairings total) can repeat the round robin instead of being stuck with few matches.
+  const matchesPerPairing = Number.isInteger(Number(body.matchesPerPairing)) && Number(body.matchesPerPairing) >= 1 && Number(body.matchesPerPairing) <= 5 ? Number(body.matchesPerPairing) : 1;
   const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
   if (!tournament) return NextResponse.json({ error: "Tournament not found." }, { status: 404 });
   if (tournament.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can generate the schedule." }, { status: 403 });
@@ -37,7 +41,7 @@ export async function POST(_request: Request, context: { params: Promise<{ tourn
 
     for (const pool of pools) {
       const teamsById = new Map(pool.teams.map((team) => [team.id, team]));
-      const rounds = generatePoolRounds(pool.teams.map((team) => team.id));
+      const rounds = generatePoolRounds(pool.teams.map((team) => team.id), matchesPerPairing);
       for (const round of rounds) {
         for (const [teamAId, teamBId] of round.matchups) {
           const teamA = teamsById.get(teamAId)!;

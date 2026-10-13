@@ -223,27 +223,43 @@ export function bracketRoundLabel(round: number, totalRounds: number): string {
 
 /**
  * Full round-robin schedule for a fixed set of team units within one pool: every team plays
- * every other team in the pool exactly once. Same circle-method rotation used for fixed-partner
- * round robins, applied to whole teams instead of individual players.
+ * every other team in the pool exactly once per pass. Same circle-method rotation used for
+ * fixed-partner round robins, applied to whole teams instead of individual players.
+ *
+ * `repeats` plays the same pairing pattern multiple times (e.g. 2 for a double round robin) --
+ * useful for small pools where a single pass produces very few matches (a 3-team pool only has
+ * 3 possible pairings total). Each pass is independently generated and valid on its own; round
+ * numbers continue across passes rather than restarting.
  */
-export function generatePoolRounds(teamIds: string[]): { roundNumber: number; matchups: [string, string][] }[] {
+export function generatePoolRounds(teamIds: string[], repeats = 1): { roundNumber: number; matchups: [string, string][] }[] {
   if (teamIds.length < 2) return [];
-  let units = [...teamIds];
-  if (units.length % 2) units.push("BYE");
-  const roundCount = units.length - 1;
-  const rounds: { roundNumber: number; matchups: [string, string][] }[] = [];
-  for (let roundNumber = 1; roundNumber <= roundCount; roundNumber++) {
-    const matchups: [string, string][] = [];
-    for (let index = 0; index < units.length / 2; index++) {
-      const teamA = units[index];
-      const teamB = units[units.length - 1 - index];
-      if (teamA !== "BYE" && teamB !== "BYE") matchups.push([teamA, teamB]);
+  const singlePass = (): [string, string][][] => {
+    let units = [...teamIds];
+    if (units.length % 2) units.push("BYE");
+    const roundCount = units.length - 1;
+    const passRounds: [string, string][][] = [];
+    for (let i = 0; i < roundCount; i++) {
+      const matchups: [string, string][] = [];
+      for (let index = 0; index < units.length / 2; index++) {
+        const teamA = units[index];
+        const teamB = units[units.length - 1 - index];
+        if (teamA !== "BYE" && teamB !== "BYE") matchups.push([teamA, teamB]);
+      }
+      passRounds.push(matchups);
+      const fixed = units[0];
+      const rotating = units.slice(1);
+      rotating.unshift(rotating.pop()!);
+      units = [fixed, ...rotating];
     }
-    rounds.push({ roundNumber, matchups });
-    const fixed = units[0];
-    const rotating = units.slice(1);
-    rotating.unshift(rotating.pop()!);
-    units = [fixed, ...rotating];
+    return passRounds;
+  };
+  const rounds: { roundNumber: number; matchups: [string, string][] }[] = [];
+  let roundNumber = 1;
+  for (let pass = 0; pass < Math.max(1, repeats); pass++) {
+    for (const matchups of singlePass()) {
+      rounds.push({ roundNumber, matchups });
+      roundNumber += 1;
+    }
   }
   return rounds;
 }

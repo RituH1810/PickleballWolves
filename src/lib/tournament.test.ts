@@ -297,4 +297,19 @@ describe("generatePoolRounds", () => {
     // Every team should play every other team exactly once: 4 matches each in a 5-team pool.
     expect([...playCounts.values()].every((count) => count === 4)).toBe(true);
   });
+  it("repeats the full pairing pattern when repeats > 1, continuing round numbers", () => {
+    const rounds = generatePoolRounds(["a", "b", "c"], 2);
+    expect(rounds.length).toBe(6); // 3 rounds per pass (with byes skipped) x 2 passes
+    expect(rounds.map((round) => round.roundNumber)).toEqual([1, 2, 3, 4, 5, 6]);
+    const seenPairs = rounds.flatMap((round) => round.matchups.map((pair) => [...pair].sort().join("-")));
+    expect(seenPairs.length).toBe(6); // 3 unique pairings in a 3-team pool, played twice each
+    const counts = new Map<string, number>();
+    for (const pair of seenPairs) counts.set(pair, (counts.get(pair) ?? 0) + 1);
+    expect([...counts.values()].every((count) => count === 2)).toBe(true);
+  });
+  it("defaults to a single pass when repeats is omitted", () => {
+    const withDefault = generatePoolRounds(["a", "b", "c"]);
+    const explicitOne = generatePoolRounds(["a", "b", "c"], 1);
+    expect(withDefault).toEqual(explicitOne);
+  });
 });
