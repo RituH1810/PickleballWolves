@@ -29,8 +29,13 @@ export async function DELETE(request: Request, context: { params: Promise<{ even
   if (!user) return NextResponse.json({ error: "Sign in to manage your RSVP." }, { status: 401 });
   const { eventId } = await context.params;
   const profile = await ensureProfile(user);
-  await prisma.rSVP.updateMany({ where: { eventId, userId: profile.id }, data: { status: RsvpStatus.CANCELLED, respondedAt: new Date() } });
-  const next = await prisma.rSVP.findFirst({ where: { eventId, status: RsvpStatus.WAITLISTED }, orderBy: { respondedAt: "asc" } });
-  if (next) await prisma.rSVP.update({ where: { id: next.id }, data: { status: RsvpStatus.GOING, respondedAt: new Date() } });
+  const existing = await prisma.rSVP.findUnique({ where: { eventId_userId: { eventId, userId: profile.id } } });
+  // Upsert so declining an invite you never answered is still recorded (and drops out of the inbox).
+  await prisma.rSVP.upsert({ where: { eventId_userId: { eventId, userId: profile.id } }, update: { status: RsvpStatus.CANCELLED, respondedAt: new Date() }, create: { eventId, userId: profile.id, status: RsvpStatus.CANCELLED } });
+  // Only a freed-up GOING spot should pull someone off the waitlist.
+  if (existing?.status === RsvpStatus.GOING) {
+    const next = await prisma.rSVP.findFirst({ where: { eventId, status: RsvpStatus.WAITLISTED }, orderBy: { respondedAt: "asc" } });
+    if (next) await prisma.rSVP.update({ where: { id: next.id }, data: { status: RsvpStatus.GOING, respondedAt: new Date() } });
+  }
   return NextResponse.json({ status: RsvpStatus.CANCELLED });
 }
