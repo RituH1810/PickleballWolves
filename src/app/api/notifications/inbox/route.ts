@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
 type InviteKind = "event" | "roundRobin" | "challenge";
-type Invite = { id: string; kind: InviteKind; startsAt: string | null; title: string; subtitle: string; count: number; cap: number | null; hostName: string; hostPhotoUrl: string | null; detailsHref: string; deadlineAt?: string };
+type Invite = { id: string; kind: InviteKind; startsAt: string | null; title: string; subtitle: string; count: number; cap: number | null; hostName: string; hostPhotoUrl: string | null; detailsHref: string; deadlineAt?: string; location?: string | null };
 type JoinRequest = { groupId: string; groupName: string; userId: string; name: string; photoUrl: string | null; skillRating: string };
 
 /**
@@ -30,7 +30,7 @@ export async function GET() {
     myGroupIds.length ? prisma.roundRobin.findMany({
       where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, createdById: { not: user.id }, rsvps: { none: { userId: user.id } }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
-      include: { group: { select: { name: true } }, rsvps: { where: { status: "JOINED" }, select: { id: true } } },
+      include: { group: { select: { name: true, location: true } }, rsvps: { where: { status: "JOINED" }, select: { id: true } } },
     }) : Promise.resolve([]),
     prisma.challenge.findMany({ where: { challengedId: user.id, status: "PENDING", deadlineAt: { gt: now } }, orderBy: { deadlineAt: "asc" } }),
     myGroupIds.length ? prisma.membership.findMany({
@@ -56,6 +56,7 @@ export async function GET() {
       startsAt: event.startsAt.toISOString(),
       title: event.group ? `${event.group.name} - ${event.title}` : event.title,
       subtitle: event.location,
+      location: event.location,
       count: event.rsvps.length,
       cap: event.playerCap,
       hostName: event.createdBy.name,
@@ -73,6 +74,7 @@ export async function GET() {
       hostName: personById.get(roundRobin.createdById)?.name ?? "Organizer",
       hostPhotoUrl: personById.get(roundRobin.createdById)?.photoUrl ?? null,
       detailsHref: `/round-robin/${roundRobin.id}`,
+      location: roundRobin.group?.location ?? null,
     })),
     ...challenges.map((challenge): Invite => ({
       id: challenge.id,

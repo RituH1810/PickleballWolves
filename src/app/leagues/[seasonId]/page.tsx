@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, Award, CalendarDays, Check, Copy, Mail, MessageCircle, Plus, Share2, Trash2, Trophy, Users, X } from "lucide-react";
+import { AddToCalendar } from "@/components/add-to-calendar";
 
 type MatchPlayerT = { userId: string; name: string; side: "A" | "B" };
 type MatchT = { id: string; courtNumber: number | null; players: MatchPlayerT[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
@@ -341,6 +342,14 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
           const pendingPartner = pendingPartnerByDivision[division.id] ?? null;
           const hasSchedule = division.weeks.length > 0;
           const weekNumbers = [...new Set(division.weeks.map((week) => week.weekNumber))].sort((a, b) => a - b);
+          // The viewer's own unplayed matches, for the "add to calendar" export.
+          const myUpcoming = myUserId ? division.weeks.filter((week) => week.scores.length === 0 && new Date(week.scheduledAt) >= now && week.players.some((player) => player.userId === myUserId)) : [];
+          const calendarItems = myUpcoming.map((week) => {
+            const mySide = week.players.find((player) => player.userId === myUserId)!.side;
+            const partners = week.players.filter((player) => player.side === mySide && player.userId !== myUserId).map((player) => player.name);
+            const opponents = week.players.filter((player) => player.side !== mySide).map((player) => player.name);
+            return { uid: `leagueMatch-${week.matchId}`, title: `${season.league.name} - Week ${week.weekNumber}`, start: week.scheduledAt, durationMinutes: 90, description: `${partners.length ? `With ${partners.join(" & ")} ` : ""}vs ${opponents.join(" & ") || "TBD"}${week.courtNumber ? ` · Court ${week.courtNumber}` : ""}`, url: `/leagues/${seasonId}` };
+          });
           const divisionStandings = standings.find((entry) => entry.divisionId === division.id);
           const band = division.minSkillRating || division.maxSkillRating ? `${division.minSkillRating ?? "any"}–${division.maxSkillRating ?? "any"}` : null;
 
@@ -445,6 +454,7 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
 
               {hasSchedule && (
                 <div className="mt-4 border-t border-[var(--line)] pt-4">
+                  {calendarItems.length > 0 && <div className="mb-4 flex justify-end"><AddToCalendar items={calendarItems} label={`Add my ${calendarItems.length} match${calendarItems.length === 1 ? "" : "es"} to calendar`} fileName={`${season.league.name}-${division.name}`.toLowerCase().replace(/[^a-z0-9]+/g, "-")} /></div>}
                   <div className="grid gap-6 lg:grid-cols-[1fr_.4fr]">
                     <div className="space-y-4">
                       {weekNumbers.map((weekNumber) => (

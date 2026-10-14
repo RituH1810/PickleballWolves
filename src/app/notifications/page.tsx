@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Bell, Check, ChevronRight, Inbox, Mailbox, Send, Settings, Swords, Users, X } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { AddToCalendar } from "@/components/add-to-calendar";
 
 type Notification = { id: string; title: string; body: string; createdAt: string; readAt: string | null };
-type Invite = { id: string; kind: "event" | "roundRobin" | "challenge"; startsAt: string | null; title: string; subtitle: string; count: number; cap: number | null; hostName: string; hostPhotoUrl: string | null; detailsHref: string; deadlineAt?: string };
+type Invite = { id: string; kind: "event" | "roundRobin" | "challenge"; startsAt: string | null; title: string; subtitle: string; count: number; cap: number | null; hostName: string; hostPhotoUrl: string | null; detailsHref: string; deadlineAt?: string; location?: string | null };
 type JoinRequest = { groupId: string; groupName: string; userId: string; name: string; photoUrl: string | null; skillRating: string };
 type Tab = "invites" | "requests" | "activity";
 
@@ -44,7 +45,10 @@ function InviteCard({ invite, busy, onDecline }: { invite: Invite; busy: boolean
           {invite.kind !== "challenge" && <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--ink-soft)]">{invite.cap ? `${invite.count}/${invite.cap}` : invite.count}<Users size={13} /></span>}
         </div>
         <p className="mt-1 truncate text-sm text-[var(--foreground)]">{invite.title}</p>
-        <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{invite.subtitle}</p>
+        <div className="mt-0.5 flex items-center justify-between gap-3">
+          <p className="truncate text-xs text-[var(--ink-soft)]">{invite.subtitle}</p>
+          {invite.startsAt && <AddToCalendar compact items={[{ uid: `${invite.kind}-${invite.id}`, title: invite.title, start: invite.startsAt, location: invite.location, url: invite.detailsHref }]} />}
+        </div>
       </div>
     </div>
     <div className="mt-4 grid grid-cols-2 gap-3">

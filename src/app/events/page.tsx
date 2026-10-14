@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CalendarDays, ChevronRight, MapPin, PawPrint, Plus, Repeat, X } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
+import { AddToCalendar } from "@/components/add-to-calendar";
 
 type LiveEvent = { id: string; title: string; startsAt: string; location: string; format: string; playerCap: number; going: number; group: string };
-type MyRoundRobin = { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: string | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null };
+type MyRoundRobin = { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: string | null; location: string | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null };
 type RecentResult = { id: string; opponent: string; score: string; result: "W" | "L" | "-"; date: string };
 type RawMatch = { id: string; players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[]; scheduledAt: string | null };
 
@@ -94,6 +95,7 @@ export default function EventsPage() {
               </div>
             </Link>
             <div className="flex shrink-0 items-center gap-1.5">
+              {roundRobin.scheduledAt && roundRobin.status !== "COMPLETED" && <AddToCalendar compact items={[{ uid: `roundRobin-${roundRobin.id}`, title: roundRobin.groupName ? `${roundRobin.groupName} - ${roundRobin.name}` : roundRobin.name, start: roundRobin.scheduledAt, location: roundRobin.location, url: `/round-robin/${roundRobin.id}` }]} />}
               {roundRobin.isOrganizer && <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizing</span>}
               {roundRobin.status === "SETUP" ? (
                 <>

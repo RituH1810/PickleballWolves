@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trash2, Trophy, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
+import { AddToCalendar } from "@/components/add-to-calendar";
 
 type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
 type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string };
-type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null };
+type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
@@ -287,6 +288,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className={`flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-xs font-bold ${room.status === "COMPLETED" ? "bg-[#1c2a1a] text-[var(--ink-soft)]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{room.status === "LIVE" ? <LivePulse color="#c7e572" size={9} /> : <Check size={15} />}{room.status === "LIVE" ? "Live schedule" : room.status === "COMPLETED" ? "Completed" : room.status}</span>
+            {room.scheduledAt && room.status !== "COMPLETED" && <AddToCalendar items={[{ uid: `roundRobin-${roundRobinId}`, title: room.groupName ? `${room.groupName} - ${room.name}` : room.name, start: room.scheduledAt, location: room.location, description: `Organized by ${room.organizerName}.`, url: `/round-robin/${roundRobinId}` }]} />}
             <button onClick={toggleShare} className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
             {room.isOwner && !room.hasScores && <Link href={`/round-robin/${roundRobinId}/edit`} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Edit round robin</Link>}
             {room.isOwner && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}

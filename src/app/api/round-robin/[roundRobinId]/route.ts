@@ -10,7 +10,7 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
   const roundRobin = await prisma.roundRobin.findUnique({
     where: { id: roundRobinId },
     include: {
-      group: { select: { id: true, name: true } },
+      group: { select: { id: true, name: true, location: true } },
       rsvps: { include: { user: { select: { id: true, name: true } } } },
       rounds: { orderBy: { roundNumber: "asc" }, include: { matches: { where: { deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } } },
       // Matches created one-off via "Create match" instead of through generate/add-round --
@@ -44,6 +44,7 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       hasScores,
       groupId: roundRobin.group?.id ?? null,
       groupName: roundRobin.group?.name ?? null,
+      location: roundRobin.group?.location ?? null,
       joinedPlayers,
       joinedCount: joinedPlayers.length,
       myUserId: user?.id ?? null,

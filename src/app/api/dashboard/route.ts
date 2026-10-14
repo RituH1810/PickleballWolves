@@ -28,7 +28,7 @@ export async function GET() {
   ]);
 
   let pendingRoundRobins: { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: Date | null }[] = [];
-  let myRoundRobins: { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: Date | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null }[] = [];
+  let myRoundRobins: { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: Date | null; location: string | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null }[] = [];
   let pendingChallenges: { id: string; challengerName: string; ladderName: string; deadlineAt: Date }[] = [];
   if (user) {
     const pendingChallengeRows = await prisma.challenge.findMany({ where: { challengedId: user.id, status: "PENDING", deadlineAt: { gt: now } }, orderBy: { deadlineAt: "asc" } });
@@ -54,12 +54,13 @@ export async function GET() {
       },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
       take: 8,
-      include: { group: { select: { name: true } }, rsvps: { where: { userId: user.id } } },
+      include: { group: { select: { name: true, location: true } }, rsvps: { where: { userId: user.id } } },
     });
     myRoundRobins = myLiveRoundRobins.map((roundRobin) => ({
       id: roundRobin.id,
       name: roundRobin.name,
       groupName: roundRobin.group?.name ?? null,
+      location: roundRobin.group?.location ?? null,
       playFormat: roundRobin.playFormat,
       partnerFormat: roundRobin.partnerFormat,
       status: roundRobin.status,
