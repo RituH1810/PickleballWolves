@@ -42,6 +42,12 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     const isPlaying = match.players.some((player) => player.userId === user.id);
     if (!isOrganizer && !isPlaying) return NextResponse.json({ error: "Only the organizer or a player in this match can update the score." }, { status: 403 });
   }
+  if (!match.roundRobin && !match.tournamentGroup && !match.bracketMatch && !match.leagueMatch) {
+    // Freestanding matches (e.g. an accepted ladder challenge) have no organizer to fall back
+    // to -- only the two people who actually played can report the score.
+    const isPlaying = match.players.some((player) => player.userId === user.id);
+    if (!isPlaying) return NextResponse.json({ error: "Only a player in this match can update the score." }, { status: 403 });
+  }
   const score = await prisma.gameScore.upsert({ where: { matchId_gameNumber: { matchId, gameNumber: Number(body.gameNumber) || 1 } }, update: { sideAScore, sideBScore, enteredById: user.id }, create: { matchId, gameNumber: Number(body.gameNumber) || 1, sideAScore, sideBScore, enteredById: user.id } });
   const wasAlreadyCompleted = match.status === MatchStatus.COMPLETED;
   await prisma.match.update({ where: { id: matchId }, data: { status: MatchStatus.COMPLETED, winnerSide } });
@@ -90,6 +96,32 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
       prisma.ratingHistory.create({ data: { userId: id, matchId, ratingBefore: before, ratingAfter: after, ratingDelta: after - before } }),
     ]));
     ratingChanges = updates.map(({ id, before, after, side }) => ({ userId: id, name: nameById.get(id) ?? "Unknown", side, ratingBefore: before, ratingAfter: after, ratingDelta: Math.round((after - before) * 100) / 100 }));
+  }
+
+  if (!wasAlreadyCompleted) {
+    const ladderChallenge = await prisma.challenge.findFirst({ where: { matchId } });
+    if (ladderChallenge) {
+      // Challenger is always side A, challenged always side B (see the respond route).
+      const [challengerPosition, challengedPosition] = await Promise.all([
+        prisma.ladderPosition.findUnique({ where: { ladderId_userId: { ladderId: ladderChallenge.ladderId, userId: ladderChallenge.challengerId } } }),
+        prisma.ladderPosition.findUnique({ where: { ladderId_userId: { ladderId: ladderChallenge.ladderId, userId: ladderChallenge.challengedId } } }),
+      ]);
+      if (challengerPosition && challengedPosition) {
+        const challengerWon = winnerSide === Side.A;
+        const winner = challengerWon ? challengerPosition : challengedPosition;
+        const loser = challengerWon ? challengedPosition : challengerPosition;
+        await prisma.$transaction([
+          prisma.ladderPosition.update({ where: { id: winner.id }, data: { wins: { increment: 1 }, lastActiveAt: new Date() } }),
+          prisma.ladderPosition.update({ where: { id: loser.id }, data: { losses: { increment: 1 }, lastActiveAt: new Date() } }),
+          // Classic ladder rule: if the lower-ranked player (higher position number) wins, they
+          // take the higher rank and the defender drops to the spot they just won.
+          ...(winner.position > loser.position ? [
+            prisma.ladderPosition.update({ where: { id: winner.id }, data: { position: loser.position } }),
+            prisma.ladderPosition.update({ where: { id: loser.id }, data: { position: winner.position } }),
+          ] : []),
+        ]);
+      }
+    }
   }
 
   if (match.bracketMatch && match.tournamentTeamAId && match.tournamentTeamBId) {

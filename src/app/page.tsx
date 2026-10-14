@@ -14,6 +14,7 @@ type LeaderboardEntry = { rank: number; id: string; name: string; initials: stri
 type RecentResult = { opponent: string; event: string; score: string; result: string; points: string; date: string };
 type PendingRoundRobin = { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: string | null };
 type MyRoundRobin = { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: string | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null };
+type PendingChallenge = { id: string; challengerName: string; ladderName: string; deadlineAt: string };
 
 const pendingPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const pendingPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
@@ -63,6 +64,7 @@ export function DashboardPage() {
   const [recentResultsList, setRecentResultsList] = useState<RecentResult[]>([]);
   const [pendingRoundRobins, setPendingRoundRobins] = useState<PendingRoundRobin[]>([]);
   const [myRoundRobins, setMyRoundRobins] = useState<MyRoundRobin[]>([]);
+  const [pendingChallenges, setPendingChallenges] = useState<PendingChallenge[]>([]);
   const [profileSummary, setProfileSummary] = useState({ name: "Player", rating: "-", initials: "PW", photoUrl: null as string | null, record: "0 - 0", winRate: "0.0%", rank: "-" as number | string });
   const [filter, setFilter] = useState<"All" | "Doubles" | "Mixed doubles">("All");
   const [loadingDashboard, setLoadingDashboard] = useState(true);
@@ -100,6 +102,7 @@ export function DashboardPage() {
       if (data?.groups) setGroupList(data.groups);
       if (data?.pendingRoundRobins) setPendingRoundRobins(data.pendingRoundRobins);
       if (data?.myRoundRobins) setMyRoundRobins(data.myRoundRobins);
+      if (data?.pendingChallenges) setPendingChallenges(data.pendingChallenges);
     }).finally(() => setLoadingDashboard(false));
     Promise.all([dashboardPromise, matchesPromise]).then(([dashboardData, matchData]) => {
       if (!matchData?.matches) return;
@@ -126,6 +129,10 @@ export function DashboardPage() {
   const respondRoundRobin = async (id: string, status: "JOINED" | "DECLINED") => {
     const response = await fetch(`/api/round-robin/${id}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     if (response.ok) setPendingRoundRobins((items) => items.filter((item) => item.id !== id));
+  };
+  const respondChallenge = async (id: string, status: "ACCEPTED" | "DECLINED") => {
+    const response = await fetch(`/api/ladder/challenges/${id}/respond`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    if (response.ok) setPendingChallenges((items) => items.filter((item) => item.id !== id));
   };
   const visibleEvents = eventList.filter((event) => filter === "All" || event.format === filter);
   const roundRobinFormatLabel = (playFormat: string) => playFormat === "MIXED" ? "Mixed doubles" : playFormat === "DOUBLES" ? "Doubles" : "Singles";
@@ -187,6 +194,26 @@ export function DashboardPage() {
                   <div className="mt-4 flex gap-2">
                     <button onClick={() => respondRoundRobin(roundRobin.id, "JOINED")} className="flex-1 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] transition-colors hover:bg-[#c3e043]">Join</button>
                     <button onClick={() => respondRoundRobin(roundRobin.id, "DECLINED")} className="flex-1 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Decline</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {!loadingDashboard && pendingChallenges.length > 0 && (
+          <section className="mt-10" id="challenge-invites">
+            <div className="mb-5"><h2 className="text-xl font-extrabold tracking-tight">Challenge invites</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Ladder challenges waiting on your response. Accept to schedule the match, or pass.</p></div>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {pendingChallenges.map((challenge) => (
+                <div key={challenge.id} className="panel rounded-[20px] p-5">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-extrabold text-[var(--foreground)]">{challenge.challengerName} challenged you</p>
+                    <p className="mt-1 text-xs text-[var(--ink-soft)]">{challenge.ladderName} ladder</p>
+                    <p className="mt-1 flex items-center gap-1.5 text-xs font-bold text-[var(--lime-deep)]"><CalendarDays size={13} />Respond by {new Date(challenge.deadlineAt).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                  </div>
+                  <div className="mt-4 flex gap-2">
+                    <button onClick={() => respondChallenge(challenge.id, "ACCEPTED")} className="flex-1 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] transition-colors hover:bg-[#c3e043]">Accept</button>
+                    <button onClick={() => respondChallenge(challenge.id, "DECLINED")} className="flex-1 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Decline</button>
                   </div>
                 </div>
               ))}

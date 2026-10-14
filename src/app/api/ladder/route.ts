@@ -4,11 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { ensureProfile } from "@/lib/server-profile";
 
 export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const ladder = await prisma.ladder.findFirst({ where: { active: true } });
-  if (!ladder) return NextResponse.json({ ladder: null, positions: [] });
+  if (!ladder) return NextResponse.json({ ladder: null, positions: [], myPosition: null });
   const positions = await prisma.ladderPosition.findMany({ where: { ladderId: ladder.id }, orderBy: { position: "asc" } });
   const users = await prisma.user.findMany({ where: { id: { in: positions.map((position) => position.userId) } }, select: { id: true, name: true, skillRating: true } });
-  return NextResponse.json({ ladder, positions: positions.map((position) => ({ ...position, rating: position.rating.toString(), name: users.find((user) => user.id === position.userId)?.name ?? "Player" })) });
+  const mapped = positions.map((position) => ({ ...position, rating: position.rating.toString(), name: users.find((candidate) => candidate.id === position.userId)?.name ?? "Player" }));
+  const myPosition = user ? mapped.find((position) => position.userId === user.id) ?? null : null;
+  return NextResponse.json({ ladder, positions: mapped, myPosition });
 }
 
 export async function POST(request: Request) {

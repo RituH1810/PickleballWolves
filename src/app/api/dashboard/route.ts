@@ -29,7 +29,21 @@ export async function GET() {
 
   let pendingRoundRobins: { id: string; name: string; groupName: string; organizerName: string; playFormat: string; partnerFormat: string; joinedCount: number; scheduledAt: Date | null }[] = [];
   let myRoundRobins: { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: Date | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null }[] = [];
+  let pendingChallenges: { id: string; challengerName: string; ladderName: string; deadlineAt: Date }[] = [];
   if (user) {
+    const pendingChallengeRows = await prisma.challenge.findMany({ where: { challengedId: user.id, status: "PENDING", deadlineAt: { gt: now } }, orderBy: { deadlineAt: "asc" } });
+    if (pendingChallengeRows.length) {
+      const challengerIds = [...new Set(pendingChallengeRows.map((challenge) => challenge.challengerId))];
+      const ladderIds = [...new Set(pendingChallengeRows.map((challenge) => challenge.ladderId))];
+      const [challengers, ladders] = await Promise.all([
+        prisma.user.findMany({ where: { id: { in: challengerIds } }, select: { id: true, name: true } }),
+        prisma.ladder.findMany({ where: { id: { in: ladderIds } }, select: { id: true, name: true } }),
+      ]);
+      const challengerNameById = new Map(challengers.map((challenger) => [challenger.id, challenger.name]));
+      const ladderNameById = new Map(ladders.map((ladder) => [ladder.id, ladder.name]));
+      pendingChallenges = pendingChallengeRows.map((challenge) => ({ id: challenge.id, challengerName: challengerNameById.get(challenge.challengerId) ?? "Player", ladderName: ladderNameById.get(challenge.ladderId) ?? "Ladder", deadlineAt: challenge.deadlineAt }));
+    }
+
     const myLiveRoundRobins = await prisma.roundRobin.findMany({
       where: {
         status: { in: ["SETUP", "LIVE"] },
@@ -87,5 +101,5 @@ export async function GET() {
     else if (nextEvent) next = nextEvent.title;
     else if (nextRoundRobin) next = nextRoundRobin.name;
     return { id: group.id, name: group.name, location: group.location, members: group._count.memberships, next, role: "Member", mark: group.name.split(" ").map((word) => word[0]).join("").slice(0, 2), color: "lime" };
-  }), pendingRoundRobins, myRoundRobins });
+  }), pendingRoundRobins, myRoundRobins, pendingChallenges });
 }
