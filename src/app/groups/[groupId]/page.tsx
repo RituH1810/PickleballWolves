@@ -251,7 +251,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                     <Avatar name={member.name} photoUrl={member.photoUrl} className="h-9 w-9 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold">{member.name}</p>
+                      <Link href={`/players/${member.id}`} className="block truncate text-sm font-bold hover:text-[var(--lime-deep)] hover:underline">{member.name}</Link>
                       <p className="text-[11px] text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"} · {member.skillRating} rating</p>
                     </div>
                     {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
@@ -331,7 +331,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                             {entry.rank}
                           </span>
                         </td>
-                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />{entry.name}</span></td>
+                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" /><Link href={`/players/${entry.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{entry.name}</Link></span></td>
                         <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{entry.matches}</td>
                         <td className="w-14 py-3 text-center font-semibold">{entry.wins}</td>
                         <td className="w-14 py-3 text-center font-semibold">{entry.losses}</td>

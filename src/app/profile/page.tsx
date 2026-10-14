@@ -2,22 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Award, Camera, CircleDot, Crown, Flame, Handshake, Lock, MapPin, Medal, Pencil, Phone, Repeat, RotateCcw, Sparkles, Star, Swords, Target, TrendingUp, Trophy, Users, Zap, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Camera, MapPin, Pencil, Phone, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { RatingChart, type RatingPoint } from "@/components/rating-chart";
+import { AchievementsPanel } from "@/components/achievements-panel";
+import { RatingHistoryPanel } from "@/components/rating-history-panel";
 
 type Profile = { id: string; name: string; skillRating: string; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number };
 type RecentResult = { opponent: string; event: string; score: string; result: "W" | "L" | "-" };
-type Achievement = { id: string; name: string; description: string; icon: string; tier: "bronze" | "silver" | "gold"; unlocked: boolean; unlockedAt: string | null; progress: { current: number; target: number } };
-
-const ACHIEVEMENT_ICONS: Record<string, LucideIcon> = { sparkles: Sparkles, star: Star, repeat: Repeat, target: Target, medal: Medal, award: Award, zap: Zap, flame: Flame, "circle-dot": CircleDot, "rotate-ccw": RotateCcw, swords: Swords, handshake: Handshake, users: Users, "trending-up": TrendingUp, crown: Crown, trophy: Trophy };
-const TIER_STYLES: Record<Achievement["tier"], string> = { bronze: "bg-[#f17e62] text-[#2e1a16]", silver: "bg-[#8cc9df] text-[#1b211e]", gold: "bg-[#d8f24e] text-[#1b211e]" };
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentResults, setRecentResults] = useState<RecentResult[]>([]);
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [ratingHistory, setRatingHistory] = useState<{ start: number | null; points: RatingPoint[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -34,8 +29,6 @@ export default function ProfilePage() {
       if (!data?.profile) return;
       setProfile(data.profile);
       setDraft({ name: data.profile.name, skillRating: data.profile.skillRating, homeCourt: data.profile.homeCourt ?? "", phone: data.profile.phone ?? "", preferredHand: data.profile.preferredHand });
-      fetch("/api/rating-history").then((response) => response.ok ? response.json() : null).then((historyData) => { if (historyData) setRatingHistory(historyData); });
-      fetch("/api/achievements").then((response) => response.ok ? response.json() : null).then((achievementData) => { if (achievementData?.achievements) setAchievements(achievementData.achievements); });
       const matchesResponse = await fetch("/api/matches");
       if (!matchesResponse.ok) return;
       const matchesData = await matchesResponse.json();
@@ -92,10 +85,6 @@ export default function ProfilePage() {
   if (signedOut) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[var(--foreground)]">Sign in to view your profile.</p><Link href="/login" className="mt-3 inline-block text-sm font-bold text-[var(--lime-deep)]">Sign in</Link></div></main>;
   if (loading || !profile) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><p className="text-sm text-[var(--ink-soft)]">Loading profile...</p></main>;
 
-  const ratingPoints = ratingHistory?.points ?? [];
-  const ratingStart = ratingHistory?.start ?? null;
-  const peakRating = ratingPoints.length ? Math.max(ratingStart ?? 0, ...ratingPoints.map((point) => point.rating)) : null;
-  const ratingChange = ratingPoints.length && ratingStart !== null ? ratingPoints[ratingPoints.length - 1].rating - ratingStart : null;
   const initials = profile.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   return (
@@ -167,23 +156,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {ratingHistory && (
-          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div className="flex items-center gap-2"><TrendingUp size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Rating history</h2></div>
-              {ratingPoints.length > 0 && peakRating !== null && ratingChange !== null && (
-                <dl className="flex gap-6 text-right">
-                  <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Current</dt><dd className="mt-1 text-lg font-black">{ratingPoints[ratingPoints.length - 1].rating.toFixed(2)}</dd></div>
-                  <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Peak</dt><dd className="mt-1 text-lg font-black">{peakRating.toFixed(2)}</dd></div>
-                  <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Change</dt><dd className={`mt-1 text-lg font-black ${ratingChange > 0 ? "text-[var(--lime-deep)]" : ratingChange < 0 ? "text-[var(--coral)]" : ""}`}>{ratingChange > 0 ? "+" : ratingChange < 0 ? "−" : ""}{Math.abs(ratingChange).toFixed(2)}</dd></div>
-                </dl>
-              )}
-            </div>
-            {ratingPoints.length > 0 && ratingStart !== null
-              ? <RatingChart start={ratingStart} points={ratingPoints} />
-              : <p className="mt-4 text-sm text-[var(--ink-soft)]">Your rating chart starts with your first scored match.</p>}
-          </section>
-        )}
+        <RatingHistoryPanel />
 
         <section className="mt-5 grid gap-5 md:grid-cols-[.8fr_1.2fr]">
           <div className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
@@ -204,35 +177,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
-        {achievements.length > 0 && (
-          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2"><Award size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Achievements</h2></div>
-              <p className="text-xs font-bold text-[var(--ink-soft)]">{achievements.filter((achievement) => achievement.unlocked).length} of {achievements.length} earned</p>
-            </div>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {[...achievements].sort((a, b) => Number(b.unlocked) - Number(a.unlocked)).map((achievement) => {
-                const Icon = ACHIEVEMENT_ICONS[achievement.icon] ?? Award;
-                const percent = Math.round((achievement.progress.current / achievement.progress.target) * 100);
-                return (
-                  <div key={achievement.id} title={achievement.description} className={`rounded-2xl border p-4 ${achievement.unlocked ? "border-[var(--line)] bg-[#131f19]" : "border-dashed border-[var(--line)] opacity-60"}`}>
-                    <span className={`grid h-10 w-10 place-items-center rounded-full ${achievement.unlocked ? TIER_STYLES[achievement.tier] : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{achievement.unlocked ? <Icon size={18} /> : <Lock size={16} />}</span>
-                    <p className="mt-3 text-sm font-extrabold">{achievement.name}</p>
-                    <p className="mt-1 text-xs leading-5 text-[var(--ink-soft)]">{achievement.description}</p>
-                    {achievement.unlocked ? (
-                      <p className="mt-2 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{achievement.unlockedAt ? `Earned ${new Date(achievement.unlockedAt).toLocaleDateString()}` : "Earned"}</p>
-                    ) : achievement.progress.target > 1 && (
-                      <div className="mt-3">
-                        <div className="h-1.5 overflow-hidden rounded-full bg-[#1c2a1a]"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${percent}%` }} /></div>
-                        <p className="mt-1 text-[10px] font-bold text-[var(--ink-soft)]">{achievement.progress.current} / {achievement.progress.target}</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        )}
+        <AchievementsPanel />
       </div>
     </main>
   );

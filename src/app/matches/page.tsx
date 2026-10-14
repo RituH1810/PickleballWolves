@@ -34,7 +34,7 @@ function RelationshipTable({ title, subtitle, firstColumn, rows, loading, emptyT
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-[var(--line)] last:border-0">
-                  <td className="py-3 font-bold text-[var(--foreground)]">{row.name}</td>
+                  <td className="py-3 font-bold text-[var(--foreground)]"><Link href={`/players/${row.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{row.name}</Link></td>
                   <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{row.matches}</td>
                   <td className="w-14 py-3 text-center font-semibold">{row.wins}</td>
                   <td className="w-14 py-3 text-center font-semibold">{row.losses}</td>
@@ -53,7 +53,7 @@ function RelationshipTable({ title, subtitle, firstColumn, rows, loading, emptyT
 function PlayerRatingChip({ player, isMe }: { player: MatchPlayer; isMe: boolean }) {
   return (
     <span className="inline-flex items-center gap-1.5">
-      <span className={isMe ? "font-bold text-[var(--foreground)]" : "font-semibold text-[var(--ink-soft)]"}>{isMe ? "You" : player.name}</span>
+      {isMe ? <span className="font-bold text-[var(--foreground)]">You</span> : <Link href={`/players/${player.id}`} className="font-semibold text-[var(--ink-soft)] hover:text-[var(--lime-deep)] hover:underline">{player.name}</Link>}
       {player.ratingDelta != null && player.ratingAfter != null && (
         <span className={`text-[11px] font-bold ${player.ratingDelta > 0 ? "text-[var(--lime-deep)]" : player.ratingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>
           {player.ratingAfter.toFixed(2)} ({player.ratingDelta > 0 ? "+" : ""}{player.ratingDelta.toFixed(2)})
