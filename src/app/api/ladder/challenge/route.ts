@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ensureProfile } from "@/lib/server-profile";
+import { notify } from "@/lib/notifications";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -13,5 +14,6 @@ export async function POST(request: Request) {
   if (!ladder) return NextResponse.json({ error: "Ladder not found." }, { status: 404 });
   const deadlineAt = new Date(Date.now() + ladder.responseDeadlineHours * 60 * 60 * 1000);
   const challenge = await prisma.challenge.create({ data: { ladderId: ladder.id, challengerId: profile.id, challengedId: body.challengedId, deadlineAt, status: "PENDING" } });
+  await notify(body.challengedId, "challenge", "CHALLENGE_RECEIVED", `${profile.name} challenged you`, `Respond by ${deadlineAt.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} on the ${ladder.name} ladder.`);
   return NextResponse.json({ challenge }, { status: 201 });
 }

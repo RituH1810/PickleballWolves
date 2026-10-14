@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus, RoundRobinRsvpStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notifications";
 
 export async function POST(request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const supabase = await createClient();
@@ -31,5 +32,8 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     update: { status: body.status as RoundRobinRsvpStatus, respondedAt: new Date() },
     create: { roundRobinId, userId: targetUserId, status: body.status as RoundRobinRsvpStatus },
   });
+  if (targetUserId !== user.id && body.status === "JOINED") {
+    await notify(targetUserId, "general", "ADDED_TO_ROUND_ROBIN", "You were added to a round robin", `The organizer added you to ${roundRobin.name}.`);
+  }
   return NextResponse.json({ status: rsvp.status, userId: targetUserId });
 }

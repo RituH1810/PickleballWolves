@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getResend, REMINDER_FROM_EMAIL } from "@/lib/resend";
+import { notify } from "@/lib/notifications";
 
 const REMINDER_WINDOW_MS = 60 * 60 * 1000;
 
@@ -36,14 +37,15 @@ export async function GET(request: Request) {
   let roundRobinsReminded = 0;
   let emailsSent = 0;
 
+  let inAppSent = 0;
+
   const events = await prisma.event.findMany({
     where: { status: "PUBLISHED", reminderSentAt: null, startsAt: { gte: now, lte: windowEnd } },
     include: { rsvps: { where: { status: "GOING" }, include: { user: { select: { id: true, email: true, name: true } } } }, group: { select: { name: true } } },
   });
   for (const event of events) {
-    if (resend) {
-      for (const rsvp of event.rsvps) {
-        if (!(await emailAllowed(rsvp.user.id))) continue;
+    for (const rsvp of event.rsvps) {
+      if (resend && await emailAllowed(rsvp.user.id)) {
         try {
           await sendReminder(resend, rsvp.user.email, rsvp.user.name, `Reminder: ${event.title} starts soon`, event.title, formatWhen(event.startsAt), event.location, `${origin}/events`);
           emailsSent += 1;
@@ -51,9 +53,13 @@ export async function GET(request: Request) {
           console.error("Failed to send event reminder", event.id, rsvp.user.email, error);
         }
       }
-      await prisma.event.update({ where: { id: event.id }, data: { reminderSentAt: now } });
-      eventsReminded += 1;
+      await notify(rsvp.user.id, "reminder", "EVENT_REMINDER", `${event.title} starts soon`, `${formatWhen(event.startsAt)} at ${event.location}.`);
+      inAppSent += 1;
     }
+    // Both channels are attempted independently above (gated by their own preference flag), so
+    // this cycle is done for this event regardless of whether Resend is even configured.
+    await prisma.event.update({ where: { id: event.id }, data: { reminderSentAt: now } });
+    eventsReminded += 1;
   }
 
   const roundRobins = await prisma.roundRobin.findMany({
@@ -61,9 +67,8 @@ export async function GET(request: Request) {
     include: { rsvps: { where: { status: "JOINED" }, include: { user: { select: { id: true, email: true, name: true } } } }, group: { select: { name: true, location: true } } },
   });
   for (const roundRobin of roundRobins) {
-    if (resend) {
-      for (const rsvp of roundRobin.rsvps) {
-        if (!(await emailAllowed(rsvp.user.id))) continue;
+    for (const rsvp of roundRobin.rsvps) {
+      if (resend && await emailAllowed(rsvp.user.id)) {
         try {
           await sendReminder(resend, rsvp.user.email, rsvp.user.name, `Reminder: ${roundRobin.name} starts soon`, roundRobin.name, formatWhen(roundRobin.scheduledAt!), roundRobin.group?.location ?? roundRobin.group?.name ?? "your group", `${origin}/round-robin/${roundRobin.id}`);
           emailsSent += 1;
@@ -71,10 +76,12 @@ export async function GET(request: Request) {
           console.error("Failed to send round robin reminder", roundRobin.id, rsvp.user.email, error);
         }
       }
-      await prisma.roundRobin.update({ where: { id: roundRobin.id }, data: { reminderSentAt: now } });
-      roundRobinsReminded += 1;
+      await notify(rsvp.user.id, "reminder", "ROUND_ROBIN_REMINDER", `${roundRobin.name} starts soon`, `${formatWhen(roundRobin.scheduledAt!)} · ${roundRobin.group?.location ?? roundRobin.group?.name ?? "your group"}.`);
+      inAppSent += 1;
     }
+    await prisma.roundRobin.update({ where: { id: roundRobin.id }, data: { reminderSentAt: now } });
+    roundRobinsReminded += 1;
   }
 
-  return NextResponse.json({ resendConfigured: Boolean(resend), eventsReminded, roundRobinsReminded, emailsSent });
+  return NextResponse.json({ resendConfigured: Boolean(resend), eventsReminded, roundRobinsReminded, emailsSent, inAppSent });
 }

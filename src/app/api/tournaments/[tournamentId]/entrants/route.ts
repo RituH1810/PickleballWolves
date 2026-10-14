@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { skillLevelForRating } from "@/lib/tournament";
+import { notify } from "@/lib/notifications";
 
 export async function POST(request: Request, context: { params: Promise<{ tournamentId: string }> }) {
   const { tournamentId } = await context.params;
@@ -28,5 +29,6 @@ export async function POST(request: Request, context: { params: Promise<{ tourna
     update: { status: "REGISTERED" },
     create: { tournamentId, userId: target.id, status: "REGISTERED" },
   });
+  await notify(target.id, "general", "ADDED_TO_TOURNAMENT", "You were registered for a tournament", `The organizer registered you for ${tournament.name}.`);
   return NextResponse.json({ entrant: { id: target.id, name: target.name, status: entrant.status } }, { status: 201 });
 }

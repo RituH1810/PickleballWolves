@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notifications";
 
 export async function POST(request: Request, context: { params: Promise<{ groupId: string; userId: string }> }) {
   const supabase = await createClient();
@@ -22,5 +23,8 @@ export async function POST(request: Request, context: { params: Promise<{ groupI
     where: { groupId_userId: { groupId, userId } },
     data: body.status === "ACTIVE" ? { status: MembershipStatus.ACTIVE, joinedAt: new Date(), approvedById: user.id } : { status: MembershipStatus.DECLINED },
   });
+  const group = await prisma.group.findUnique({ where: { id: groupId }, select: { name: true } });
+  if (body.status === "ACTIVE") await notify(userId, "general", "GROUP_JOIN_APPROVED", "Join request approved", `You're in! Welcome to ${group?.name ?? "the group"}.`);
+  else await notify(userId, "general", "GROUP_JOIN_DECLINED", "Join request declined", `Your request to join ${group?.name ?? "the group"} was declined.`);
   return NextResponse.json({ status: updated.status });
 }

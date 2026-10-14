@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { notify } from "@/lib/notifications";
 
 export async function POST(request: Request, context: { params: Promise<{ divisionId: string }> }) {
   const { divisionId } = await context.params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to manage registrations." }, { status: 401 });
-  const division = await prisma.division.findUnique({ where: { id: divisionId }, include: { season: { include: { league: { select: { createdById: true } } } } } });
+  const division = await prisma.division.findUnique({ where: { id: divisionId }, include: { season: { include: { league: { select: { createdById: true, name: true } } } } } });
   if (!division) return NextResponse.json({ error: "Division not found." }, { status: 404 });
   if (division.season.league.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can add registrations." }, { status: 403 });
 
@@ -30,5 +31,6 @@ export async function POST(request: Request, context: { params: Promise<{ divisi
     update: { status: "REGISTERED" },
     create: { divisionId, userId: target.id, status: "REGISTERED" },
   });
+  await notify(target.id, "general", "ADDED_TO_LEAGUE", "You were registered for a league", `The organizer registered you for ${division.name} in ${division.season.league.name}.`);
   return NextResponse.json({ registration: { id: target.id, name: target.name, status: registration.status } }, { status: 201 });
 }
