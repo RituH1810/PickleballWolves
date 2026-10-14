@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Award, Camera, CircleDot, Crown, Flame, Handshake, Lock, MapPin, Medal, Pencil, Phone, Repeat, RotateCcw, Sparkles, Star, Swords, Target, TrendingUp, Trophy, Users, Zap, type LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { RatingChart, type RatingPoint } from "@/components/rating-chart";
 
 type Profile = { id: string; name: string; skillRating: string; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number };
 type RecentResult = { opponent: string; event: string; score: string; result: "W" | "L" | "-" };
@@ -16,6 +17,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentResults, setRecentResults] = useState<RecentResult[]>([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
+  const [ratingHistory, setRatingHistory] = useState<{ start: number | null; points: RatingPoint[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [signedOut, setSignedOut] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -32,6 +34,7 @@ export default function ProfilePage() {
       if (!data?.profile) return;
       setProfile(data.profile);
       setDraft({ name: data.profile.name, skillRating: data.profile.skillRating, homeCourt: data.profile.homeCourt ?? "", phone: data.profile.phone ?? "", preferredHand: data.profile.preferredHand });
+      fetch("/api/rating-history").then((response) => response.ok ? response.json() : null).then((historyData) => { if (historyData) setRatingHistory(historyData); });
       fetch("/api/achievements").then((response) => response.ok ? response.json() : null).then((achievementData) => { if (achievementData?.achievements) setAchievements(achievementData.achievements); });
       const matchesResponse = await fetch("/api/matches");
       if (!matchesResponse.ok) return;
@@ -89,6 +92,10 @@ export default function ProfilePage() {
   if (signedOut) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="text-center"><p className="font-bold text-[var(--foreground)]">Sign in to view your profile.</p><Link href="/login" className="mt-3 inline-block text-sm font-bold text-[var(--lime-deep)]">Sign in</Link></div></main>;
   if (loading || !profile) return <main className="grid min-h-screen place-items-center bg-[var(--background)] px-5 py-8 noise sm:px-10"><p className="text-sm text-[var(--ink-soft)]">Loading profile...</p></main>;
 
+  const ratingPoints = ratingHistory?.points ?? [];
+  const ratingStart = ratingHistory?.start ?? null;
+  const peakRating = ratingPoints.length ? Math.max(ratingStart ?? 0, ...ratingPoints.map((point) => point.rating)) : null;
+  const ratingChange = ratingPoints.length && ratingStart !== null ? ratingPoints[ratingPoints.length - 1].rating - ratingStart : null;
   const initials = profile.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   return (
@@ -159,6 +166,24 @@ export default function ProfilePage() {
             <div className="rounded-2xl bg-[#1b211e] p-4 text-white"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#a9b6a9]">Wolves rank</p><p className="mt-2 flex items-center gap-2 text-2xl font-black">#{profile.rank} <span className="text-xs text-[#d8f24e]"><ArrowUpRight size={15} className="inline" /></span></p></div>
           </div>
         </section>
+
+        {ratingHistory && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="flex items-center gap-2"><TrendingUp size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Rating history</h2></div>
+              {ratingPoints.length > 0 && peakRating !== null && ratingChange !== null && (
+                <dl className="flex gap-6 text-right">
+                  <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Current</dt><dd className="mt-1 text-lg font-black">{ratingPoints[ratingPoints.length - 1].rating.toFixed(2)}</dd></div>
+                  <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Peak</dt><dd className="mt-1 text-lg font-black">{peakRating.toFixed(2)}</dd></div>
+                  <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Change</dt><dd className={`mt-1 text-lg font-black ${ratingChange > 0 ? "text-[var(--lime-deep)]" : ratingChange < 0 ? "text-[var(--coral)]" : ""}`}>{ratingChange > 0 ? "+" : ratingChange < 0 ? "−" : ""}{Math.abs(ratingChange).toFixed(2)}</dd></div>
+                </dl>
+              )}
+            </div>
+            {ratingPoints.length > 0 && ratingStart !== null
+              ? <RatingChart start={ratingStart} points={ratingPoints} />
+              : <p className="mt-4 text-sm text-[var(--ink-soft)]">Your rating chart starts with your first scored match.</p>}
+          </section>
+        )}
 
         <section className="mt-5 grid gap-5 md:grid-cols-[.8fr_1.2fr]">
           <div className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
