@@ -19,7 +19,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   const group = await prisma.group.findUnique({
     where: { id: groupId },
     include: {
-      memberships: { where: { status: MembershipStatus.ACTIVE }, orderBy: { joinedAt: "asc" }, include: { user: { select: { id: true, name: true, skillRating: true } } } },
+      memberships: { where: { status: MembershipStatus.ACTIVE }, orderBy: { joinedAt: "asc" }, include: { user: { select: { id: true, name: true, skillRating: true, photoUrl: true } } } },
       events: { where: { status: "PUBLISHED", startsAt: { gte: now } }, orderBy: { startsAt: "asc" }, take: 6 },
       roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] }, orderBy: { scheduledAt: "asc" }, take: 6 },
     },
@@ -40,10 +40,10 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
     include: { _count: { select: { matches: true } } },
   }) : [];
 
-  let pendingRequests: { id: string; name: string }[] = [];
+  let pendingRequests: { id: string; name: string; photoUrl: string | null }[] = [];
   if (myMembership && myMembership.status === MembershipStatus.ACTIVE) {
-    const requests = await prisma.membership.findMany({ where: { groupId, status: MembershipStatus.PENDING }, include: { user: { select: { id: true, name: true } } } });
-    pendingRequests = requests.map((request) => ({ id: request.user.id, name: request.user.name }));
+    const requests = await prisma.membership.findMany({ where: { groupId, status: MembershipStatus.PENDING }, include: { user: { select: { id: true, name: true, photoUrl: true } } } });
+    pendingRequests = requests.map((request) => ({ id: request.user.id, name: request.user.name, photoUrl: request.user.photoUrl }));
   }
 
   // Scope to matches actually played as part of this group's own events or round robins --
@@ -80,7 +80,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       });
       const losses = Math.max(0, matches.length - wins);
       const totalDiff = scored - conceded;
-      return { id: membership.user.id, name: membership.user.name, rating: membership.user.skillRating.toString(), matches: matches.length, wins, losses, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, scored, conceded, avgPointDiff: matches.length ? Number((totalDiff / matches.length).toFixed(1)) : 0 };
+      return { id: membership.user.id, name: membership.user.name, photoUrl: membership.user.photoUrl, rating: membership.user.skillRating.toString(), matches: matches.length, wins, losses, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, scored, conceded, avgPointDiff: matches.length ? Number((totalDiff / matches.length).toFixed(1)) : 0 };
     })
     .filter((entry) => entry.matches >= MIN_MATCHES_FOR_RANKING)
     .sort((a, b) => b.winPct - a.winPct || b.avgPointDiff - a.avgPointDiff)
@@ -94,7 +94,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       description: group.description,
       memberCount: group.memberships.length,
       members: group.memberships
-        .map((membership) => ({ id: membership.user.id, name: membership.user.name, skillRating: membership.user.skillRating.toString(), role: membership.role, rank: leaderboard.find((entry) => entry.id === membership.user.id)?.rank ?? null }))
+        .map((membership) => ({ id: membership.user.id, name: membership.user.name, photoUrl: membership.user.photoUrl, skillRating: membership.user.skillRating.toString(), role: membership.role, rank: leaderboard.find((entry) => entry.id === membership.user.id)?.rank ?? null }))
         .sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity)),
       leaderboard,
       recentResults,

@@ -4,15 +4,16 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, Lock, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
+import { Avatar } from "@/components/avatar";
 
 type Player = { id: string; name: string; rank: number | null };
-type Member = { id: string; name: string; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
-type LeaderboardEntry = { rank: number; id: string; name: string; rating: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
+type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
+type LeaderboardEntry = { rank: number; id: string; name: string; photoUrl: string | null; rating: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
 type GroupRoundRobin = { id: string; name: string; scheduledAt: string | null; playFormat: string; partnerFormat: string };
 type RecentRoundRobin = { id: string; name: string; status: string; scheduledAt: string | null; playFormat: string; partnerFormat: string; matchCount: number };
-type PendingRequest = { id: string; name: string };
+type PendingRequest = { id: string; name: string; photoUrl: string | null };
 type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; recentRoundRobins: RecentRoundRobin[]; isMember: boolean; myRole: string | null; myStatus: "ACTIVE" | "PENDING" | "DECLINED" | null; pendingRequests: PendingRequest[] };
 
 const groupPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
@@ -229,7 +230,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <div className="mt-4 space-y-2">
               {group.pendingRequests.map((request) => (
                 <div key={request.id} className="flex items-center gap-3 rounded-xl bg-[#131f19] px-4 py-3">
-                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{request.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
+                  <Avatar name={request.name} photoUrl={request.photoUrl} className="h-9 w-9 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />
                   <p className="min-w-0 flex-1 truncate text-sm font-bold">{request.name}</p>
                   <div className="flex shrink-0 gap-2">
                     <button onClick={() => respondToRequest(request.id, "ACTIVE")} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Approve</button>
@@ -248,7 +249,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <div className="mt-4 divide-y divide-[var(--line)]">
                 {group.members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <span className="grid h-9 w-9 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{member.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>
+                    <Avatar name={member.name} photoUrl={member.photoUrl} className="h-9 w-9 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{member.name}</p>
                       <p className="text-[11px] text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"} · {member.skillRating} rating</p>
@@ -330,7 +331,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                             {entry.rank}
                           </span>
                         </td>
-                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]">{entry.name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</span>{entry.name}</span></td>
+                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />{entry.name}</span></td>
                         <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{entry.matches}</td>
                         <td className="w-14 py-3 text-center font-semibold">{entry.wins}</td>
                         <td className="w-14 py-3 text-center font-semibold">{entry.losses}</td>

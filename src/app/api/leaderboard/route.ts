@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 const MIN_MATCHES_FOR_RANKING = 20;
 
 export async function GET() {
-  const players = await prisma.user.findMany({ take: 50, select: { id: true, name: true, skillRating: true } });
+  const players = await prisma.user.findMany({ take: 50, select: { id: true, name: true, skillRating: true, photoUrl: true } });
   const completed = await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null }, include: { players: true, scores: true } });
   const entries = players.map((player) => {
     const matches = completed.filter((match) => match.players.some((matchPlayer) => matchPlayer.userId === player.id));
@@ -23,7 +23,7 @@ export async function GET() {
     });
     const losses = Math.max(0, matches.length - wins);
     const differential = scored - conceded;
-    return { name: player.name, rating: player.skillRating.toString(), record: `${wins} - ${losses}`, wins, losses, scored, conceded, differential, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, avgPointDiff: matches.length ? Number((differential / matches.length).toFixed(1)) : 0, matches: matches.length, movement: 0 };
+    return { id: player.id, name: player.name, photoUrl: player.photoUrl, rating: player.skillRating.toString(), record: `${wins} - ${losses}`, wins, losses, scored, conceded, differential, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, avgPointDiff: matches.length ? Number((differential / matches.length).toFixed(1)) : 0, matches: matches.length, movement: 0 };
   });
   const leaderboard = entries
     .filter((entry) => entry.matches >= MIN_MATCHES_FOR_RANKING)
