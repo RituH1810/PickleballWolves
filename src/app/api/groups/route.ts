@@ -4,13 +4,17 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ensureProfile } from "@/lib/server-profile";
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  // ?mine=1 lists only the groups the signed-in player is an active member of, private ones
+  // included (e.g. for picking which group a new game belongs to).
+  const mine = new URL(request.url).searchParams.get("mine") === "1";
+  if (mine && !user) return NextResponse.json({ groups: [] });
   const now = new Date();
   const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const groups = await prisma.group.findMany({
-    where: { visibility: GroupVisibility.PUBLIC },
+    where: mine ? { memberships: { some: { userId: user!.id, status: MembershipStatus.ACTIVE } } } : { visibility: GroupVisibility.PUBLIC },
     orderBy: { createdAt: "asc" },
     include: {
       _count: { select: { memberships: { where: { status: MembershipStatus.ACTIVE } } } },
