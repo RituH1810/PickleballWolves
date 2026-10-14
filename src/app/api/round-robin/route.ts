@@ -3,6 +3,7 @@ import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ensureProfile } from "@/lib/server-profile";
+import { notify } from "@/lib/notifications";
 
 export async function GET() {
   const supabase = await createClient();
@@ -60,5 +61,10 @@ export async function POST(request: Request) {
   // organizes each one.
   const name = group ? `${group.name} - ${(scheduledAt ?? new Date()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : (body.name?.trim() || "New round robin");
   const roundRobin = await prisma.roundRobin.create({ data: { name, createdById: profile.id, groupId, scheduledAt, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
+  // Let the rest of the group know there's a new session to RSVP to (shows under Activity).
+  if (groupId && group) {
+    const members = await prisma.membership.findMany({ where: { groupId, status: MembershipStatus.ACTIVE, userId: { not: profile.id } }, select: { userId: true } });
+    await Promise.all(members.map((member) => notify(member.userId, "general", "ROUND_ROBIN_CREATED", `New game in ${group.name}`, `${profile.name} scheduled ${name}. Check your invites to join or pass.`)));
+  }
   return NextResponse.json({ roundRobin }, { status: 201 });
 }
