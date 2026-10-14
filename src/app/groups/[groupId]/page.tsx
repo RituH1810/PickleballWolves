@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, Lock, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 import { Avatar } from "@/components/avatar";
+import { GroupAnnouncements } from "@/components/group-announcements";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -241,6 +242,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
           </section>
         )}
+
+        {group.isMember && <GroupAnnouncements groupId={groupId} />}
 
         <div className="mt-5 grid gap-5 md:grid-cols-[1fr_.8fr]">
           <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">

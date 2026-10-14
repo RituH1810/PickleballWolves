@@ -1,0 +1,2 @@
+export const ANNOUNCEMENT_TITLE_MAX = 100;
+export const ANNOUNCEMENT_BODY_MAX = 2000;
