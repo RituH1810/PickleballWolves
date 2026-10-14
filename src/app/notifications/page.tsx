@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Bell, Check, ChevronRight, Inbox, Mailbox, Send, Swords, Users, X } from "lucide-react";
+import { Bell, Check, ChevronRight, Inbox, Mailbox, Send, Settings, Swords, Users, X } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 
 type Notification = { id: string; title: string; body: string; createdAt: string; readAt: string | null };
@@ -120,7 +120,7 @@ export default function NotificationsPage() {
   ];
 
   return <main className="min-h-screen bg-[var(--background)] px-4 py-8 noise sm:px-10"><div className="mx-auto max-w-2xl">
-    <div className="flex items-center justify-between"><h1 className="text-3xl font-black tracking-[-.04em] text-[var(--lime)]">Notifications</h1><Link href="/" aria-label="Close" className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--panel)] text-[var(--foreground)] hover:bg-[#1c2a1a]"><X size={20} /></Link></div>
+    <div className="flex items-center justify-between"><h1 className="text-3xl font-black tracking-[-.04em] text-[var(--lime)]">Notifications</h1><div className="flex gap-2"><Link href="/notifications/settings" aria-label="Notification settings" className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--panel)] text-[var(--foreground)] hover:bg-[#1c2a1a]"><Settings size={20} /></Link><Link href="/" aria-label="Close" className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--panel)] text-[var(--foreground)] hover:bg-[#1c2a1a]"><X size={20} /></Link></div></div>
 
     <nav className="mt-6 grid grid-cols-3 border-b border-[var(--line)]">
       {tabs.map(({ id, label, icon: Icon, count }) => <button key={id} onClick={() => setTab(id)} className={`relative flex flex-col items-center gap-2 pb-3 pt-2 text-sm font-bold ${tab === id ? "text-[var(--foreground)]" : "text-[var(--ink-soft)]"}`}>
