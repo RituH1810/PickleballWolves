@@ -161,6 +161,7 @@ model Group {
   announcements Announcement[]
   roundRobins RoundRobin[]
   leagues     League[]
+  recurringSchedules RecurringSchedule[]
 }
 
 model Membership {
@@ -258,10 +259,35 @@ model RoundRobin {
   reminderSentAt DateTime?
   createdAt     DateTime @default(now())
   completedAt   DateTime?
+  recurringScheduleId String?
   group         Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  recurringSchedule RecurringSchedule? @relation(fields: [recurringScheduleId], references: [id], onDelete: SetNull)
   rounds        Round[]
   matches       Match[]
   rsvps         RoundRobinRSVP[]
+}
+
+// A group's standing weekly game ("every Mon & Thu at 6:30pm"). The cron job turns each upcoming
+// occurrence into a regular group RoundRobin a week ahead. generatedThrough marks how far it has
+// already gone, so a game an organizer deletes isn't recreated.
+model RecurringSchedule {
+  id               String       @id @default(cuid())
+  groupId          String
+  createdById      String
+  daysOfWeek       Int[]        // 0 = Sunday ... 6 = Saturday, in timeZone
+  timeOfDay        String       // "18:30", wall-clock time in timeZone
+  timeZone         String       // IANA name, e.g. "America/New_York"
+  playFormat       String       @default("DOUBLES")
+  partnerFormat    String       @default("ROTATE")
+  courtCount       Int          @default(1)
+  pointsToWin      Int          @default(11)
+  winBy            Int          @default(1)
+  generatedThrough DateTime
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  group            Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  roundRobins      RoundRobin[]
+  @@index([groupId])
 }
 
 enum RoundRobinRsvpStatus {

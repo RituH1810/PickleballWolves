@@ -1,6 +1,7 @@
 {
   "regions": ["pdx1"],
   "crons": [
-    { "path": "/api/cron/send-reminders", "schedule": "*/15 * * * *" }
+    { "path": "/api/cron/send-reminders", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/generate-recurring", "schedule": "5 * * * *" }
   ]
 }
