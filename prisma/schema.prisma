@@ -117,6 +117,7 @@ model User {
   email           String       @unique
   name            String
   photoUrl        String?
+  phone           String?
   role            UserRole     @default(PLAYER)
   skillRating     Decimal      @db.Decimal(3, 1)
   preferredHand   Hand         @default(RIGHT)

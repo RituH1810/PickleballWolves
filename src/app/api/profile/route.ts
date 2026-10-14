@@ -56,15 +56,20 @@ export async function PATCH(request: Request) {
   const homeCourt = typeof body.homeCourt === "string" ? body.homeCourt.trim() : null;
   const preferredHand = ["LEFT", "RIGHT", "AMBIDEXTROUS"].includes(body.preferredHand) ? body.preferredHand : "RIGHT";
   const skillRating = Number(body.skillRating);
+  const phone = typeof body.phone === "string" ? body.phone.trim() || null : undefined;
+  const photoUrl = typeof body.photoUrl === "string" ? body.photoUrl.trim() || null : undefined;
 
   if (!name || !Number.isFinite(skillRating) || skillRating < 2 || skillRating > 6) {
     return NextResponse.json({ error: "Enter a name and a rating between 2.0 and 6.0." }, { status: 400 });
   }
+  if (phone && !/^[+()\-.\s\d]{7,20}$/.test(phone)) {
+    return NextResponse.json({ error: "Enter a valid phone number." }, { status: 400 });
+  }
 
   const profile = await prisma.user.upsert({
     where: { id: user.id },
-    update: { name, homeCourt, preferredHand, skillRating },
-    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name, homeCourt, preferredHand, skillRating },
+    update: { name, homeCourt, preferredHand, skillRating, ...(phone !== undefined ? { phone } : {}), ...(photoUrl !== undefined ? { photoUrl } : {}) },
+    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name, homeCourt, preferredHand, skillRating, phone: phone ?? null, photoUrl: photoUrl ?? null },
   });
 
   return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString() } });
