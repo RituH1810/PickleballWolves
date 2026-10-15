@@ -10,15 +10,14 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const { roundRobinId } = await context.params;
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
-  if (!roundRobin.groupId) return NextResponse.json({ error: "Manual matches are only available for group round robins." }, { status: 400 });
-
   // Same permission model as starting/extending the schedule: organizer or any active group member.
+  // A round robin outside a group has no members, so only its organizer can add matches.
   let canManage = roundRobin.createdById === user.id;
-  if (!canManage) {
+  if (!canManage && roundRobin.groupId) {
     const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } });
     canManage = membership?.status === MembershipStatus.ACTIVE;
   }
-  if (!canManage) return NextResponse.json({ error: "Only the organizer or a group member can create a match." }, { status: 403 });
+  if (!canManage) return NextResponse.json({ error: roundRobin.groupId ? "Only the organizer or a group member can create a match." : "Only the organizer can create a match." }, { status: 403 });
 
   const body = await request.json();
   const teamA: unknown = body.teamA;

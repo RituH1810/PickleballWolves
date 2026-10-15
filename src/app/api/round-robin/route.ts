@@ -54,7 +54,15 @@ export async function POST(request: Request) {
   if (groupId && !scheduledAt) return NextResponse.json({ error: "Pick a date and time so the group knows when to show up." }, { status: 400 });
 
   const partnerFormat = ["ROTATE", "FIXED", "MANUAL"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
-  if (partnerFormat === "MANUAL" && !groupId) return NextResponse.json({ error: "Manual scheduling is only available for group round robins." }, { status: 400 });
+  // Outside a group there are no RSVPs, so a Dink Draft needs its roster up front: the players
+  // picked in the builder are recorded as JOINED, which is exactly who the match picker offers.
+  let rosterIds: string[] = [];
+  if (partnerFormat === "MANUAL" && !groupId) {
+    const requested: string[] = Array.isArray(body.playerIds) ? [...new Set<string>(body.playerIds.filter((id: unknown): id is string => typeof id === "string"))] : [];
+    rosterIds = (await prisma.user.findMany({ where: { id: { in: requested } }, select: { id: true } })).map((player) => player.id);
+    const minPlayers = body.playFormat === "SINGLES" ? 2 : 4;
+    if (rosterIds.length < minPlayers) return NextResponse.json({ error: `Select at least ${minPlayers} players.` }, { status: 400 });
+  }
   const playFormat = ["SINGLES", "DOUBLES", "MIXED"].includes(body.playFormat) ? body.playFormat : "DOUBLES";
   // Group round robins are named after the group and the day they're scheduled to be played,
   // rather than a freeform title, so the group's list stays consistent regardless of who
@@ -66,5 +74,6 @@ export async function POST(request: Request) {
     const members = await prisma.membership.findMany({ where: { groupId, status: MembershipStatus.ACTIVE, userId: { not: profile.id } }, select: { userId: true } });
     await Promise.all(members.map((member) => notify(member.userId, "general", "ROUND_ROBIN_CREATED", `New game in ${group.name}`, `${profile.name} scheduled ${name}. Check your invites to join or pass.`)));
   }
+  if (rosterIds.length) await prisma.roundRobinRSVP.createMany({ data: rosterIds.map((userId) => ({ roundRobinId: roundRobin.id, userId, status: "JOINED" as const })) });
   return NextResponse.json({ roundRobin }, { status: 201 });
 }

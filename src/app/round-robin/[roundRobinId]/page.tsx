@@ -406,7 +406,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
         )}
 
-        {room.groupId && room.status !== "COMPLETED" && (room.isOwner || room.isGroupMember) && (
+        {room.status !== "COMPLETED" && (room.isOwner || (room.groupId && room.isGroupMember)) && (room.groupId || room.partnerFormat === "MANUAL") && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <h2 className="font-extrabold">Create a match</h2>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Pick from players who&apos;ve joined or already have a match -- tap to assign; once a team fills up, the next tap goes to the other side.</p>

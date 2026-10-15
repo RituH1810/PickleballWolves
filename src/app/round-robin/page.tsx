@@ -21,7 +21,7 @@ const playFormats = [
 const partnerFormats = [
   { id: "ROTATE", label: "Rotate", detail: "Get a new partner every round." },
   { id: "FIXED", label: "Fixed", detail: "Keep the same partner all event.", badge: "NEW" },
-  { id: "MANUAL", label: "Dink Draft", detail: "Skip auto-scheduling -- build every matchup yourself.", badge: "NEW", groupOnly: true },
+  { id: "MANUAL", label: "Dink Draft", detail: "Skip auto-scheduling -- build every matchup yourself.", badge: "NEW" },
 ];
 
 const gameFormats = [
@@ -202,9 +202,11 @@ function RoundRobinBuilder() {
       if (selected.some((id) => !pairedPlayerIds.has(id))) { showNotice("Every selected player must be paired into a team.", "error"); return; }
     }
     setGenerating(true);
-    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced, scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : undefined }) });
+    const created = await fetch("/api/round-robin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: form.name, playerIds: form.partnerFormat === "MANUAL" ? selected : undefined, format: form.gameFormat, partnerFormat: form.partnerFormat, playFormat: form.playFormat, courtCount: Number(form.courtCount), roundCount: Number(form.roundCount), pointsToWin: Number(form.pointsToWin), winBy: Number(form.winBy), skillBalanced: form.skillBalanced, scheduledAt: form.scheduledAt ? new Date(form.scheduledAt).toISOString() : undefined }) });
     const createdData = await created.json();
     if (!created.ok) { showNotice(createdData.error ?? "Unable to create round robin.", "error"); setGenerating(false); return; }
+    // Dink Draft: no generated schedule -- the organizer builds each match on the round robin page.
+    if (form.partnerFormat === "MANUAL") { router.push(`/round-robin/${createdData.roundRobin.id}`); return; }
     const generateBody = needsFixedTeams ? { teams } : { playerIds: selected };
     const generated = await fetch(`/api/round-robin/${createdData.roundRobin.id}/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(generateBody) });
     if (!generated.ok) { showNotice((await generated.json()).error ?? "Unable to generate schedule.", "error"); setGenerating(false); return; }
@@ -278,7 +280,7 @@ function RoundRobinBuilder() {
             <>
               <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Partner format</p>
               <div className="mt-2 flex gap-2">
-                {partnerFormats.filter((option) => !option.groupOnly || groupId).map((option) => (
+                {partnerFormats.map((option) => (
                   <button key={option.id} onClick={() => { setForm({ ...form, partnerFormat: option.id }); setTeams([]); setPendingPartner(null); }} className={`relative flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.partnerFormat === option.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
                     {option.badge && <span className="absolute -top-2 right-2 rounded-full bg-[var(--lime)] px-2 py-0.5 text-[9px] font-black text-[#0f1712]">{option.badge}</span>}
                     <span className="block text-sm font-bold">{option.label}</span>
@@ -379,7 +381,7 @@ function RoundRobinBuilder() {
               </button>
             ))}
           </div>
-          {!needsFixedTeams && <button onClick={createAndGenerate} disabled={generating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{generating ? "Generating..." : "Generate matches"} <ArrowRight size={16} /></button>}
+          {!needsFixedTeams && <button onClick={createAndGenerate} disabled={generating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{generating ? (form.partnerFormat === "MANUAL" ? "Creating..." : "Generating...") : form.partnerFormat === "MANUAL" ? "Create round robin" : "Generate matches"} <ArrowRight size={16} /></button>}
           {needsFixedTeams && <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Pair up teams <ArrowRight size={16} /></button>}
         </section>}
 
