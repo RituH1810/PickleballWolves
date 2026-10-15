@@ -91,6 +91,7 @@ export function DashboardPage() {
     { label: "Round robin", icon: Repeat, href: "/round-robin" },
     { label: "Tournaments", icon: Award, href: "/tournaments" },
     { label: "Leaderboards", icon: Trophy, href: "/leaderboards" },
+    { label: "Find players", icon: Search, href: "/players" },
     { label: "Match history", icon: Activity, href: "/matches" },
   ];
   const signOut = async () => { await createClient().auth.signOut(); router.push("/login"); };

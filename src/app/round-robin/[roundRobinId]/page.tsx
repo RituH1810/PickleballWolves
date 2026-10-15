@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trash2, Trophy, Users } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
+import { RoundRobinRecap } from "@/components/round-robin-recap";
 
 type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
@@ -442,6 +443,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             )}
           </section>
         )}
+
+        {room.status === "COMPLETED" && <RoundRobinRecap roundRobinId={roundRobinId} name={room.name} />}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
           <section className="space-y-4">
