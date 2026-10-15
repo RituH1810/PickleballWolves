@@ -37,3 +37,28 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   }
   return NextResponse.json({ status: rsvp.status, userId: targetUserId });
 }
+
+// Organizer removes someone from the roster (e.g. they said they'd come but didn't show). Deleting
+// the RSVP rather than marking it DECLINED leaves them free to join again themselves.
+export async function DELETE(request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Sign in to manage this round robin." }, { status: 401 });
+  const { roundRobinId } = await context.params;
+
+  const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
+  if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+  if (roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can remove players." }, { status: 403 });
+  if (roundRobin.status === "COMPLETED") return NextResponse.json({ error: "This round robin has already ended." }, { status: 400 });
+
+  const userId = new URL(request.url).searchParams.get("userId");
+  if (!userId) return NextResponse.json({ error: "Pick a player to remove." }, { status: 400 });
+
+  const removed = await prisma.roundRobinRSVP.deleteMany({ where: { roundRobinId, userId } });
+  if (!removed.count) return NextResponse.json({ error: "That player isn't on the roster." }, { status: 404 });
+
+  // Matches already created with them stay put -- the organizer decides whether to delete those.
+  const matchCount = await prisma.match.count({ where: { roundRobinId, deletedAt: null, players: { some: { userId } } } });
+  if (userId !== user.id) await notify(userId, "general", "REMOVED_FROM_ROUND_ROBIN", "You were removed from a round robin", `The organizer removed you from ${roundRobin.name}. You can join again from your invites if plans change.`);
+  return NextResponse.json({ ok: true, matchCount });
+}

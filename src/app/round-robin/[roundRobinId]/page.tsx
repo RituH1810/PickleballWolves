@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trash2, Trophy, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trash2, Trophy, Users, X } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
@@ -40,6 +40,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [creatingMatch, setCreatingMatch] = useState(false);
   const [groupMembers, setGroupMembers] = useState<{ id: string; name: string }[]>([]);
   const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
+  const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -113,6 +114,17 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     if (!response.ok) { showNotice(data.error ?? "Unable to add this player.", "error"); setAddingPlayerId(null); return; }
     await loadRoom();
     setAddingPlayerId(null);
+  }
+
+  async function removePlayerFromRoster(player: JoinedPlayer) {
+    if (!window.confirm(`Remove ${player.name} from this round robin?`)) return;
+    setRemovingPlayerId(player.id);
+    const response = await fetch(`/api/round-robin/${roundRobinId}/rsvp?userId=${encodeURIComponent(player.id)}`, { method: "DELETE" });
+    const data = await response.json().catch(() => null);
+    if (!response.ok) { showNotice(data?.error ?? "Unable to remove this player.", "error"); setRemovingPlayerId(null); return; }
+    await loadRoom();
+    setRemovingPlayerId(null);
+    showNotice(data.matchCount ? `${player.name} removed. They're still in ${data.matchCount} match${data.matchCount === 1 ? "" : "es"} already created -- delete those if needed.` : `${player.name} removed.`, "success");
   }
 
   async function saveScore(matchId: string, sideAScore: string, sideBScore: string) {
@@ -343,7 +355,12 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
-              {room.joinedPlayers.map((player) => <span key={player.id} className="rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[#c7e572]">{player.name}</span>)}
+              {room.joinedPlayers.map((player) => (
+                <span key={player.id} className={`flex items-center gap-1 rounded-full bg-[#1e2b17] py-1.5 text-xs font-bold text-[#c7e572] ${room.isOwner ? "pl-3 pr-1.5" : "px-3"} ${removingPlayerId === player.id ? "opacity-50" : ""}`}>
+                  {player.name}
+                  {room.isOwner && <button onClick={() => removePlayerFromRoster(player)} disabled={removingPlayerId === player.id} aria-label={`Remove ${player.name}`} title={`Remove ${player.name}`} className="grid h-5 w-5 place-items-center rounded-full text-[#c7e572] transition-colors hover:bg-[var(--coral)] hover:text-[#2e1a16]"><X size={12} /></button>}
+                </span>
+              ))}
             </div>
             {room.isOwner && (() => {
               const notYetJoined = groupMembers.filter((member) => !room.joinedPlayers.some((player) => player.id === member.id));
