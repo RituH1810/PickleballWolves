@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { computeRecap } from "@/lib/round-robin-recap";
 
 // Same qualification rule as the site-wide leaderboard -- a high win % over a handful of
 // matches isn't statistically meaningful, so require a minimum sample size to be ranked.
@@ -29,15 +30,16 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   const myAnyMembership = user ? await prisma.membership.findUnique({ where: { groupId_userId: { groupId, userId: user.id } } }) : null;
   const isActiveMember = myMembership?.status === MembershipStatus.ACTIVE;
 
-  // Last 5 round robins for this group, completed or upcoming alike. A few legacy round
-  // robins predate the "group round robins require a date" rule and have a null scheduledAt --
-  // Postgres defaults to NULLS FIRST on DESC, which would otherwise shove a dateless legacy
-  // entry to the very top, so sort those last explicitly.
+  // Last 5 completed round robins that were actually played (upcoming ones are already under
+  // Upcoming games, and ones ended without a single scored game are just noise). A few legacy
+  // round robins predate the "group round robins require a date" rule and have a null
+  // scheduledAt -- Postgres defaults to NULLS FIRST on DESC, which would otherwise shove a
+  // dateless legacy entry to the very top, so sort those last explicitly.
   const recentRoundRobins = isActiveMember ? await prisma.roundRobin.findMany({
-    where: { groupId },
+    where: { groupId, status: "COMPLETED", matches: { some: { deletedAt: null, scores: { some: {} } } } },
     orderBy: { scheduledAt: { sort: "desc", nulls: "last" } },
     take: 5,
-    include: { _count: { select: { matches: true } } },
+    include: { matches: { where: { deletedAt: null }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } },
   }) : [];
 
   let pendingRequests: { id: string; name: string; photoUrl: string | null }[] = [];
@@ -101,7 +103,10 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: event.location, format: event.format })),
       // Round robins are private to the group -- don't list them for non-members browsing the group page.
       roundRobins: isActiveMember ? group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })) : [],
-      recentRoundRobins: recentRoundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, status: roundRobin.status, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat, matchCount: roundRobin._count.matches })),
+      recentRoundRobins: recentRoundRobins.map((roundRobin) => {
+        const recap = computeRecap(roundRobin.matches.map((match) => ({ id: match.id, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores })));
+        return { id: roundRobin.id, name: roundRobin.name, status: roundRobin.status, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat, gameCount: recap?.totals.games ?? 0, champions: recap?.champions.map((entry) => ({ id: entry.userId, name: entry.name, wins: entry.wins, losses: entry.losses })) ?? [] };
+      }),
       isMember: Boolean(myMembership),
       myRole: myMembership?.role ?? null,
       myStatus: myAnyMembership?.status ?? null,
