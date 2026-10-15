@@ -7,7 +7,10 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    // An expired or already-used link (e.g. a password reset email clicked twice) would otherwise
+    // bounce silently to a page that needs a session.
+    if (error) return NextResponse.redirect(new URL("/login?error=confirm-link-invalid", request.url));
   }
 
   const next = url.searchParams.get("next");
