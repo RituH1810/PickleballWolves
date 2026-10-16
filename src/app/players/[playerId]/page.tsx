@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, MapPin, Pencil, Swords, Users } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { AchievementsPanel } from "@/components/achievements-panel";
+import { AwardsPanel } from "@/components/awards-panel";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 
 type PlayerLink = { id: string; name: string };
@@ -112,6 +113,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
           </div>
         </section>
 
+        <AwardsPanel userId={player.id} />
         <AchievementsPanel userId={player.id} />
       </div>
     </main>

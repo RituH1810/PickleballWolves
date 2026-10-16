@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Camera, MapPin, Pencil, Phone, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AchievementsPanel } from "@/components/achievements-panel";
+import { AwardsPanel } from "@/components/awards-panel";
 import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 
@@ -178,6 +179,7 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        <AwardsPanel />
         <AchievementsPanel />
         <ChangePassword />
       </div>

@@ -14,7 +14,7 @@ export function isValidTimeZone(timeZone: string) {
 }
 
 /** Calendar date/time parts of an instant as seen on a wall clock in timeZone. */
-function zonedParts(date: Date, timeZone: string) {
+export function zonedParts(date: Date, timeZone: string) {
   const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }).formatToParts(date).map((part) => [part.type, part.value]));
   return { year: Number(parts.year), month: Number(parts.month), day: Number(parts.day), hour: Number(parts.hour), minute: Number(parts.minute), second: Number(parts.second) };
 }
