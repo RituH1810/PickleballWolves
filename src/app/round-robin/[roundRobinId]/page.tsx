@@ -146,6 +146,17 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   }
 
   async function endRoundRobin() {
+    if (!room) return;
+    // One stray click used to end a game days before it was played, hiding it from everyone's
+    // invites -- so spell out which game and when, and call out games that haven't happened yet.
+    const when = room.scheduledAt ? new Date(room.scheduledAt).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null;
+    const notPlayedYet = room.scheduledAt ? new Date(room.scheduledAt).getTime() > Date.now() : false;
+    const message = [
+      `End "${room.name}"${when ? ` on ${when}` : ""}?`,
+      notPlayedYet ? "This game hasn't been played yet. Ending it removes it from everyone's invites and dashboard." : "",
+      "It moves to completed round robins and everyone who played gets the recap.",
+    ].filter(Boolean).join("\n\n");
+    if (!window.confirm(message)) return;
     setEnding(true);
     const response = await fetch(`/api/round-robin/${roundRobinId}/complete`, { method: "POST" });
     const data = await response.json();
