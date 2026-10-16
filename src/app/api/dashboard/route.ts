@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { upcomingCutoff } from "@/lib/upcoming";
 
 export async function GET() {
   const supabase = await createClient();
@@ -10,7 +11,7 @@ export async function GET() {
   // instant their start time passes (they may still be live), and only drop off starting the
   // next calendar day -- unless already COMPLETED, which hides them immediately regardless.
   const now = new Date();
-  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const upcomingSince = upcomingCutoff(now);
   const myGroupIds = user ? (await prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { groupId: true } })).map((membership) => membership.groupId) : [];
   const [events, groups] = await Promise.all([
     prisma.event.findMany({ where: { status: "PUBLISHED", startsAt: { gte: new Date() } }, orderBy: { startsAt: "asc" }, take: 6, include: { group: true, rsvps: { select: { userId: true, status: true } } } }),
@@ -22,7 +23,7 @@ export async function GET() {
       include: {
         _count: { select: { memberships: { where: { status: MembershipStatus.ACTIVE } } } },
         events: { where: { status: "PUBLISHED", startsAt: { gte: new Date() } }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true, startsAt: true } },
-        roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] }, orderBy: { scheduledAt: "asc" }, take: 1, select: { name: true, scheduledAt: true } },
+        roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] }, orderBy: { scheduledAt: "asc" }, take: 1, select: { name: true, scheduledAt: true } },
       },
     }) : Promise.resolve([]),
   ]);
@@ -49,7 +50,7 @@ export async function GET() {
         status: { in: ["SETUP", "LIVE"] },
         AND: [
           { OR: [{ createdById: user.id }, { rsvps: { some: { userId: user.id, status: "JOINED" } } }] },
-          { OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] },
+          { OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] },
         ],
       },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
@@ -71,7 +72,7 @@ export async function GET() {
 
     if (myGroupIds.length) {
       const roundRobins = await prisma.roundRobin.findMany({
-        where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] },
+        where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] },
         orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
         include: { group: { select: { name: true } }, rsvps: true },
       });

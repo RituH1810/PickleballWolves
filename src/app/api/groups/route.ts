@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { GroupVisibility, MembershipRole, MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { upcomingCutoff } from "@/lib/upcoming";
 import { ensureProfile } from "@/lib/server-profile";
 
 export async function GET(request: Request) {
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
   const mine = new URL(request.url).searchParams.get("mine") === "1";
   if (mine && !user) return NextResponse.json({ groups: [] });
   const now = new Date();
-  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const upcomingSince = upcomingCutoff(now);
   const groups = await prisma.group.findMany({
     where: mine ? { memberships: { some: { userId: user!.id, status: MembershipStatus.ACTIVE } } } : { visibility: GroupVisibility.PUBLIC },
     orderBy: { createdAt: "asc" },
@@ -20,7 +21,7 @@ export async function GET(request: Request) {
       _count: { select: { memberships: { where: { status: MembershipStatus.ACTIVE } } } },
       events: { where: { status: "PUBLISHED", startsAt: { gte: now } }, orderBy: { startsAt: "asc" }, take: 1, select: { title: true, startsAt: true } },
       // "Next up" can come from either an event or a round robin -- whichever is soonest.
-      roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] }, orderBy: { scheduledAt: "asc" }, take: 1, select: { name: true, scheduledAt: true } },
+      roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] }, orderBy: { scheduledAt: "asc" }, take: 1, select: { name: true, scheduledAt: true } },
       memberships: user ? { where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { id: true } } : false,
     },
   });

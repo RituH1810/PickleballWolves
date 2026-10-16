@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { upcomingCutoff } from "@/lib/upcoming";
 import { computeRecap } from "@/lib/round-robin-recap";
 
 // Same qualification rule as the site-wide leaderboard -- a high win % over a handful of
@@ -16,13 +17,13 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   // their start time passes (they're often still live and being played/scored at that point),
   // only dropping off starting the next calendar day. See /api/dashboard and /api/groups.
   const now = new Date();
-  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const upcomingSince = upcomingCutoff(now);
   const group = await prisma.group.findUnique({
     where: { id: groupId },
     include: {
       memberships: { where: { status: MembershipStatus.ACTIVE }, orderBy: { joinedAt: "asc" }, include: { user: { select: { id: true, name: true, skillRating: true, photoUrl: true } } } },
       events: { where: { status: "PUBLISHED", startsAt: { gte: now } }, orderBy: { startsAt: "asc" }, take: 6 },
-      roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] }, orderBy: { scheduledAt: "asc" }, take: 6 },
+      roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] }, orderBy: { scheduledAt: "asc" }, take: 6 },
     },
   });
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });

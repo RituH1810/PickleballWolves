@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus, RsvpStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { upcomingCutoff } from "@/lib/upcoming";
 
 type InviteKind = "event" | "roundRobin" | "challenge";
 type Invite = { id: string; kind: InviteKind; startsAt: string | null; title: string; subtitle: string; count: number; cap: number | null; hostName: string; hostPhotoUrl: string | null; detailsHref: string; deadlineAt?: string; location?: string | null };
@@ -18,7 +19,7 @@ export async function GET() {
   if (!user) return NextResponse.json({ invites: [], requests: [] });
 
   const now = new Date();
-  const startOfToday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const upcomingSince = upcomingCutoff(now);
   const myGroupIds = (await prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE }, select: { groupId: true } })).map((membership) => membership.groupId);
 
   const [events, roundRobins, challenges, pendingMemberships] = await Promise.all([
@@ -28,7 +29,7 @@ export async function GET() {
       include: { group: { select: { name: true, logoUrl: true } }, createdBy: { select: { name: true, photoUrl: true } }, rsvps: { where: { status: RsvpStatus.GOING }, select: { id: true } } },
     }) : Promise.resolve([]),
     myGroupIds.length ? prisma.roundRobin.findMany({
-      where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, createdById: { not: user.id }, rsvps: { none: { userId: user.id } }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: startOfToday } }] },
+      where: { groupId: { in: myGroupIds }, status: { in: ["SETUP", "LIVE"] }, createdById: { not: user.id }, rsvps: { none: { userId: user.id } }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] },
       orderBy: [{ scheduledAt: "asc" }, { createdAt: "desc" }],
       include: { group: { select: { name: true, location: true } }, rsvps: { where: { status: "JOINED" }, select: { id: true } } },
     }) : Promise.resolve([]),
