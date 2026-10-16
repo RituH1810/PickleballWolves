@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/invite"];
+// /install is public so the "how to install" link can be shared before people sign up.
+const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/invite", "/install"];
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

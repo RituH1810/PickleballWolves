@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Share, Smartphone } from "lucide-react";
 import { currentSubscription, disablePush, enablePush, pushSupport } from "@/lib/push-client";
@@ -65,12 +66,12 @@ export function PhoneNotifications() {
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#131f19] text-[var(--lime-deep)]"><Smartphone size={18} /></span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-extrabold text-[var(--foreground)]">Phone notifications</p>
-          <p className="mt-0.5 text-xs leading-5 text-[var(--ink-soft)]">Get invites, reminders, game chat, and recaps as real notifications on this device. Your choices above still apply.</p>
+          <p className="mt-0.5 text-xs leading-5 text-[var(--ink-soft)]">Get invites, reminders, game chat, and recaps as real notifications on this device. Your choices above still apply. <Link href="/install" className="font-bold text-[var(--lime-deep)]">How to install the app</Link></p>
 
           {state === "install-first" && (
             <div className="mt-3 rounded-xl bg-[#131f19] p-3 text-xs leading-5 text-[var(--foreground)]">
               <p className="font-bold">First, add PickleballWolves to your home screen:</p>
-              <p className="mt-1 text-[var(--ink-soft)]">In Safari, tap <Share size={12} className="inline align-[-2px]" /> <strong className="text-[var(--foreground)]">Share</strong>, then <strong className="text-[var(--foreground)]">Add to Home Screen</strong>. Open Wolves from your home screen and come back here to turn notifications on.</p>
+              <p className="mt-1 text-[var(--ink-soft)]">In Safari, tap <Share size={12} className="inline align-[-2px]" /> <strong className="text-[var(--foreground)]">Share</strong>, then <strong className="text-[var(--foreground)]">Add to Home Screen</strong>. Open Wolves from your home screen and come back here to turn notifications on. <Link href="/install" className="font-bold text-[var(--lime-deep)]">Step-by-step guide</Link></p>
             </div>
           )}
           {state === "unsupported" && <p className="mt-3 text-xs text-[var(--ink-soft)]">This browser can&apos;t receive push notifications. Try Chrome, Edge, Firefox, or Safari on a recent device.</p>}
