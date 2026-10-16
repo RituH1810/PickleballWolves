@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Camera, MapPin, Pencil, Phone, Trophy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AchievementsPanel } from "@/components/achievements-panel";
+import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 
 type Profile = { id: string; name: string; skillRating: string; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number };
@@ -178,6 +179,7 @@ export default function ProfilePage() {
         </section>
 
         <AchievementsPanel />
+        <ChangePassword />
       </div>
     </main>
   );
