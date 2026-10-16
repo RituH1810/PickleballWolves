@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarClock, ChevronRight, Plus, X } from "lucide-react";
+import { CalendarClock, Check, ChevronRight, Pencil, Plus, X } from "lucide-react";
 import { DAY_LABELS, GENERATE_AHEAD_DAYS } from "@/lib/recurring";
 
-type Schedule = { id: string; description: string; timeZone: string; playFormat: string; partnerFormat: string; courtCount: number; pointsToWin: number; createdByName: string; nextGame: { id: string; name: string; scheduledAt: string } | null };
+type Schedule = { id: string; description: string; daysOfWeek: number[]; timeOfDay: string; timeZone: string; playFormat: string; partnerFormat: string; courtCount: number; pointsToWin: number; winBy: number; alwaysInCount: number; amAlwaysIn: boolean; createdByName: string; nextGame: { id: string; name: string; scheduledAt: string } | null };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
@@ -16,6 +16,9 @@ export function RecurringSchedules({ groupId, onGamesCreated }: { groupId: strin
   const [schedules, setSchedules] = useState<Schedule[] | null>(null);
   const [canManage, setCanManage] = useState(false);
   const [composing, setComposing] = useState(false);
+  // The schedule being edited, or null when the form is creating a new one.
+  const [editing, setEditing] = useState<Schedule | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
@@ -40,24 +43,58 @@ export function RecurringSchedules({ groupId, onGamesCreated }: { groupId: strin
     setDraft((current) => ({ ...current, daysOfWeek: current.daysOfWeek.includes(day) ? current.daysOfWeek.filter((entry) => entry !== day) : [...current.daysOfWeek, day] }));
   }
 
+  function startEditing(schedule: Schedule) {
+    setEditing(schedule);
+    setDraft({ daysOfWeek: schedule.daysOfWeek, timeOfDay: schedule.timeOfDay, courtCount: String(schedule.courtCount), playFormat: schedule.playFormat, partnerFormat: schedule.partnerFormat, pointsToWin: String(schedule.pointsToWin) });
+    setComposing(true);
+    setMessage(null);
+  }
+
+  function closeForm() {
+    setComposing(false);
+    setEditing(null);
+    setDraft(EMPTY_DRAFT);
+  }
+
   async function save() {
     setSaving(true);
     setMessage(null);
     try {
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const response = await fetch(`/api/groups/${groupId}/schedules`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...draft, timeZone, courtCount: Number(draft.courtCount), pointsToWin: Number(draft.pointsToWin) }) });
+      const payload = { ...draft, courtCount: Number(draft.courtCount), pointsToWin: Number(draft.pointsToWin), ...(editing ? { winBy: editing.winBy } : { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone }) };
+      const response = await fetch(editing ? `/api/groups/${groupId}/schedules/${editing.id}` : `/api/groups/${groupId}/schedules`, { method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const data = await response.json().catch(() => null);
       if (!response.ok) { setMessage({ text: data?.error ?? "Couldn't save the schedule.", error: true }); return; }
-      setComposing(false);
-      setDraft(EMPTY_DRAFT);
-      setMessage({ text: data.created ? `Schedule saved -- ${data.created} game${data.created === 1 ? "" : "s"} created for the next ${GENERATE_AHEAD_DAYS} days.` : "Schedule saved. Games will appear a week ahead.", error: false });
+      if (editing) {
+        const parts = [
+          data.updated ? `${data.updated} upcoming game${data.updated === 1 ? "" : "s"} updated` : "",
+          data.created ? `${data.created} added` : "",
+          data.removed ? `${data.removed} removed` : "",
+          data.kept?.length ? `kept ${data.kept.join(", ")} because players already joined -- delete ${data.kept.length === 1 ? "it" : "them"} from the game page if needed` : "",
+        ].filter(Boolean);
+        setMessage({ text: `Schedule updated to ${data.description}.${parts.length ? ` ${parts.join("; ")}.` : ""}`, error: false });
+      } else {
+        setMessage({ text: data.created ? `Schedule saved -- ${data.created} game${data.created === 1 ? "" : "s"} created for the next ${GENERATE_AHEAD_DAYS} days.` : "Schedule saved. Games will appear a week ahead.", error: false });
+      }
+      closeForm();
       await load();
-      if (data.created) onGamesCreated?.();
+      if (data.created || data.updated || data.removed) onGamesCreated?.();
     } catch {
       setMessage({ text: "Couldn't save the schedule.", error: true });
     } finally {
       setSaving(false);
     }
+  }
+
+  async function toggleAlwaysIn(schedule: Schedule) {
+    setTogglingId(schedule.id);
+    setMessage(null);
+    const response = await fetch(`/api/groups/${groupId}/schedules/${schedule.id}/always-in`, { method: schedule.amAlwaysIn ? "DELETE" : "POST" });
+    const data = await response.json().catch(() => null);
+    setTogglingId(null);
+    if (!response.ok) { setMessage({ text: data?.error ?? "Couldn't update Always in.", error: true }); return; }
+    setMessage({ text: schedule.amAlwaysIn ? `You're no longer Always in for ${schedule.description}. Games you already joined stay joined.` : `You're Always in for ${schedule.description}${data.joined ? ` -- joined ${data.joined} upcoming game${data.joined === 1 ? "" : "s"}` : ""}.`, error: false });
+    await load();
+    if (data.joined) onGamesCreated?.();
   }
 
   async function stop(schedule: Schedule) {
@@ -76,7 +113,7 @@ export function RecurringSchedules({ groupId, onGamesCreated }: { groupId: strin
     <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2"><CalendarClock size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Weekly games</h2></div>
-        {canManage && !composing && <button onClick={() => { setComposing(true); setMessage(null); }} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-3.5 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]"><Plus size={14} />New schedule</button>}
+        {canManage && !composing && <button onClick={() => { setEditing(null); setDraft(EMPTY_DRAFT); setComposing(true); setMessage(null); }} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-3.5 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]"><Plus size={14} />New schedule</button>}
       </div>
 
       {composing && (
@@ -108,10 +145,10 @@ export function RecurringSchedules({ groupId, onGamesCreated }: { groupId: strin
             </label>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[11px] leading-5 text-[var(--ink-soft)]">Times are in {browserTimeZone}. Each game is created {GENERATE_AHEAD_DAYS} days ahead and members are notified.</p>
+            <p className="text-[11px] leading-5 text-[var(--ink-soft)]">{editing ? `Times are in ${editing.timeZone}. Upcoming games that haven't started move to the new settings; anyone who joined is told about a time change.` : `Times are in ${browserTimeZone}. Each game is created ${GENERATE_AHEAD_DAYS} days ahead and members are notified.`}</p>
             <div className="flex gap-2">
-              <button onClick={() => { setComposing(false); setDraft(EMPTY_DRAFT); }} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold"><X size={14} />Cancel</button>
-              <button onClick={save} disabled={saving || draft.daysOfWeek.length === 0 || !draft.timeOfDay} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Saving..." : "Save schedule"}</button>
+              <button onClick={closeForm} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold"><X size={14} />Cancel</button>
+              <button onClick={save} disabled={saving || draft.daysOfWeek.length === 0 || !draft.timeOfDay} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Saving..." : editing ? "Save changes" : "Save schedule"}</button>
             </div>
           </div>
         </div>
@@ -128,10 +165,12 @@ export function RecurringSchedules({ groupId, onGamesCreated }: { groupId: strin
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-extrabold">{schedule.description}</p>
                 <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{playFormatLabels[schedule.playFormat] ?? schedule.playFormat} · {partnerFormatLabels[schedule.partnerFormat] ?? schedule.partnerFormat} · {schedule.courtCount} court{schedule.courtCount === 1 ? "" : "s"} · to {schedule.pointsToWin}{schedule.timeZone !== browserTimeZone && ` · ${schedule.timeZone}`}</p>
-                <p className="mt-0.5 text-[11px] text-[var(--ink-soft)]">Set up by {schedule.createdByName}</p>
+                <p className="mt-0.5 text-[11px] text-[var(--ink-soft)]">Set up by {schedule.createdByName}{schedule.alwaysInCount > 0 && ` · ${schedule.alwaysInCount} always in`}</p>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {schedule.nextGame && <Link href={`/round-robin/${schedule.nextGame.id}`} className="flex items-center gap-1 rounded-full bg-[#131f19] px-3 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]">Next: {new Date(schedule.nextGame.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}<ChevronRight size={14} /></Link>}
+                <button onClick={() => toggleAlwaysIn(schedule)} disabled={togglingId === schedule.id} aria-pressed={schedule.amAlwaysIn} title={schedule.amAlwaysIn ? "You're joined to every game automatically. Tap to turn off." : "Join every game from this schedule automatically."} className={`flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold transition-colors disabled:opacity-50 ${schedule.amAlwaysIn ? "bg-[var(--lime)] text-[#0f1712]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{schedule.amAlwaysIn && <Check size={13} />}Always in</button>
+                {canManage && <button onClick={() => startEditing(schedule)} aria-label={`Edit ${schedule.description}`} className="flex items-center gap-1 rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Pencil size={13} />Edit</button>}
                 {canManage && <button onClick={() => stop(schedule)} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold text-[var(--coral)] hover:bg-[#1c2a1a]">Stop</button>}
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeSchedule, occurrenceName, occurrencesBetween, zonedTimeToUtc } from "./recurring";
+import { describeSchedule, occurrenceName, occurrencesBetween, parseScheduleBody, rescheduledTime, zonedTimeToUtc } from "./recurring";
 
 const NY = "America/New_York";
 
@@ -48,5 +48,38 @@ describe("describeSchedule", () => {
     expect(describeSchedule({ daysOfWeek: [4, 1], timeOfDay: "18:30", timeZone: NY })).toBe("Mon & Thu at 6:30 PM");
     expect(describeSchedule({ daysOfWeek: [6], timeOfDay: "07:30", timeZone: NY })).toBe("Every Sat at 7:30 AM");
     expect(describeSchedule({ daysOfWeek: [1, 3, 5], timeOfDay: "12:00", timeZone: NY })).toBe("Mon, Wed & Fri at 12:00 PM");
+  });
+});
+
+describe("rescheduledTime", () => {
+  it("moves a game to the new time on the same local date", () => {
+    // Sat Oct 24, 6:30pm EDT -> 6:30am the same Saturday.
+    expect(rescheduledTime(new Date("2026-10-24T22:30:00Z"), { daysOfWeek: [6], timeOfDay: "06:30", timeZone: NY })?.toISOString()).toBe("2026-10-24T10:30:00.000Z");
+  });
+
+  it("uses the right offset after daylight saving ends", () => {
+    expect(rescheduledTime(new Date("2026-11-07T22:30:00Z"), { daysOfWeek: [6], timeOfDay: "06:30", timeZone: NY })?.toISOString()).toBe("2026-11-07T11:30:00.000Z");
+  });
+
+  it("returns null when the weekday was dropped", () => {
+    expect(rescheduledTime(new Date("2026-10-24T22:30:00Z"), { daysOfWeek: [0], timeOfDay: "06:30", timeZone: NY })).toBeNull();
+  });
+
+  it("reads the weekday in the schedule's time zone, not UTC", () => {
+    // Mon 9pm EDT is Tuesday in UTC; still a Monday game.
+    expect(rescheduledTime(new Date("2026-10-20T01:00:00Z"), { daysOfWeek: [1], timeOfDay: "19:00", timeZone: NY })?.toISOString()).toBe("2026-10-19T23:00:00.000Z");
+  });
+});
+
+describe("parseScheduleBody", () => {
+  it("normalizes days and applies defaults", () => {
+    expect(parseScheduleBody({ daysOfWeek: [4, 1, 1], timeOfDay: "18:30", courtCount: 2 }, NY)).toEqual({ fields: { daysOfWeek: [1, 4], timeOfDay: "18:30", timeZone: NY, courtCount: 2, playFormat: "DOUBLES", partnerFormat: "ROTATE", pointsToWin: 11, winBy: 1 } });
+  });
+
+  it("rejects missing days, bad times, and bad court counts", () => {
+    expect(parseScheduleBody({ daysOfWeek: [], timeOfDay: "18:30", courtCount: 1 }, NY)).toHaveProperty("error");
+    expect(parseScheduleBody({ daysOfWeek: [1], timeOfDay: "25:00", courtCount: 1 }, NY)).toHaveProperty("error");
+    expect(parseScheduleBody({ daysOfWeek: [1], timeOfDay: "18:30", courtCount: 0 }, NY)).toHaveProperty("error");
+    expect(parseScheduleBody({ daysOfWeek: [1], timeOfDay: "18:30", courtCount: 1 }, "Not/AZone")).toHaveProperty("error");
   });
 });

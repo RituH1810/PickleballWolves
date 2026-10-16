@@ -287,7 +287,18 @@ model RecurringSchedule {
   updatedAt        DateTime     @updatedAt
   group            Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
   roundRobins      RoundRobin[]
+  alwaysIn         RecurringScheduleMember[]
   @@index([groupId])
+}
+
+// "Always in": a member who's joined automatically to every game this schedule creates.
+model RecurringScheduleMember {
+  id         String            @id @default(cuid())
+  scheduleId String
+  userId     String
+  createdAt  DateTime          @default(now())
+  schedule   RecurringSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  @@unique([scheduleId, userId])
 }
 
 enum RoundRobinRsvpStatus {

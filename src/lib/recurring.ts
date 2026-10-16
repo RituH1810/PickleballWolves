@@ -65,3 +65,38 @@ export function describeSchedule(schedule: ScheduleTiming) {
   const label = days.length === 7 ? "Every day" : days.length === 1 ? `Every ${DAY_LABELS[days[0]]}` : `${days.slice(0, -1).map((day) => DAY_LABELS[day]).join(", ")} & ${DAY_LABELS[days[days.length - 1]]}`;
   return `${label} at ${time}`;
 }
+
+export type ScheduleFields = ScheduleTiming & { courtCount: number; playFormat: string; partnerFormat: string; pointsToWin: number; winBy: number };
+
+/** Validates a create/edit request body. The time zone comes from the caller, not the body, on edit. */
+export function parseScheduleBody(body: unknown, timeZone: string | null): { fields: ScheduleFields } | { error: string } {
+  const input = (body ?? {}) as Record<string, unknown>;
+  const daysOfWeek = Array.isArray(input.daysOfWeek) ? [...new Set(input.daysOfWeek.filter((day): day is number => Number.isInteger(day) && (day as number) >= 0 && (day as number) <= 6))].sort((a, b) => a - b) : [];
+  const timeOfDay = typeof input.timeOfDay === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(input.timeOfDay) ? input.timeOfDay : null;
+  const courtCount = Number(input.courtCount);
+  if (!daysOfWeek.length || !timeOfDay || !timeZone || !isValidTimeZone(timeZone)) return { error: "Pick at least one day and a start time." };
+  if (!Number.isInteger(courtCount) || courtCount < 1 || courtCount > 20) return { error: "Courts must be between 1 and 20." };
+  return {
+    fields: {
+      daysOfWeek,
+      timeOfDay,
+      timeZone,
+      courtCount,
+      playFormat: ["SINGLES", "DOUBLES", "MIXED"].includes(input.playFormat as string) ? (input.playFormat as string) : "DOUBLES",
+      partnerFormat: ["ROTATE", "FIXED", "MANUAL"].includes(input.partnerFormat as string) ? (input.partnerFormat as string) : "ROTATE",
+      pointsToWin: [11, 15, 21].includes(Number(input.pointsToWin)) ? Number(input.pointsToWin) : 11,
+      winBy: Number(input.winBy) === 2 ? 2 : 1,
+    },
+  };
+}
+
+/**
+ * Where an already-created game lands after its schedule is edited: the new time on the same local
+ * date, or null when that weekday is no longer part of the schedule.
+ */
+export function rescheduledTime(at: Date, schedule: ScheduleTiming) {
+  const local = zonedParts(at, schedule.timeZone);
+  if (!schedule.daysOfWeek.includes(new Date(Date.UTC(local.year, local.month - 1, local.day)).getUTCDay())) return null;
+  const [hour, minute] = schedule.timeOfDay.split(":").map(Number);
+  return zonedTimeToUtc(local.year, local.month, local.day, hour, minute, schedule.timeZone);
+}
