@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 
-const FIELDS = ["emailReminders", "inAppReminders", "challengeAlerts", "scoreDisputeAlerts", "weeklyDigest", "achievementAlerts"] as const;
+const FIELDS = ["emailReminders", "inAppReminders", "challengeAlerts", "scoreDisputeAlerts", "weeklyDigest", "achievementAlerts", "gameChatAlerts"] as const;
 type Preferences = Record<(typeof FIELDS)[number], boolean>;
 
 // Matches the schema defaults: a player with no row yet gets everything.
-const DEFAULTS: Preferences = { emailReminders: true, inAppReminders: true, challengeAlerts: true, scoreDisputeAlerts: true, weeklyDigest: true, achievementAlerts: true };
+const DEFAULTS: Preferences = { emailReminders: true, inAppReminders: true, challengeAlerts: true, scoreDisputeAlerts: true, weeklyDigest: true, achievementAlerts: true, gameChatAlerts: true };
 
 function pick(row: Preferences): Preferences {
   return Object.fromEntries(FIELDS.map((field) => [field, row[field]])) as Preferences;

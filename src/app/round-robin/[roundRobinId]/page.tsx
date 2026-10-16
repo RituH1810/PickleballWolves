@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, 
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
+import { GameChat } from "@/components/game-chat";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 
 type Match = { id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
@@ -523,6 +524,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         )}
 
         {room.status === "COMPLETED" && <RoundRobinRecap roundRobinId={roundRobinId} name={room.name} />}
+        {(room.isOwner || room.isGroupMember || room.myRsvpStatus === "JOINED") && <GameChat roundRobinId={roundRobinId} />}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
           <section className="space-y-4">

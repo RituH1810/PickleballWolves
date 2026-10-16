@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AlertTriangle, ArrowLeft, Award, Bell, Mail, Newspaper, Swords, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Award, Bell, Mail, MessageCircle, Newspaper, Swords, type LucideIcon } from "lucide-react";
 import { CalendarSubscription } from "@/components/calendar-subscription";
+import { PhoneNotifications } from "@/components/phone-notifications";
 
-type PreferenceKey = "emailReminders" | "inAppReminders" | "challengeAlerts" | "scoreDisputeAlerts" | "weeklyDigest" | "achievementAlerts";
+type PreferenceKey = "emailReminders" | "inAppReminders" | "challengeAlerts" | "scoreDisputeAlerts" | "weeklyDigest" | "achievementAlerts" | "gameChatAlerts";
 type Preferences = Record<PreferenceKey, boolean>;
 
 const SECTIONS: { title: string; items: { key: PreferenceKey; label: string; detail: string; icon: LucideIcon }[] }[] = [
@@ -22,6 +23,7 @@ const SECTIONS: { title: string; items: { key: PreferenceKey; label: string; det
       { key: "challengeAlerts", label: "Ladder challenges", detail: "When someone challenges you, or accepts or declines your challenge.", icon: Swords },
       { key: "scoreDisputeAlerts", label: "Score disputes", detail: "When someone disputes the score of a match you played.", icon: AlertTriangle },
       { key: "achievementAlerts", label: "Achievements", detail: "When a score earns you a new badge.", icon: Award },
+      { key: "gameChatAlerts", label: "Game chat", detail: "New messages in games you're in -- running late, courts wet, can't make it.", icon: MessageCircle },
     ],
   },
   {
@@ -116,6 +118,7 @@ export default function NotificationSettingsPage() {
           </>
         )}
 
+        <PhoneNotifications />
         <CalendarSubscription />
 
         {notice && <p role="status" className="mt-4 text-xs font-bold text-[var(--lime-deep)]">{notice}</p>}
