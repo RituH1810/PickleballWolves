@@ -108,3 +108,100 @@ export function recapShareText(name: string, recap: Recap, url: string) {
   lines.push(url);
   return lines.join("\n");
 }
+
+type Pairing = PlayerRef & { wins: number; losses: number };
+
+export type PlayerRecap = {
+  rank: number;
+  tiedWith: number;
+  players: number;
+  champion: boolean;
+  wins: number;
+  losses: number;
+  scored: number;
+  conceded: number;
+  differential: number;
+  winPct: number;
+  ratingChange: number | null;
+  bestPartner: Pairing | null;
+  toughestOpponent: Pairing | null;
+  bestWin: GameHighlight | null;
+  closestGame: (GameHighlight & { won: boolean }) | null;
+};
+
+function ordinal(n: number) {
+  const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] ?? "th";
+  return `${n}${suffix}`;
+}
+
+/** One player's night: where they finished, how they played, and who with/against. */
+export function computePlayerRecap(matches: RecapMatch[], userId: string, ratingDeltas: { userId: string; matchId: string | null; ratingDelta: number }[] = []): PlayerRecap | null {
+  const scored = matches.filter((match) => match.scores.length > 0 && match.players.some((player) => player.userId === userId));
+  if (!scored.length) return null;
+  const standings = computeRoundRobinStandings(matches.filter((match) => match.scores.length > 0));
+  const mine = standings.find((entry) => entry.userId === userId)!;
+  // Players level on wins and differential share a place, same as the recap's co-champions.
+  const rank = standings.findIndex((entry) => entry.wins === mine.wins && entry.differential === mine.differential) + 1;
+  const tiedWith = standings.filter((entry) => entry.userId !== userId && entry.wins === mine.wins && entry.differential === mine.differential).length;
+
+  const partners = new Map<string, Pairing>();
+  const opponents = new Map<string, Pairing>();
+  const games: (GameHighlight & { won: boolean })[] = [];
+  const tally = (map: Map<string, Pairing>, player: PlayerRef, won: boolean) => {
+    const entry = map.get(player.userId) ?? { userId: player.userId, name: player.name, wins: 0, losses: 0 };
+    if (won) entry.wins += 1; else entry.losses += 1;
+    map.set(player.userId, entry);
+  };
+  for (const match of scored) {
+    const side = match.players.find((player) => player.userId === userId)!.side;
+    const team = match.players.filter((player) => player.side === side && player.userId !== userId);
+    const others = match.players.filter((player) => player.side !== side);
+    for (const score of match.scores) {
+      const own = side === "A" ? score.sideAScore : score.sideBScore;
+      const other = side === "A" ? score.sideBScore : score.sideAScore;
+      if (own === other) continue;
+      const won = own > other;
+      team.forEach((player) => tally(partners, player, won));
+      others.forEach((player) => tally(opponents, player, won));
+      const us = match.players.filter((player) => player.side === side).map(({ userId: id, name }) => ({ userId: id, name }));
+      const them = others.map(({ userId: id, name }) => ({ userId: id, name }));
+      games.push({ matchId: match.id, won, winners: won ? us : them, losers: won ? them : us, winnerScore: Math.max(own, other), loserScore: Math.min(own, other) });
+    }
+  }
+
+  // Best partner: most wins together (then fewest losses); toughest opponent: most losses to them.
+  const bestPartner = [...partners.values()].sort((a, b) => b.wins - a.wins || a.losses - b.losses)[0] ?? null;
+  const toughestOpponent = [...opponents.values()].filter((entry) => entry.losses > 0).sort((a, b) => b.losses - a.losses || a.wins - b.wins)[0] ?? null;
+  const margin = (game: GameHighlight) => game.winnerScore - game.loserScore;
+  const bestWin = games.filter((game) => game.won).sort((a, b) => margin(b) - margin(a))[0] ?? null;
+  const closestGame = [...games].sort((a, b) => margin(a) - margin(b) || b.winnerScore - a.winnerScore)[0] ?? null;
+
+  const matchIds = new Set(scored.map((match) => match.id));
+  const myDeltas = ratingDeltas.filter((row) => row.userId === userId && row.matchId && matchIds.has(row.matchId));
+  const ratingChange = myDeltas.length ? Math.round(myDeltas.reduce((total, row) => total + row.ratingDelta, 0) * 100) / 100 : null;
+
+  return {
+    rank,
+    tiedWith,
+    players: standings.length,
+    champion: rank === 1,
+    wins: mine.wins,
+    losses: mine.losses,
+    scored: mine.scored,
+    conceded: mine.conceded,
+    differential: mine.differential,
+    winPct: mine.winPct,
+    ratingChange,
+    bestPartner: bestPartner && bestPartner.wins > 0 ? bestPartner : null,
+    toughestOpponent,
+    bestWin,
+    closestGame: closestGame && closestGame !== bestWin ? closestGame : null,
+  };
+}
+
+/** "You finished 2nd of 7 · 5-3 · +8 points · rating +0.12" */
+export function playerRecapHeadline(recap: PlayerRecap) {
+  const place = recap.champion ? `You won${recap.tiedWith ? ` (tied with ${recap.tiedWith})` : ""}` : `You finished ${recap.tiedWith ? "tied " : ""}${ordinal(recap.rank)} of ${recap.players}`;
+  const rating = recap.ratingChange !== null && recap.ratingChange !== 0 ? ` · rating ${recap.ratingChange > 0 ? "+" : "−"}${Math.abs(recap.ratingChange).toFixed(2)}` : "";
+  return `${place} · ${recap.wins}-${recap.losses} · ${recap.differential > 0 ? "+" : ""}${recap.differential} points${rating}`;
+}
