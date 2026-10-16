@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Trash2, Trophy, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Sparkles, Trash2, Trophy, Users, X } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
+import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 
-type Match = { id: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
+type Match = { id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
 type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string };
-type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null };
+type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null; playerRatings: Record<string, number> };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
@@ -37,6 +38,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [shareMessage, setShareMessage] = useState("");
   const [loadingShare, setLoadingShare] = useState(false);
   const [matchAssignment, setMatchAssignment] = useState<Record<string, "A" | "B">>({});
+  // Ranked "Suggest a match" options and which one is showing; Shuffle steps through them.
+  const [suggestions, setSuggestions] = useState<{ options: Suggestion[]; index: number } | null>(null);
   const [creatingMatch, setCreatingMatch] = useState(false);
   const [rosterCandidates, setRosterCandidates] = useState<{ id: string; name: string }[]>([]);
   const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
@@ -225,6 +228,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   }
 
   function toggleMatchAssignment(playerId: string) {
+    setSuggestions(null);
     setMatchAssignment((current) => {
       const next = { ...current };
       const expectedSize = room?.playFormat === "SINGLES" ? 1 : 2;
@@ -252,6 +256,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     const data = await response.json();
     if (!response.ok) { showNotice(data.error ?? "Unable to create this match.", "error"); setCreatingMatch(false); return; }
     setMatchAssignment({});
+    setSuggestions(null);
     showNotice("Match created!", "success");
     await loadRoom();
     setCreatingMatch(false);
@@ -307,6 +312,31 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   for (const match of manualMatches) for (const player of match.players) eligibleMatchPlayersById.set(player.userId, player.name);
   const eligibleMatchPlayers = [...eligibleMatchPlayersById.entries()].map(([id, name]) => ({ id, name }));
   function eligiblePlayerName(id: string) { return eligibleMatchPlayersById.get(id) ?? "Unknown"; }
+
+  function applySuggestion(option: Suggestion) {
+    setMatchAssignment(Object.fromEntries([...option.teamA.map((id) => [id, "A" as const]), ...option.teamB.map((id) => [id, "B" as const])]));
+  }
+
+  // Fair next match from who's waiting: fewest games / longest sat out, balanced by rating,
+  // avoiding tonight's repeat partners and opponents. Shuffle cycles the next-best options.
+  function suggestMatch() {
+    if (!room) return;
+    if (suggestions && suggestions.options.length > 1) {
+      const index = (suggestions.index + 1) % suggestions.options.length;
+      setSuggestions({ ...suggestions, index });
+      applySuggestion(suggestions.options[index]);
+      return;
+    }
+    const allMatches = [...rounds.flatMap((round) => round.matches), ...manualMatches];
+    const options = suggestMatches(
+      eligibleMatchPlayers.map((player) => ({ id: player.id, rating: room.playerRatings[player.id] ?? 3 })),
+      allMatches.map((match) => ({ createdAt: match.createdAt, scored: match.scores.length > 0, players: match.players })),
+      room.playFormat === "SINGLES" ? 1 : 2,
+    );
+    if (!options.length) { showNotice(`Not enough free players -- everyone else is on court. Need ${room.playFormat === "SINGLES" ? 2 : 4} who aren't in an unscored match.`, "error"); return; }
+    setSuggestions({ options, index: 0 });
+    applySuggestion(options[0]);
+  }
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
@@ -445,8 +475,19 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
 
         {room.status !== "COMPLETED" && (room.isOwner || (room.groupId && room.isGroupMember)) && (room.groupId || room.partnerFormat === "MANUAL") && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-            <h2 className="font-extrabold">Create a match</h2>
-            <p className="mt-1 text-xs text-[var(--ink-soft)]">Pick from players who&apos;ve joined or already have a match -- tap to assign; once a team fills up, the next tap goes to the other side.</p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="font-extrabold">Create a match</h2>
+              {eligibleMatchPlayers.length >= (room.playFormat === "SINGLES" ? 2 : 4) && (
+                <button onClick={suggestMatch} className="flex items-center gap-1.5 rounded-full border border-[var(--lime-deep)] px-3.5 py-2 text-xs font-bold text-[var(--lime-deep)] hover:bg-[#1e2b17]">
+                  <Sparkles size={14} />{suggestions && suggestions.options.length > 1 ? `Shuffle (${suggestions.index + 1}/${suggestions.options.length})` : "Suggest a match"}
+                </button>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Pick from players who&apos;ve joined or already have a match -- tap to assign; once a team fills up, the next tap goes to the other side. Or let Suggest pick a fair match from who&apos;s waiting.</p>
+            {suggestions && Object.keys(matchAssignment).length > 0 && (() => {
+              const option = suggestions.options[suggestions.index];
+              return <p className="mt-2 text-[11px] font-semibold text-[var(--lime-deep)]">Suggested: longest-waiting players · teams {option.ratingGap === 0 ? "evenly rated" : `within ${option.ratingGap.toFixed(2)} rating`}{option.repeats === 0 ? " · no repeat partners or opponents" : ` · ${option.repeats} repeat${option.repeats === 1 ? "" : "s"} from earlier`}</p>;
+            })()}
             {eligibleMatchPlayers.length === 0 ? <p className="mt-4 text-sm text-[var(--ink-soft)]">No joined or scheduled players yet.</p> : (
               <>
                 <div className="mt-3 flex flex-wrap gap-2">

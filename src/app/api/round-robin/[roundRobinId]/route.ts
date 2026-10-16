@@ -34,6 +34,9 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
   const hasScores = roundRobin.rounds.some((round) => round.matches.some((match) => match.scores.length > 0)) || roundRobin.matches.some((match) => match.scores.length > 0);
 
   const joinedPlayers = roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED").map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name }));
+  // Skill ratings for anyone who can be put in a match, so "Suggest a match" can balance teams.
+  const pickableIds = [...new Set([...joinedPlayers.map((player) => player.id), ...roundRobin.rounds.flatMap((round) => round.matches.flatMap((match) => match.players.map((player) => player.userId))), ...roundRobin.matches.flatMap((match) => match.players.map((player) => player.userId))])];
+  const playerRatings = Object.fromEntries((await prisma.user.findMany({ where: { id: { in: pickableIds } }, select: { id: true, skillRating: true } })).map((player) => [player.id, Number(player.skillRating)]));
   const myRsvpStatus = user ? roundRobin.rsvps.find((rsvp) => rsvp.userId === user.id)?.status ?? null : null;
 
   return NextResponse.json({
@@ -47,6 +50,7 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       location: roundRobin.group?.location ?? null,
       joinedPlayers,
       joinedCount: joinedPlayers.length,
+      playerRatings,
       myUserId: user?.id ?? null,
       myRsvpStatus,
       isGroupMember,
