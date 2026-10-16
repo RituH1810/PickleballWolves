@@ -6,6 +6,7 @@ import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, Lock, Mail, 
 import { Avatar } from "@/components/avatar";
 import { GroupAnnouncements } from "@/components/group-announcements";
 import { RecurringSchedules } from "@/components/recurring-schedules";
+import { AvailabilityPolls } from "@/components/availability-polls";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -245,6 +246,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
         {group.isMember && <GroupAnnouncements groupId={groupId} />}
         {group.isMember && <RecurringSchedules groupId={groupId} onGamesCreated={loadGroup} />}
+        {group.isMember && <AvailabilityPolls groupId={groupId} onScheduled={loadGroup} />}
 
         <div className="mt-5 grid gap-5 md:grid-cols-[1fr_.8fr]">
           <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
