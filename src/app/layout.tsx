@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "PickleballWolves | Play sharper",
   description: "Organize your games, track your progress, and find your pack.",
+  // Installed to an iPhone home screen, open full-screen like an app.
+  appleWebApp: { capable: true, title: "Wolves", statusBarStyle: "black-translucent" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0f1712",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

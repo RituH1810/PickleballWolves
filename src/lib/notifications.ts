@@ -1,25 +1,29 @@
 import { prisma } from "@/lib/prisma";
+import { sendPush } from "@/lib/push";
 
-export type NotificationCategory = "reminder" | "scoreDispute" | "challenge" | "achievement" | "general";
+export type NotificationCategory = "reminder" | "scoreDispute" | "challenge" | "achievement" | "gameChat" | "general";
 
-const PREFERENCE_FIELD: Partial<Record<NotificationCategory, "inAppReminders" | "scoreDisputeAlerts" | "challengeAlerts" | "achievementAlerts">> = {
+const PREFERENCE_FIELD: Partial<Record<NotificationCategory, "inAppReminders" | "scoreDisputeAlerts" | "challengeAlerts" | "achievementAlerts" | "gameChatAlerts">> = {
   reminder: "inAppReminders",
   scoreDispute: "scoreDisputeAlerts",
   challenge: "challengeAlerts",
   achievement: "achievementAlerts",
+  gameChat: "gameChatAlerts",
 };
 
 /**
  * Writes a Notification row for the in-app notifications page/bell, respecting the matching
- * NotificationPreference flag for categories that have one. "general" notifications (e.g. "you
- * were added to this event by the organizer") have no dedicated opt-out in the schema yet, so
- * they're always sent.
+ * NotificationPreference flag for categories that have one, and pushes it to any phones the player
+ * turned notifications on for. "general" notifications (e.g. "you were added to this event by the
+ * organizer") have no dedicated opt-out, so they're always sent. `url` is where tapping the phone
+ * notification opens.
  */
-export async function notify(userId: string, category: NotificationCategory, type: string, title: string, body: string) {
+export async function notify(userId: string, category: NotificationCategory, type: string, title: string, body: string, url = "/notifications") {
   const field = PREFERENCE_FIELD[category];
   if (field) {
     const preference = await prisma.notificationPreference.findUnique({ where: { userId } });
     if (preference && preference[field] === false) return;
   }
   await prisma.notification.create({ data: { userId, type, title, body } });
+  await sendPush(userId, { title, body, url, tag: type });
 }

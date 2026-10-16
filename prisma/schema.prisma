@@ -570,6 +570,59 @@ model NotificationPreference {
   challengeAlerts   Boolean @default(true)
   weeklyDigest      Boolean @default(true)
   achievementAlerts Boolean @default(true)
+  gameChatAlerts    Boolean @default(true)
+}
+
+// A phone/browser that agreed to receive push notifications (Web Push). One player can have several.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+// "Running 10 min late" -- a short message thread on one round robin.
+model RoundRobinMessage {
+  id           String   @id @default(cuid())
+  roundRobinId String
+  authorId     String
+  body         String
+  createdAt    DateTime @default(now())
+  @@index([roundRobinId, createdAt])
+}
+
+// An organizer asks the group which times work before scheduling; members vote on options and the
+// organizer turns the winner into a round robin (scheduledRoundRobinId).
+model AvailabilityPoll {
+  id                    String               @id @default(cuid())
+  groupId               String
+  createdById           String
+  question              String
+  timeZone              String
+  status                String               @default("OPEN") // OPEN | SCHEDULED | CLOSED
+  scheduledRoundRobinId String?
+  createdAt             DateTime             @default(now())
+  options               AvailabilityOption[]
+  @@index([groupId, createdAt])
+}
+
+model AvailabilityOption {
+  id       String             @id @default(cuid())
+  pollId   String
+  startsAt DateTime
+  poll     AvailabilityPoll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes    AvailabilityVote[]
+}
+
+model AvailabilityVote {
+  id       String             @id @default(cuid())
+  optionId String
+  userId   String
+  option   AvailabilityOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  @@unique([optionId, userId])
 }
 
 // Badges a player has already been told about, so "Achievement unlocked!" fires once per badge.
