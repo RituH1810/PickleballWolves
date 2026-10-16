@@ -48,3 +48,12 @@ describe("googleCalendarUrl", () => {
     expect(url.searchParams.get("details")).toBe(item.url);
   });
 });
+
+describe("buildIcs feed", () => {
+  it("names the calendar and asks apps to refresh it", () => {
+    const ics = buildIcs([item], new Date("2026-10-01T00:00:00Z"), { name: "PickleballWolves -- Arpit", refreshMinutes: 60 });
+    expect(ics).toContain("X-WR-CALNAME:PickleballWolves -- Arpit");
+    expect(ics).toContain("REFRESH-INTERVAL;VALUE=DURATION:PT60M");
+    expect(ics.indexOf("X-WR-CALNAME")).toBeLessThan(ics.indexOf("BEGIN:VEVENT"));
+  });
+});

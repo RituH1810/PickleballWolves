@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, Award, Bell, Mail, Newspaper, Swords, type LucideIcon } from "lucide-react";
+import { CalendarSubscription } from "@/components/calendar-subscription";
 
 type PreferenceKey = "emailReminders" | "inAppReminders" | "challengeAlerts" | "scoreDisputeAlerts" | "weeklyDigest" | "achievementAlerts";
 type Preferences = Record<PreferenceKey, boolean>;
@@ -114,6 +115,8 @@ export default function NotificationSettingsPage() {
             <p className="mt-5 px-1 text-xs leading-5 text-[var(--ink-soft)]">Group updates -- new games, join approvals, announcements, monthly awards, and being added to a game -- always appear in your inbox.</p>
           </>
         )}
+
+        <CalendarSubscription />
 
         {notice && <p role="status" className="mt-4 text-xs font-bold text-[var(--lime-deep)]">{notice}</p>}
       </div>

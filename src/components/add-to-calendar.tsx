@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { CalendarPlus, Download } from "lucide-react";
+import { CalendarPlus, Download, Repeat } from "lucide-react";
 import { buildIcs, googleCalendarUrl, type CalendarItem } from "@/lib/calendar";
 
 function slug(value: string) {
@@ -68,6 +68,9 @@ export function AddToCalendar({ items, label = "Add to calendar", compact = fals
           <button role="menuitem" type="button" onClick={downloadIcs} className={itemClass}>
             <Download size={14} className="text-[var(--lime-deep)]" />{items.length === 1 ? "Apple / Outlook (.ics)" : `Download ${items.length} games (.ics)`}
           </button>
+          <a role="menuitem" href="/notifications/settings#calendar" onClick={() => setOpen(false)} className={`${itemClass} border-t border-[var(--line)] text-[var(--ink-soft)]`}>
+            <Repeat size={14} className="text-[var(--lime-deep)]" />Subscribe to all your games
+          </a>
         </div>
       )}
     </div>

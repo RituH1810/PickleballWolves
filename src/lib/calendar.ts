@@ -49,8 +49,16 @@ function details(item: CalendarItem) {
   return [item.description, item.url].filter(Boolean).join("\n\n");
 }
 
-export function buildIcs(items: CalendarItem[], now = new Date()) {
+/**
+ * An .ics file. Pass `feed` for a subscribed calendar: apps show `name` as the calendar's name and
+ * re-fetch it about every `refreshMinutes`.
+ */
+export function buildIcs(items: CalendarItem[], now = new Date(), feed?: { name: string; refreshMinutes?: number }) {
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PickleballWolves//Games//EN", "CALSCALE:GREGORIAN", "METHOD:PUBLISH"];
+  if (feed) {
+    const refresh = `PT${feed.refreshMinutes ?? 60}M`;
+    lines.push(`X-WR-CALNAME:${escapeText(feed.name)}`, `NAME:${escapeText(feed.name)}`, `REFRESH-INTERVAL;VALUE=DURATION:${refresh}`, `X-PUBLISHED-TTL:${refresh}`);
+  }
   for (const item of items) {
     lines.push(
       "BEGIN:VEVENT",
