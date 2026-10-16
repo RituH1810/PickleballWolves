@@ -6,7 +6,7 @@ import { ArrowLeft, CalendarDays, MapPin, PawPrint } from "lucide-react";
 
 type MatchPlayer = { id: string; name: string; side: "A" | "B"; ratingDelta: number | null; ratingAfter: number | null };
 type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: MatchPlayer[] };
-type Profile = { id: string; record: string; winRate: string; rank: number };
+type Profile = { id: string; record: string; winRate: string; rank: number | null };
 type RelationshipStat = { id: string; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 
 function RelationshipTable({ title, subtitle, firstColumn, rows, loading, emptyText }: { title: string; subtitle: string; firstColumn: string; rows: RelationshipStat[]; loading: boolean; emptyText: string }) {
@@ -87,7 +87,7 @@ export default function MatchesPage() {
       <section className="mt-6 grid gap-3 sm:grid-cols-3">
         <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Overall record</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profile.record}</p></div>
         <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Win rate</p><p className="mt-3 text-3xl font-black tracking-[-.04em] text-[var(--lime-deep)]">{profile.winRate}</p></div>
-        <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">#{profile.rank}</p></div>
+        <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profile.rank ? `#${profile.rank}` : "—"}</p></div>
       </section>
     )}
 
