@@ -12,8 +12,6 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
 
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
-  if (!roundRobin.groupId) return NextResponse.json({ error: "This round robin isn't open for RSVPs." }, { status: 400 });
-
   const body = await request.json();
   if (!["JOINED", "DECLINED"].includes(body.status)) return NextResponse.json({ error: "Invalid RSVP status." }, { status: 400 });
 
@@ -24,8 +22,16 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     return NextResponse.json({ error: "Only the organizer can RSVP on someone else's behalf." }, { status: 403 });
   }
 
-  const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: targetUserId } } });
-  if (!membership || membership.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "That player isn't an active member of this group." }, { status: 403 });
+  if (roundRobin.groupId) {
+    const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: targetUserId } } });
+    if (!membership || membership.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "That player isn't an active member of this group." }, { status: 403 });
+  } else {
+    // No group means no invites to answer: the organizer builds the roster (a Dink Draft's
+    // players), and can add anyone with a profile.
+    if (roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can change this round robin's players." }, { status: 403 });
+    if (body.status !== "JOINED") return NextResponse.json({ error: "Remove a player instead of declining for them." }, { status: 400 });
+    if (!(await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true } }))) return NextResponse.json({ error: "Player not found." }, { status: 404 });
+  }
 
   const rsvp = await prisma.roundRobinRSVP.upsert({
     where: { roundRobinId_userId: { roundRobinId, userId: targetUserId } },

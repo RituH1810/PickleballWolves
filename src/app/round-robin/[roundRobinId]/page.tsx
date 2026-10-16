@@ -38,7 +38,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [loadingShare, setLoadingShare] = useState(false);
   const [matchAssignment, setMatchAssignment] = useState<Record<string, "A" | "B">>({});
   const [creatingMatch, setCreatingMatch] = useState(false);
-  const [groupMembers, setGroupMembers] = useState<{ id: string; name: string }[]>([]);
+  const [rosterCandidates, setRosterCandidates] = useState<{ id: string; name: string }[]>([]);
   const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
   const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
 
@@ -76,13 +76,22 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     }).finally(() => setLoading(false));
   }, [roundRobinId]);
 
+  // Who the organizer can add straight to the roster: the group's members, or -- for a Dink Draft
+  // outside any group -- every player.
   useEffect(() => {
-    if (!room?.isOwner || !room.groupId) return;
-    fetch(`/api/groups/${room.groupId}`).then((response) => response.ok ? response.json() : null).then((data) => {
-      const members = data?.group?.members as { id: string; name: string }[] | undefined;
-      setGroupMembers(members?.map((member) => ({ id: member.id, name: member.name })) ?? []);
-    });
-  }, [room?.isOwner, room?.groupId]);
+    if (!room?.isOwner) return;
+    if (room.groupId) {
+      fetch(`/api/groups/${room.groupId}`).then((response) => response.ok ? response.json() : null).then((data) => {
+        const members = data?.group?.members as { id: string; name: string }[] | undefined;
+        setRosterCandidates(members?.map((member) => ({ id: member.id, name: member.name })) ?? []);
+      });
+    } else if (room.partnerFormat === "MANUAL") {
+      fetch("/api/players").then((response) => response.ok ? response.json() : null).then((data) => {
+        const players = data?.players as { id: string; name: string }[] | undefined;
+        setRosterCandidates(players?.map((player) => ({ id: player.id, name: player.name })) ?? []);
+      });
+    }
+  }, [room?.isOwner, room?.groupId, room?.partnerFormat]);
 
   // Keep other viewers' screens live while scores are still being entered -- someone scoring a
   // match court-side shouldn't be the only one who sees it update. Stops once completed, since
@@ -350,12 +359,12 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
         )}
 
-        {room.groupId && (room.status === "SETUP" || (room.partnerFormat === "MANUAL" && room.status === "LIVE")) && (
+        {(room.groupId || (room.partnerFormat === "MANUAL" && room.isOwner)) && (room.status === "SETUP" || (room.partnerFormat === "MANUAL" && room.status === "LIVE")) && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="font-extrabold">Who&apos;s in</h2>
-                <p className="mt-1 text-xs text-[var(--ink-soft)]">{room.groupName ?? "Group"} members can join or decline. The schedule generates from who joins.</p>
+                <p className="mt-1 text-xs text-[var(--ink-soft)]">{room.groupId ? `${room.groupName ?? "Group"} members can join or decline. The schedule generates from who joins.` : "The players you can pick from when you create each match."}</p>
               </div>
               {room.isGroupMember && (
                 <div className="flex gap-2">
@@ -374,13 +383,13 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               ))}
             </div>
             {room.isOwner && (() => {
-              const notYetJoined = groupMembers.filter((member) => !room.joinedPlayers.some((player) => player.id === member.id));
+              const notYetJoined = rosterCandidates.filter((member) => !room.joinedPlayers.some((player) => player.id === member.id));
               return (
                 <div className="mt-4 border-t border-[var(--line)] pt-4">
                   <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Add players directly</p>
-                  <p className="mt-1 text-xs text-[var(--ink-soft)]">Skip waiting on an RSVP -- add anyone from the group straight to the roster.</p>
+                  <p className="mt-1 text-xs text-[var(--ink-soft)]">{room.groupId ? "Skip waiting on an RSVP -- add anyone from the group straight to the roster." : "Add anyone on PickleballWolves to this round robin's players."}</p>
                   {notYetJoined.length === 0 ? (
-                    <p className="mt-2 text-sm text-[var(--ink-soft)]">Everyone in the group has already joined.</p>
+                    <p className="mt-2 text-sm text-[var(--ink-soft)]">{room.groupId ? "Everyone in the group has already joined." : "Everyone's already in."}</p>
                   ) : (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {notYetJoined.map((member) => (
