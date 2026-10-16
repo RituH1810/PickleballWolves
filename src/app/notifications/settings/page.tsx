@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AlertTriangle, ArrowLeft, Bell, Mail, Swords, type LucideIcon } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Award, Bell, Mail, Newspaper, Swords, type LucideIcon } from "lucide-react";
 
-type PreferenceKey = "emailReminders" | "inAppReminders" | "challengeAlerts" | "scoreDisputeAlerts";
+type PreferenceKey = "emailReminders" | "inAppReminders" | "challengeAlerts" | "scoreDisputeAlerts" | "weeklyDigest" | "achievementAlerts";
 type Preferences = Record<PreferenceKey, boolean>;
 
 const SECTIONS: { title: string; items: { key: PreferenceKey; label: string; detail: string; icon: LucideIcon }[] }[] = [
@@ -20,6 +20,13 @@ const SECTIONS: { title: string; items: { key: PreferenceKey; label: string; det
     items: [
       { key: "challengeAlerts", label: "Ladder challenges", detail: "When someone challenges you, or accepts or declines your challenge.", icon: Swords },
       { key: "scoreDisputeAlerts", label: "Score disputes", detail: "When someone disputes the score of a match you played.", icon: AlertTriangle },
+      { key: "achievementAlerts", label: "Achievements", detail: "When a score earns you a new badge.", icon: Award },
+    ],
+  },
+  {
+    title: "Email",
+    items: [
+      { key: "weeklyDigest", label: "Weekly digest", detail: "Monday morning: your games this week, last week's results, rating change, and new badges.", icon: Newspaper },
     ],
   },
 ];
@@ -104,7 +111,7 @@ export default function NotificationSettingsPage() {
                 })}
               </section>
             ))}
-            <p className="mt-5 px-1 text-xs leading-5 text-[var(--ink-soft)]">Group updates -- new games, join approvals, scores added to your matches, and being added to an event -- always appear in your inbox.</p>
+            <p className="mt-5 px-1 text-xs leading-5 text-[var(--ink-soft)]">Group updates -- new games, join approvals, announcements, monthly awards, and being added to a game -- always appear in your inbox.</p>
           </>
         )}
 

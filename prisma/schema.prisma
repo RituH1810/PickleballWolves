@@ -565,6 +565,35 @@ model NotificationPreference {
   inAppReminders    Boolean @default(true)
   scoreDisputeAlerts Boolean @default(true)
   challengeAlerts   Boolean @default(true)
+  weeklyDigest      Boolean @default(true)
+  achievementAlerts Boolean @default(true)
+}
+
+// Badges a player has already been told about, so "Achievement unlocked!" fires once per badge.
+// Badges themselves are still computed from match history (src/lib/achievements.ts).
+model AchievementUnlock {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime
+  createdAt     DateTime @default(now())
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+}
+
+// A group's awards for one calendar month (e.g. "2026-10"), computed on the 1st of the next month.
+model MonthlyAward {
+  id        String   @id @default(cuid())
+  groupId   String
+  month     String
+  award     String   // MOST_IMPROVED | IRON_WOLF | BEST_PARTNERSHIP
+  userId    String
+  partnerId String?
+  value     Float
+  detail    String
+  createdAt DateTime @default(now())
+  @@unique([groupId, month, award, userId])
+  @@index([userId])
 }
 
 model Tournament {

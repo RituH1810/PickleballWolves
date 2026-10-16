@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MatchStatus, Side } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { announceNewAchievements } from "@/lib/announce-achievements";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -150,5 +151,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     }
   }
 
+  // A score can complete a badge (first win, a streak, a bagel...) -- tell whoever just earned one.
+  await announceNewAchievements(match.players.map((player) => player.userId));
   return NextResponse.json({ score, winnerSide, ratingChanges, opponentAvgRating });
 }

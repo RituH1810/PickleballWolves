@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/prisma";
 
-export type NotificationCategory = "reminder" | "scoreDispute" | "challenge" | "general";
+export type NotificationCategory = "reminder" | "scoreDispute" | "challenge" | "achievement" | "general";
 
-const PREFERENCE_FIELD: Partial<Record<NotificationCategory, "inAppReminders" | "scoreDisputeAlerts" | "challengeAlerts">> = {
+const PREFERENCE_FIELD: Partial<Record<NotificationCategory, "inAppReminders" | "scoreDisputeAlerts" | "challengeAlerts" | "achievementAlerts">> = {
   reminder: "inAppReminders",
   scoreDispute: "scoreDisputeAlerts",
   challenge: "challengeAlerts",
+  achievement: "achievementAlerts",
 };
 
 /**

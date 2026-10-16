@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MatchStatus, Side } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { announceNewAchievements } from "@/lib/announce-achievements";
 import { ensureProfile } from "@/lib/server-profile";
 
 export async function GET() {
@@ -35,5 +36,6 @@ export async function POST(request: Request) {
   const scores = Array.isArray(body.scores) ? body.scores : [];
   if (!opponentIds.length || !scores.length) return NextResponse.json({ error: "Add at least one opponent and one game score." }, { status: 400 });
   const match = await prisma.match.create({ data: { status: MatchStatus.COMPLETED, scheduledAt: new Date(), enteredById: profile.id, players: { create: [{ userId: profile.id, side: Side.A }, ...opponentIds.map((userId: string) => ({ userId, side: Side.B }))] }, scores: { create: scores.map((score: { sideAScore: number; sideBScore: number }, index: number) => ({ gameNumber: index + 1, sideAScore: Number(score.sideAScore), sideBScore: Number(score.sideBScore), enteredById: profile.id })) } } });
+  await announceNewAchievements([profile.id, ...opponentIds]);
   return NextResponse.json({ matchId: match.id }, { status: 201 });
 }
