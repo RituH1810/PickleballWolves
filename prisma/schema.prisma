@@ -672,6 +672,13 @@ model Tournament {
   pointsToWin           Int                    @default(11)
   winBy                 Int                    @default(1)
   status                TournamentStatus       @default(DRAFT)
+  // Organizer branding and the public page (/t/<publicSlug>), shown only while isPublic is on.
+  isPublic              Boolean                @default(false)
+  publicSlug            String?                @unique
+  brandColor            String?
+  presentedBy           String?
+  logoAssetId           String?
+  bannerAssetId         String?
   createdAt             DateTime               @default(now())
   updatedAt             DateTime               @updatedAt
   createdBy             User                   @relation("TournamentCreator", fields: [createdById], references: [id])
@@ -679,6 +686,31 @@ model Tournament {
   teams                 TournamentTeam[]
   pools                 TournamentGroup[]
   bracketMatches        TournamentBracketMatch[]
+  assets                TournamentAsset[]
+  sponsors              TournamentSponsor[]
+}
+
+// Branding images (logo, banner, sponsor logos), stored resized and served from /api/t-assets/<id>.
+model TournamentAsset {
+  id           String     @id @default(cuid())
+  tournamentId String
+  kind         String     // LOGO | BANNER | SPONSOR
+  contentType  String
+  data         Bytes
+  createdAt    DateTime   @default(now())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  @@index([tournamentId])
+}
+
+model TournamentSponsor {
+  id           String     @id @default(cuid())
+  tournamentId String
+  name         String
+  url          String?
+  logoAssetId  String?
+  position     Int        @default(0)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  @@index([tournamentId])
 }
 
 model TournamentEntrant {

@@ -1,8 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// /install is public so the "how to install" link can be shared before people sign up.
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/invite", "/install"];
+// /install is public so the "how to install" link can be shared before people sign up; /t/<slug>
+// is an organizer's public tournament page (it only shows tournaments they've made public).
+const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/invite", "/install", "/t"];
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

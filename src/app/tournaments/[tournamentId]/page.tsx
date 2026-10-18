@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, Award, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Plus, Share2, Trash2, Trophy, Users, X } from "lucide-react";
 import { bracketRoundLabel } from "@/lib/tournament";
+import { TournamentBranding } from "@/components/tournament-branding";
 
 type MatchPlayerT = { userId: string; name: string; side: "A" | "B" };
 type MatchT = { id: string; courtNumber: number | null; players: MatchPlayerT[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
@@ -17,6 +18,7 @@ type TournamentT = {
   skillLevel: string; eventType: string; groupCount: number; teamFormationMethod: string; groupAssignmentMethod: string;
   registrationMode: string; registrationDeadline: string | null; pointsToWin: number; winBy: number; status: string;
   createdBy: { id: string; name: string }; isOwner: boolean; hasScores: boolean; myEntrantStatus: string | null;
+  isPublic: boolean; publicSlug: string | null;
   entrants: EntrantT[]; teams: TeamT[]; pools: PoolT[]; bracketMatches: BracketMatchT[];
 };
 type PoolStanding = { poolId: string; poolName: string; standings: { rank: number; teamId: string; teamName: string; wins: number; losses: number; scored: number; conceded: number; differential: number }[] };
@@ -319,6 +321,11 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
             </div>
           </section>
         )}
+
+        {tournament.isPublic && tournament.publicSlug && !isOwner && (
+          <a href={`/t/${tournament.publicSlug}`} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--lime-deep)] hover:bg-[#1c2a1a]">View the public tournament page</a>
+        )}
+        {isOwner && <TournamentBranding tournamentId={tournamentId} />}
 
         {/* Registration */}
         <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
