@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { isRoundRobinParticipant } from "@/lib/round-robin-access";
 
 export async function GET(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const { roundRobinId } = await context.params;
@@ -27,13 +28,17 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
   if (roundRobin.groupId) {
     const membership = user ? await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } }) : null;
     isGroupMember = Boolean(membership && membership.status === MembershipStatus.ACTIVE);
-    if (!isGroupMember && roundRobin.createdById !== user?.id) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+    // Players added from outside the group can see the game they're in.
+    if (!isGroupMember && roundRobin.createdById !== user?.id && !(user && await isRoundRobinParticipant(roundRobinId, user.id))) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
   }
 
   const organizer = await prisma.user.findUnique({ where: { id: roundRobin.createdById }, select: { name: true } });
   const hasScores = roundRobin.rounds.some((round) => round.matches.some((match) => match.scores.length > 0)) || roundRobin.matches.some((match) => match.scores.length > 0);
 
-  const joinedPlayers = roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED").map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name }));
+  // In a group game, flag anyone the organizer brought in from outside the group.
+  const joinedRsvps = roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED");
+  const memberIds = roundRobin.groupId ? new Set((await prisma.membership.findMany({ where: { groupId: roundRobin.groupId, status: MembershipStatus.ACTIVE, userId: { in: joinedRsvps.map((rsvp) => rsvp.userId) } }, select: { userId: true } })).map((membership) => membership.userId)) : null;
+  const joinedPlayers = joinedRsvps.map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name, fromOutside: memberIds ? !memberIds.has(rsvp.userId) : false }));
   // Skill ratings for anyone who can be put in a match, so "Suggest a match" can balance teams.
   const pickableIds = [...new Set([...joinedPlayers.map((player) => player.id), ...roundRobin.rounds.flatMap((round) => round.matches.flatMap((match) => match.players.map((player) => player.userId))), ...roundRobin.matches.flatMap((match) => match.players.map((player) => player.userId))])];
   const playerRatings = Object.fromEntries((await prisma.user.findMany({ where: { id: { in: pickableIds } }, select: { id: true, skillRating: true } })).map((player) => [player.id, Number(player.skillRating)]));

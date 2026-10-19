@@ -22,3 +22,15 @@ export async function canUseRoundRobinChat(roundRobinId: string, userId: string)
   }
   return null;
 }
+
+/**
+ * True if the player is in this round robin: joined (including players from outside the group the
+ * organizer added) or already in one of its matches. Lets non-members see a game they're playing in.
+ */
+export async function isRoundRobinParticipant(roundRobinId: string, userId: string) {
+  const [rsvp, match] = await Promise.all([
+    prisma.roundRobinRSVP.findFirst({ where: { roundRobinId, userId, status: "JOINED" }, select: { id: true } }),
+    prisma.match.findFirst({ where: { roundRobinId, deletedAt: null, players: { some: { userId } } }, select: { id: true } }),
+  ]);
+  return Boolean(rsvp || match);
+}

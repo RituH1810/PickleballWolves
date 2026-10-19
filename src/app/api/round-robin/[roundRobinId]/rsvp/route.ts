@@ -24,7 +24,12 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
 
   if (roundRobin.groupId) {
     const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: targetUserId } } });
-    if (!membership || membership.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "That player isn't an active member of this group." }, { status: 403 });
+    const isMember = membership?.status === MembershipStatus.ACTIVE;
+    // The organizer can also bring in a player from outside the group -- added to this game only,
+    // not to the group. Everyone else has to be a member.
+    const organizerAddingSomeoneElse = roundRobin.createdById === user.id && targetUserId !== user.id && body.status === "JOINED";
+    if (!isMember && !organizerAddingSomeoneElse) return NextResponse.json({ error: "That player isn't an active member of this group." }, { status: 403 });
+    if (!isMember && !(await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true } }))) return NextResponse.json({ error: "Player not found." }, { status: 404 });
   } else {
     // No group means no invites to answer: the organizer builds the roster (a Dink Draft's
     // players), and can add anyone with a profile.
@@ -39,7 +44,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     create: { roundRobinId, userId: targetUserId, status: body.status as RoundRobinRsvpStatus },
   });
   if (targetUserId !== user.id && body.status === "JOINED") {
-    await notify(targetUserId, "general", "ADDED_TO_ROUND_ROBIN", "You were added to a round robin", `The organizer added you to ${roundRobin.name}.`);
+    await notify(targetUserId, "general", "ADDED_TO_ROUND_ROBIN", "You were added to a round robin", `The organizer added you to ${roundRobin.name}.`, `/round-robin/${roundRobinId}`);
   }
   return NextResponse.json({ status: rsvp.status, userId: targetUserId });
 }

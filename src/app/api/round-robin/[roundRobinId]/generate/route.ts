@@ -47,8 +47,12 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
       // The organizer picked these players/teams directly (e.g. from the edit page's full
       // roster) -- trust that choice rather than requiring each one to have separately RSVP'd
       // JOINED. Still confirm they're actually in the group, not just any platform user.
-      const members = await prisma.membership.findMany({ where: { groupId: roundRobin.groupId, status: "ACTIVE" }, select: { userId: true } });
-      const memberIds = new Set(members.map((membership) => membership.userId));
+      const [members, joined] = await Promise.all([
+        prisma.membership.findMany({ where: { groupId: roundRobin.groupId, status: "ACTIVE" }, select: { userId: true } }),
+        prisma.roundRobinRSVP.findMany({ where: { roundRobinId, status: "JOINED" }, select: { userId: true } }),
+      ]);
+      // Members, plus anyone the organizer added from outside the group.
+      const memberIds = new Set([...members.map((membership) => membership.userId), ...joined.map((rsvp) => rsvp.userId)]);
       if (playerIds.some((id) => !memberIds.has(id))) return NextResponse.json({ error: "Every selected player must be a member of the group." }, { status: 400 });
     } else {
       // No explicit selection was sent (the room page's "Generate matches" button) -- fall back
