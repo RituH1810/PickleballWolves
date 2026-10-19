@@ -7,6 +7,7 @@ import { Avatar } from "@/components/avatar";
 import { GroupAnnouncements } from "@/components/group-announcements";
 import { RecurringSchedules } from "@/components/recurring-schedules";
 import { AvailabilityPolls } from "@/components/availability-polls";
+import { MonthlyLeaderboard } from "@/components/monthly-leaderboard";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -320,6 +321,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             </div>
           </section>
         )}
+
+        {group.isMember && <MonthlyLeaderboard groupId={groupId} />}
 
         <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
           <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
