@@ -6,6 +6,7 @@ import { ArrowLeft, CalendarDays, MapPin, Pencil, Swords, Users } from "lucide-r
 import { Avatar } from "@/components/avatar";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
+import { RivalCard } from "@/components/rival-card";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 
 type PlayerLink = { id: string; name: string };
@@ -83,7 +84,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
 
         {hasHeadToHead && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
-            <div className="flex items-center gap-2"><Swords size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">You and {firstName}</h2></div>
+            <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Swords size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">You and {firstName}</h2></div><Link href={`/rivalry/me/${player.id}`} className="text-xs font-bold text-[var(--lime-deep)] hover:underline">Full rivalry →</Link></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {([["Against each other", headToHead.against, `You're ${headToHead.against.wins}-${headToHead.against.losses} against ${firstName}`], ["As partners", headToHead.together, `${headToHead.together.wins}-${headToHead.together.losses} as a team`]] as const).map(([label, stat, line]) => (
                 <div key={label} className="rounded-2xl bg-[#131f19] p-4">
@@ -113,6 +114,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
           </div>
         </section>
 
+        <RivalCard userId={player.id} isMe={player.isMe} playerName={player.name} />
         <AwardsPanel userId={player.id} />
         <AchievementsPanel userId={player.id} />
       </div>
