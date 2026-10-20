@@ -3,6 +3,7 @@ import { MatchStatus, Side } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { announceNewAchievements } from "@/lib/announce-achievements";
+import { notify } from "@/lib/notifications";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -53,6 +54,13 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const wasAlreadyCompleted = match.status === MatchStatus.COMPLETED;
   await prisma.match.update({ where: { id: matchId }, data: { status: MatchStatus.COMPLETED, winnerSide } });
   await prisma.auditLog.create({ data: { actorId: user.id, entityType: "GameScore", entityId: score.id, action: "SCORE_ENTERED", afterData: { matchId, gameNumber: score.gameNumber, sideAScore, sideBScore }, matchId } });
+
+  const enteredByName = match.players.find((player) => player.userId === user.id)?.user.name ?? (await prisma.user.findUnique({ where: { id: user.id }, select: { name: true } }))?.name ?? "Someone";
+  await Promise.all(match.players.filter((player) => player.userId !== user.id).map((player) => {
+    const won = player.side === winnerSide;
+    return notify(player.userId, "general", "SCORE_ADDED", "Score added to your match", `${enteredByName} recorded a score of ${sideAScore}-${sideBScore}. You ${won ? "won" : "lost"} this game.`);
+  }));
+
   const playerIds = match.players.map((player) => player.userId);
   const players = await prisma.user.findMany({ where: { id: { in: playerIds } }, select: { id: true, skillRating: true } });
   const ratingById = new Map(players.map((player) => [player.id, Number(player.skillRating)]));
