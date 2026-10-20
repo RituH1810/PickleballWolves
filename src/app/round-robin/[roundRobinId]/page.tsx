@@ -603,23 +603,30 @@ function MatchCard({ match, onSave, onDelete, canManage, canScore }: { match: Ma
           {canManage && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[#2e1a16] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
         </div>
       </div>
-      <div className="space-y-2 text-sm font-bold text-[var(--foreground)]">
-        <p>{match.players.filter((player) => player.side === "A").map((player) => player.name).join(" / ")}</p>
-        <p className="text-[var(--ink-soft)]">vs</p>
-        <p>{match.players.filter((player) => player.side === "B").map((player) => player.name).join(" / ")}</p>
-      </div>
+      {/* Scoreboard layout: each team's score sits on the right of its names. */}
+      {(["A", "B"] as const).map((side) => {
+        const names = match.players.filter((player) => player.side === side).map((player) => player.name).join(" / ");
+        const saved = match.scores[0] ? (side === "A" ? match.scores[0].sideAScore : match.scores[0].sideBScore) : null;
+        const other = match.scores[0] ? (side === "A" ? match.scores[0].sideBScore : match.scores[0].sideAScore) : null;
+        const won = saved !== null && other !== null && saved > other;
+        return (
+          <div key={side}>
+            {side === "B" && <p className="my-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">vs</p>}
+            <div className="flex items-center justify-between gap-3">
+              <p className={`min-w-0 flex-1 text-sm font-bold ${saved !== null && !won ? "text-[var(--ink-soft)]" : "text-[var(--foreground)]"}`}>{names}</p>
+              {canScore ? (
+                <input value={side === "A" ? sideA : sideB} onChange={(event) => (side === "A" ? setSideA : setSideB)(event.target.value)} placeholder="0" type="number" inputMode="numeric" min={0} aria-label={`${names} score`} className={`h-11 w-16 shrink-0 rounded-lg border text-center text-base font-black ${won ? "border-[var(--lime-deep)] text-[var(--lime)]" : "border-[var(--line)]"}`} />
+              ) : (
+                <span className={`grid h-11 w-16 shrink-0 place-items-center rounded-lg bg-[#131f19] text-base font-black ${won ? "text-[var(--lime)]" : saved === null ? "text-[var(--ink-soft)]" : "text-[var(--foreground)]"}`}>{saved ?? "-"}</span>
+              )}
+            </div>
+          </div>
+        );
+      })}
       {canScore ? (
-        <div className="mt-4 flex items-center gap-2">
-          <input value={sideA} onChange={(event) => setSideA(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
-          <span className="text-[var(--ink-soft)]">-</span>
-          <input value={sideB} onChange={(event) => setSideB(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
-          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold text-[#1b211e]">{hasScore ? "Update score" : "Save score"}</button>
-        </div>
-      ) : (
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-[#131f19] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
-          {match.scores[0] ? <span className="font-bold text-[var(--foreground)]">{match.scores[0].sideAScore} - {match.scores[0].sideBScore}</span> : <span>Score not entered yet</span>}
-          <span>Members only</span>
-        </div>
+        <button onClick={() => onSave(match.id, sideA, sideB)} className="mt-4 w-full rounded-full bg-[#d8f24e] px-3 py-2.5 text-xs font-bold text-[#1b211e] hover:bg-[#c3e043]">{hasScore ? "Update score" : "Save score"}</button>
+      ) : !hasScore && (
+        <p className="mt-3 text-[11px] font-semibold text-[var(--ink-soft)]">Score not entered yet · players in the game can enter it</p>
       )}
     </article>
   );
