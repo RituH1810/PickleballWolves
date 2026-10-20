@@ -9,6 +9,7 @@ import { AwardsPanel } from "@/components/awards-panel";
 import { RivalCard } from "@/components/rival-card";
 import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
+import { AddressInput } from "@/components/address-input";
 
 type Profile = { id: string; name: string; skillRating: string; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number | null; matchesToQualify: number };
 type RecentResult = { opponent: string; event: string; score: string; result: "W" | "L" | "-" };
@@ -135,7 +136,7 @@ export default function ProfilePage() {
                 <input type="number" min="2" max="6" step="0.1" value={draft.skillRating} onChange={(event) => setDraft({ ...draft, skillRating: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
               </label>
               <label className="text-xs font-bold text-[#c3d0c5]">Home court
-                <input value={draft.homeCourt} onChange={(event) => setDraft({ ...draft, homeCourt: event.target.value })} placeholder="Northside Courts" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
+                <AddressInput value={draft.homeCourt} onChange={(homeCourt) => setDraft({ ...draft, homeCourt })} placeholder="Northside Courts -- start typing to search" ariaLabel="Home court" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
               </label>
               <label className="text-xs font-bold text-[#c3d0c5]">Mobile number
                 <input type="tel" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} placeholder="+1 555 123 4567" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />

@@ -8,6 +8,7 @@ import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
 import { RivalCard } from "@/components/rival-card";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
+import { DirectionsLink } from "@/components/directions-link";
 
 type PlayerLink = { id: string; name: string };
 type Player = { id: string; name: string; photoUrl: string | null; homeCourt: string | null; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; skillRating: string; memberSince: string; matches: number; record: string; winRate: string; rank: number | null; matchesToQualify: number; isMe: boolean };
@@ -58,7 +59,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
               <p className="text-xs font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">Player</p>
               <h1 className="mt-2 text-3xl font-black tracking-[-.04em] text-[var(--foreground)]">{player.name}</h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--ink-soft)]">
-                <span className="flex items-center gap-2"><MapPin size={15} />{player.homeCourt || "No home court"} &middot; {player.preferredHand.toLowerCase()}-handed</span>
+                <span className="flex items-center gap-2"><MapPin size={15} />{player.homeCourt || "No home court"}{player.homeCourt && <DirectionsLink address={player.homeCourt} />} &middot; {player.preferredHand.toLowerCase()}-handed</span>
                 <span className="flex items-center gap-2"><CalendarDays size={15} />Joined {new Date(player.memberSince).toLocaleDateString(undefined, { month: "short", year: "numeric" })}</span>
               </p>
               {groups.length > 0 && (

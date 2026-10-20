@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Award, Check, Users } from "lucide-react";
+import { AddressInput } from "@/components/address-input";
 
 type Player = { id: string; name: string; rank: number | null; skillRating: string; gender: "MALE" | "FEMALE" | "UNSPECIFIED" | null };
 
@@ -150,7 +151,7 @@ export default function NewTournamentPage() {
                 <textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] px-4 py-3 text-sm" />
               </label>
               <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Location
-                <input value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} placeholder="Northside Courts" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
+                <AddressInput value={form.location} onChange={(location) => setForm({ ...form, location })} placeholder="Courts or venue -- start typing to search" ariaLabel="Location" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
               </label>
               <label className="text-xs font-bold text-[#c3d0c5]">Courts available
                 <input type="number" min="1" value={form.courtCount} onChange={(event) => setForm({ ...form, courtCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />

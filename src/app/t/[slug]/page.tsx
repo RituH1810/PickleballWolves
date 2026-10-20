@@ -5,6 +5,7 @@ import { CalendarDays, Crown, MapPin, Trophy, Users } from "lucide-react";
 import { LiveRefresh } from "@/components/live-refresh";
 import { DEFAULT_BRAND_COLOR, readableTextColor, tournamentDates } from "@/lib/branding";
 import { loadPublicTournament, type PublicTournament } from "@/lib/public-tournament";
+import { DirectionsLink } from "@/components/directions-link";
 
 const STATUS_LABELS: Record<string, string> = { DRAFT: "Coming soon", REGISTRATION_OPEN: "Registration open", TEAMS_LOCKED: "Teams set", LIVE: "Live now", COMPLETED: "Final results", CANCELLED: "Cancelled" };
 const EVENT_LABELS: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
@@ -83,7 +84,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
           <h1 className="mt-1 break-words text-3xl font-black tracking-[-.04em] sm:text-5xl">{tournament.name}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-[var(--ink-soft)]">
             <span className="flex items-center gap-1.5"><CalendarDays size={15} />{tournamentDates(tournament.startDate, tournament.endDate)}</span>
-            <span className="flex items-center gap-1.5"><MapPin size={15} />{tournament.location}</span>
+            <span className="flex items-center gap-1.5"><MapPin size={15} />{tournament.location}<DirectionsLink address={tournament.location} className="ml-1" /></span>
             <span className="flex items-center gap-1.5"><Users size={15} />{EVENT_LABELS[tournament.eventType]} · {LEVEL_LABELS[tournament.skillLevel]} · {tournament.teamCount || tournament.entrantCount} {tournament.teamCount ? "teams" : "players"}</span>
           </div>
           {tournament.description && <p className="mt-4 max-w-2xl whitespace-pre-line text-sm leading-6 text-[var(--ink-soft)]">{tournament.description}</p>}

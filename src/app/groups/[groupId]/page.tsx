@@ -8,6 +8,7 @@ import { GroupAnnouncements } from "@/components/group-announcements";
 import { RecurringSchedules } from "@/components/recurring-schedules";
 import { AvailabilityPolls } from "@/components/availability-polls";
 import { MonthlyLeaderboard } from "@/components/monthly-leaderboard";
+import { DirectionsLink } from "@/components/directions-link";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -144,7 +145,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#d8f24e] text-lg font-black text-[#1b211e]">{mark}</div>
             <div className="flex-1">
               <h1 className="text-2xl font-black tracking-[-.03em] text-[var(--foreground)] sm:text-3xl">{group.name}</h1>
-              <p className="mt-1 flex items-center gap-1 text-sm text-[var(--ink-soft)]"><MapPin size={14} />{group.location}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--ink-soft)]"><span className="flex items-center gap-1"><MapPin size={14} />{group.location}</span><DirectionsLink address={group.location} /></p>
             </div>
             <div className="flex items-center gap-2">
               {group.isMember && (

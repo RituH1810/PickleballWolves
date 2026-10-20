@@ -6,6 +6,7 @@ import { use, useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, Award, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Plus, Share2, Trash2, Trophy, Users, X } from "lucide-react";
 import { bracketRoundLabel } from "@/lib/tournament";
 import { TournamentBranding } from "@/components/tournament-branding";
+import { DirectionsLink } from "@/components/directions-link";
 
 type MatchPlayerT = { userId: string; name: string; side: "A" | "B" };
 type MatchT = { id: string; courtNumber: number | null; players: MatchPlayerT[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
@@ -292,7 +293,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{skillLabels[tournament.skillLevel]} · {eventTypeLabels[tournament.eventType]}</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{tournament.name}</h1>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{isOwner ? "you" : tournament.createdBy.name}</span></p>
-            <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-bold text-[var(--lime-deep)]"><span className="flex items-center gap-1.5"><CalendarDays size={15} />{new Date(tournament.startDate).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span><span className="flex items-center gap-1.5"><MapPin size={15} />{tournament.location}</span></p>
+            <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-bold text-[var(--lime-deep)]"><span className="flex items-center gap-1.5"><CalendarDays size={15} />{new Date(tournament.startDate).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span><span className="flex items-center gap-1.5"><MapPin size={15} />{tournament.location}</span><DirectionsLink address={tournament.location} /></p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#1e2b17] px-4 text-xs font-bold text-[#c7e572]"><Trophy size={13} />{statusLabels[tournament.status] ?? tournament.status}</span>

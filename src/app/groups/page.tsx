@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Check, ChevronRight, MapPin, PawPrint, Plus, Users, X } from "lucide-react";
+import { AddressInput } from "@/components/address-input";
 
 type LiveGroup = { id: string; name: string; location: string; members: number; next: string; mark: string; isMember: boolean };
 
@@ -59,7 +60,7 @@ export default function GroupsPage() {
             <h2 className="text-lg font-extrabold">Create a group</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Group name" className="h-11 rounded-xl border border-[var(--line)] px-3 text-sm" />
-              <input value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} placeholder="Location" className="h-11 rounded-xl border border-[var(--line)] px-3 text-sm" />
+              <AddressInput value={form.location} onChange={(location) => setForm({ ...form, location })} placeholder="Location -- start typing to search" ariaLabel="Location" className="w-full h-11 rounded-xl border border-[var(--line)] px-3 text-sm" />
               <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Short description" className="h-11 rounded-xl border border-[var(--line)] px-3 text-sm sm:col-span-2" />
               <button onClick={createGroup} className="h-11 rounded-full bg-[#d8f24e] text-sm font-bold text-[#1b211e] sm:w-fit sm:px-6">Create group</button>
             </div>

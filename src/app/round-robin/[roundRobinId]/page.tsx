@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MessageCircle, Share2, Sparkles, Trash2, Trophy, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Share2, Sparkles, Trash2, Trophy, Users, X } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
 import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
+import { DirectionsLink } from "@/components/directions-link";
 
 type Match = { id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
@@ -349,6 +350,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{partnerFormatLabels[room.partnerFormat] ?? room.partnerFormat} · {playFormatLabels[room.playFormat] ?? room.playFormat}</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{room.name}</h1>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{room.isOwner ? "you" : room.organizerName}</span>{room.groupName && <> for <span className="font-bold text-[var(--foreground)]">{room.groupName}</span></>}</p>
+            {room.location && <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--ink-soft)]"><MapPin size={15} />{room.location}<DirectionsLink address={room.location} /></p>}
             {room.scheduledAt && <p className="mt-1 flex items-center gap-2 text-sm font-bold text-[var(--lime-deep)]"><CalendarDays size={15} />{new Date(room.scheduledAt).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-3">
