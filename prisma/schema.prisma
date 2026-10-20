@@ -637,6 +637,22 @@ model AchievementUnlock {
   @@index([userId, unlockedAt])
 }
 
+// A group's Player of the Week for the Monday-Sunday week starting at weekStart (local midnight),
+// chosen and announced every Monday. Ties share the award (one row each).
+model PlayerOfTheWeek {
+  id           String   @id @default(cuid())
+  groupId      String
+  weekStart    DateTime
+  userId       String
+  matches      Int
+  wins         Int
+  losses       Int
+  avgPointDiff Float
+  createdAt    DateTime @default(now())
+  @@unique([groupId, weekStart, userId])
+  @@index([userId])
+}
+
 // A group's awards for one calendar month (e.g. "2026-10"), computed on the 1st of the next month.
 model MonthlyAward {
   id        String   @id @default(cuid())
