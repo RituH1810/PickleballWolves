@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronRight, Crown, Flame, Handshake, Swords, Target, TrendingDown, TrendingUp, type LucideIcon } from "lucide-react";
+import { BragButton } from "@/components/brag-button";
 import { playerRecapHeadline, type PlayerRecap } from "@/lib/round-robin-recap";
 
 type RecentRecap = { roundRobinId: string; name: string; groupName: string | null; completedAt: string; expiresAt: string; recap: PlayerRecap };
@@ -68,7 +69,10 @@ export function MyRecaps() {
               {recap.bestWin && <Stat icon={Flame} label="Best win"><span className="text-[var(--lime-deep)]">{recap.bestWin.winnerScore}-{recap.bestWin.loserScore}</span> <span className="text-xs text-[var(--ink-soft)]">over {names(recap.bestWin.losers)}</span></Stat>}
               {recap.closestGame && <Stat icon={Target} label="Closest game"><span className={recap.closestGame.won ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}>{recap.closestGame.won ? "Won" : "Lost"} {recap.closestGame.won ? `${recap.closestGame.winnerScore}-${recap.closestGame.loserScore}` : `${recap.closestGame.loserScore}-${recap.closestGame.winnerScore}`}</span> <span className="text-xs text-[var(--ink-soft)]">vs {names(recap.closestGame.won ? recap.closestGame.losers : recap.closestGame.winners)}</span></Stat>}
             </div>
-            <Link href={`/round-robin/${roundRobinId}`} className="flex items-center justify-between border-t border-[var(--line)] px-5 py-3 text-xs font-bold text-[var(--lime-deep)] hover:bg-[#1c2a1a]">Full round robin recap<ChevronRight size={15} /></Link>
+            <div className="flex items-center gap-3 border-t border-[var(--line)] py-2 pl-5 pr-3">
+              <Link href={`/round-robin/${roundRobinId}`} className="flex flex-1 items-center gap-1 py-1 text-xs font-bold text-[var(--lime-deep)] hover:underline">Full round robin recap<ChevronRight size={15} /></Link>
+              <BragButton card={{ kind: "recap", roundRobinId }} label={`Share your ${name} result`} />
+            </div>
           </article>
         ))}
       </div>

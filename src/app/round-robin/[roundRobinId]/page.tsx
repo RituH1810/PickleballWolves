@@ -527,7 +527,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
         )}
 
-        {room.status === "COMPLETED" && <RoundRobinRecap roundRobinId={roundRobinId} name={room.name} />}
+        {room.status === "COMPLETED" && <RoundRobinRecap roundRobinId={roundRobinId} name={room.name} played={[...rounds.flatMap((round) => round.matches), ...manualMatches].some((match) => match.scores.length > 0 && match.players.some((player) => player.userId === room.myUserId))} />}
         {(room.isOwner || room.isGroupMember || room.myRsvpStatus === "JOINED") && <GameChat roundRobinId={roundRobinId} />}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">

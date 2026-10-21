@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Award, CircleDot, Crown, Flame, Handshake, Lock, Medal, Repeat, RotateCcw, Sparkles, Star, Swords, Target, TrendingUp, Trophy, Users, Zap, type LucideIcon } from "lucide-react";
+import { Award, Lock } from "lucide-react";
+import { ACHIEVEMENT_ICONS } from "@/lib/achievement-icons";
+import { BragButton } from "@/components/brag-button";
 
 type Achievement = { id: string; name: string; description: string; icon: string; tier: "bronze" | "silver" | "gold"; unlocked: boolean; unlockedAt: string | null; progress: { current: number; target: number } };
 
-const ACHIEVEMENT_ICONS: Record<string, LucideIcon> = { sparkles: Sparkles, star: Star, repeat: Repeat, target: Target, medal: Medal, award: Award, zap: Zap, flame: Flame, "circle-dot": CircleDot, "rotate-ccw": RotateCcw, swords: Swords, handshake: Handshake, users: Users, "trending-up": TrendingUp, crown: Crown, trophy: Trophy };
 const TIER_STYLES: Record<Achievement["tier"], string> = { bronze: "bg-[#f17e62] text-[#2e1a16]", silver: "bg-[#8cc9df] text-[#1b211e]", gold: "bg-[#d8f24e] text-[#1b211e]" };
 
 /** Badge grid, earned first. Omit userId for the signed-in player. */
@@ -33,7 +34,10 @@ export function AchievementsPanel({ userId }: { userId?: string }) {
               <p className="mt-3 text-sm font-extrabold">{achievement.name}</p>
               <p className="mt-1 text-xs leading-5 text-[var(--ink-soft)]">{achievement.description}</p>
               {achievement.unlocked ? (
-                <p className="mt-2 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{achievement.unlockedAt ? `Earned ${new Date(achievement.unlockedAt).toLocaleDateString()}` : "Earned"}</p>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{achievement.unlockedAt ? `Earned ${new Date(achievement.unlockedAt).toLocaleDateString()}` : "Earned"}</p>
+                  {!userId && <BragButton card={{ kind: "achievement", achievementId: achievement.id }} label={`Share ${achievement.name}`} compact />}
+                </div>
               ) : achievement.progress.target > 1 && (
                 <div className="mt-3">
                   <div className="h-1.5 overflow-hidden rounded-full bg-[#1c2a1a]"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${percent}%` }} /></div>

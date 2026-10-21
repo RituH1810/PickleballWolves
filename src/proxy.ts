@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // /install is public so the "how to install" link can be shared before people sign up; /t/<slug>
 // is an organizer's public tournament page (it only shows tournaments they've made public).
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/invite", "/install", "/t"];
+// /brag/<code> is a card a player chose to share (codes are signed, so only those open).
+const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/invite", "/install", "/t", "/brag"];
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

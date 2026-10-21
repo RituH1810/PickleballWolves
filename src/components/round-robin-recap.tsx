@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Copy, Crown, Flame, MessageCircle, Swords, Target, TrendingUp, type LucideIcon } from "lucide-react";
+import { BragButton } from "@/components/brag-button";
 import { recapShareText, type Recap } from "@/lib/round-robin-recap";
 
 type PlayerRef = { userId: string; name: string };
@@ -21,7 +22,7 @@ function Highlight({ icon: Icon, label, children }: { icon: LucideIcon; label: s
 }
 
 /** Shown on a completed round robin: champion, podium, and the night's highlights. */
-export function RoundRobinRecap({ roundRobinId, name }: { roundRobinId: string; name: string }) {
+export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundRobinId: string; name: string; played?: boolean }) {
   const [recap, setRecap] = useState<Recap | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -79,6 +80,7 @@ export function RoundRobinRecap({ roundRobinId, name }: { roundRobinId: string; 
         <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--line)] pt-5">
           <a href={`https://wa.me/?text=${encodeURIComponent(typeof window === "undefined" ? "" : shareText())}`} target="_blank" rel="noopener noreferrer" className={`${shareButton} bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]`}><MessageCircle size={14} />Share on WhatsApp</a>
           <button onClick={copy} className={`${shareButton} border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]`}><Copy size={14} />{copied ? "Copied!" : "Copy recap"}</button>
+          {played && <div className="ml-auto"><BragButton card={{ kind: "recap", roundRobinId }} label="Share my result card" /></div>}
         </div>
       </div>
     </section>
