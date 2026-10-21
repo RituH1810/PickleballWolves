@@ -89,4 +89,14 @@ describe("computeAchievements", () => {
     expect(result["ladder-king"].unlockedAt).toEqual(at);
     expect(result.champion.unlockedAt).toEqual(at);
   });
+
+  it("counts round robin wins toward the champion badges", () => {
+    const wins = Array.from({ length: 5 }, (_, index) => new Date(2026, 5, 5 - index));
+    const result = compute([], { roundRobinWins: wins });
+    expect(result["rr-champion"].unlockedAt).toEqual(new Date(2026, 5, 1));
+    expect(result["rr-five-time"].unlocked).toBe(true);
+    expect(result["rr-five-time"].unlockedAt).toEqual(new Date(2026, 5, 5));
+    expect(result["rr-dynasty"].unlocked).toBe(false);
+    expect(result["rr-dynasty"].progress).toEqual({ current: 5, target: 10 });
+  });
 });

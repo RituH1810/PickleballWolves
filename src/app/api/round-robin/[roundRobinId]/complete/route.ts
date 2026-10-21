@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notifications";
 import { loadPlayerRecaps } from "@/lib/load-recap";
 import { playerRecapHeadline } from "@/lib/round-robin-recap";
+import { announceNewAchievements } from "@/lib/announce-achievements";
 
 export async function POST(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const supabase = await createClient();
@@ -19,6 +20,8 @@ export async function POST(_request: Request, context: { params: Promise<{ round
   if (roundRobin.status !== "COMPLETED") {
     const recaps = await loadPlayerRecaps(roundRobinId);
     await Promise.all([...recaps].map(([userId, recap]) => notify(userId, "general", "ROUND_ROBIN_RECAP", `Your recap: ${roundRobin.name}`, `${playerRecapHeadline(recap)}. See the full breakdown on your dashboard.`)));
+    // Ending it is what crowns the champion, so this is when round robin badges unlock.
+    await announceNewAchievements([...recaps.keys()]);
   }
   return NextResponse.json({ roundRobin: updated });
 }

@@ -1,6 +1,7 @@
 import { MatchStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { computeAchievements } from "@/lib/achievements";
+import { loadRoundRobinWins } from "@/lib/load-recap";
 
 export async function loadAchievements(userId: string) {
   const matches = await prisma.match.findMany({
@@ -9,7 +10,7 @@ export async function loadAchievements(userId: string) {
   });
   const matchIds = matches.map((match) => match.id);
 
-  const [matchRatings, ownHistory, topPositions, finals] = await Promise.all([
+  const [matchRatings, ownHistory, topPositions, finals, roundRobinWins] = await Promise.all([
     prisma.ratingHistory.findMany({ where: { matchId: { in: matchIds } }, select: { matchId: true, userId: true, ratingBefore: true } }),
     prisma.ratingHistory.findMany({ where: { userId, ladderId: null }, select: { ratingBefore: true, ratingAfter: true, createdAt: true } }),
     prisma.ladderPosition.findMany({ where: { userId, position: 1 }, select: { ladderId: true, updatedAt: true } }),
@@ -18,6 +19,7 @@ export async function loadAchievements(userId: string) {
       where: { nextMatchId: null, match: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId } } } },
       select: { match: { select: { updatedAt: true, winnerSide: true, players: { where: { userId }, select: { side: true } } } } },
     }),
+    loadRoundRobinWins(userId),
   ]);
 
   // Sitting alone on a ladder isn't much of a crown -- require at least one other player.
@@ -44,5 +46,6 @@ export async function loadAchievements(userId: string) {
     ratingHistory: ownHistory.map((entry) => ({ ratingBefore: Number(entry.ratingBefore), ratingAfter: Number(entry.ratingAfter), createdAt: entry.createdAt })),
     ladderTopAt,
     championAt,
+    roundRobinWins,
   });
 }

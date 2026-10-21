@@ -49,3 +49,17 @@ export async function loadRecentPersonalRecaps(userId: string, now = new Date())
     return recap ? [{ roundRobinId: roundRobin.id, name: roundRobin.name, groupName: roundRobin.group?.name ?? null, completedAt: roundRobin.completedAt!, expiresAt: new Date(roundRobin.completedAt!.getTime() + PERSONAL_RECAP_HOURS * 3_600_000), recap }] : [];
   });
 }
+
+/** When each ended round robin this player won (finished first; co-champions all count) was ended. */
+export async function loadRoundRobinWins(userId: string) {
+  const roundRobins = await prisma.roundRobin.findMany({
+    where: { status: "COMPLETED", matches: { some: { deletedAt: null, players: { some: { userId } }, scores: { some: {} } } } },
+    select: { id: true, completedAt: true, createdAt: true },
+  });
+  if (!roundRobins.length) return [];
+  const { byRoundRobin } = await loadMatches(roundRobins.map((roundRobin) => roundRobin.id));
+  return roundRobins.flatMap((roundRobin) => {
+    const recap = computeRecap(byRoundRobin.get(roundRobin.id) ?? []);
+    return recap?.champions.some((entry) => entry.userId === userId) ? [roundRobin.completedAt ?? roundRobin.createdAt] : [];
+  });
+}

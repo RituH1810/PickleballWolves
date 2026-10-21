@@ -31,6 +31,8 @@ export type AchievementInput = {
   ratingHistory: { ratingBefore: number; ratingAfter: number; createdAt: Date }[];
   ladderTopAt: Date | null;
   championAt: Date | null;
+  // When each round robin this player won (finished first, ties shared) was ended, any order.
+  roundRobinWins?: Date[];
 };
 
 // Beating a side whose average pre-match rating is at least this much higher counts as an upset.
@@ -56,6 +58,9 @@ const DEFINITIONS: Definition[] = [
   { id: "round-robin-regular", name: "Round Robin Regular", description: "Play in 5 different round robins.", icon: "users", tier: "bronze", target: 5 },
   { id: "rising-star", name: "Rising Star", description: `Raise your skill rating by ${RISING_STAR_GAIN.toFixed(1)}.`, icon: "trending-up", tier: "gold", target: RISING_STAR_GAIN },
   { id: "ladder-king", name: "Ladder King", description: "Hold the #1 spot on a ladder.", icon: "crown", tier: "gold", target: 1 },
+  { id: "rr-champion", name: "Round Robin Champion", description: "Win a round robin.", icon: "crown", tier: "bronze", target: 1 },
+  { id: "rr-five-time", name: "Five-Time Champ", description: "Win 5 round robins.", icon: "crown", tier: "silver", target: 5 },
+  { id: "rr-dynasty", name: "Dynasty", description: "Win 10 round robins.", icon: "crown", tier: "gold", target: 10 },
   { id: "champion", name: "Champion", description: "Win a tournament final.", icon: "trophy", tier: "gold", target: 1 },
 ];
 
@@ -138,6 +143,9 @@ export function computeAchievements(input: AchievementInput): Achievement[] {
 
   if (input.ladderTopAt) bump("ladder-king", 1, input.ladderTopAt);
   if (input.championAt) bump("champion", 1, input.championAt);
+  [...(input.roundRobinWins ?? [])].sort((a, b) => a.getTime() - b.getTime()).forEach((at, index) => {
+    for (const id of ["rr-champion", "rr-five-time", "rr-dynasty"]) bump(id, index + 1, at);
+  });
 
   return DEFINITIONS.map(({ target, ...definition }) => ({
     ...definition,
