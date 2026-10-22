@@ -15,7 +15,7 @@ type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
 type LeaderboardEntry = { rank: number; id: string; name: string; photoUrl: string | null; rating: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
-type GroupEvent = { id: string; title: string; startsAt: string; location: string; format: string };
+type GroupEvent = { id: string; title: string; startsAt: string; location: string | null; format: string };
 type GroupRoundRobin = { id: string; name: string; scheduledAt: string | null; playFormat: string; partnerFormat: string };
 type RecentRoundRobin = { id: string; name: string; status: string; scheduledAt: string | null; playFormat: string; partnerFormat: string; gameCount: number; champions: { id: string; name: string; wins: number; losses: number }[] };
 type PendingRequest = { id: string; name: string; photoUrl: string | null };
@@ -130,7 +130,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
   const mark = group.name.split(" ").map((word) => word[0]).join("").slice(0, 2).toUpperCase();
   const upcomingGames = [
-    ...group.events.map((event) => ({ kind: "event" as const, id: event.id, date: event.startsAt, title: event.title, detail: event.location })),
+    ...group.events.map((event) => ({ kind: "event" as const, id: event.id, date: event.startsAt, title: event.title, detail: event.location ?? "Sign in to see where" })),
     ...group.roundRobins.filter((roundRobin) => roundRobin.scheduledAt).map((roundRobin) => ({ kind: "roundRobin" as const, id: roundRobin.id, date: roundRobin.scheduledAt as string, title: roundRobin.name, detail: `${groupPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · ${groupPlayFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat}` })),
   ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 

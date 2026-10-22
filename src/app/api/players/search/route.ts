@@ -13,17 +13,17 @@ const RESULT_LIMIT = 50;
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const params = new URL(request.url).searchParams;
   const q = params.get("q")?.trim() ?? "";
-  const court = params.get("court")?.trim() ?? "";
+  // Home courts are for signed-in players only, so guests can't search by them either.
+  const court = user ? params.get("court")?.trim() ?? "" : "";
   const minRating = params.get("minRating") ? Number(params.get("minRating")) : NaN;
   const maxRating = params.get("maxRating") ? Number(params.get("maxRating")) : NaN;
   const groupId = params.get("groupId") || null;
   const sort = params.get("sort") ?? "name";
 
-  const myGroups = await prisma.group.findMany({ where: { memberships: { some: { userId: user.id, status: MembershipStatus.ACTIVE } } }, select: { id: true, name: true }, orderBy: { name: "asc" } });
+  const myGroups = user ? await prisma.group.findMany({ where: { memberships: { some: { userId: user.id, status: MembershipStatus.ACTIVE } } }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : [];
   // Only filter by groups the viewer belongs to, so this can't be used to list a private group's roster.
   if (groupId && !myGroups.some((group) => group.id === groupId)) return NextResponse.json({ error: "You can only filter by your own groups." }, { status: 403 });
 
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   const rankById = new Map(leaderboard.map((entry) => [entry.id, entry.rank]));
 
   const results = players
-    .map((player) => ({ id: player.id, name: player.name, photoUrl: player.photoUrl, homeCourt: player.homeCourt, skillRating: Number(player.skillRating), matches: matchesById.get(player.id) ?? 0, rank: rankById.get(player.id) ?? null, isMe: player.id === user.id }))
+    .map((player) => ({ id: player.id, name: player.name, photoUrl: player.photoUrl, homeCourt: user ? player.homeCourt : null, skillRating: Number(player.skillRating), matches: matchesById.get(player.id) ?? 0, rank: rankById.get(player.id) ?? null, isMe: player.id === user?.id }))
     .sort((a, b) => sort === "rating" ? b.skillRating - a.skillRating || a.name.localeCompare(b.name) : sort === "matches" ? b.matches - a.matches || a.name.localeCompare(b.name) : a.name.localeCompare(b.name))
     .slice(0, RESULT_LIMIT);
 

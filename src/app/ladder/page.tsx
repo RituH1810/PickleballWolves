@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowUp, ChevronRight, Plus, Swords } from "lucide-react";
+import { DashboardLink } from "@/components/guest-shell";
 
 type Position = { id: string; position: number; userId: string; name: string; rating: string; wins: number; losses: number };
 type Ladder = { id: string; name: string; challengeRange: number; responseDeadlineHours: number };
@@ -69,7 +69,7 @@ export default function LadderPage() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   return <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="mx-auto max-w-4xl">
-    <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
+    <DashboardLink className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</DashboardLink>
     <div className="mt-8 flex items-end justify-between">
       <div><p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Challenge play</p><h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">The ladder.</h1><p className="mt-3 text-sm text-[var(--ink-soft)]">Challenge up, defend your spot, keep climbing.</p></div>
       <div className="flex items-center gap-2">

@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Check, ChevronRight, MapPin, PawPrint, Plus, Users, X } from "lucide-react";
 import { AddressInput } from "@/components/address-input";
+import { DashboardLink, useViewer } from "@/components/guest-shell";
 
 type LiveGroup = { id: string; name: string; location: string; members: number; next: string; mark: string; isMember: boolean };
 
 export default function GroupsPage() {
+  const { signedIn, promptSignIn } = useViewer();
   const [groups, setGroups] = useState<LiveGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -45,12 +47,12 @@ export default function GroupsPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <Link href="/" className="text-xs font-bold text-[var(--lime-deep)]">Back to dashboard</Link>
+            <DashboardLink className="text-xs font-bold text-[var(--lime-deep)]">Back to dashboard</DashboardLink>
             <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Community</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Find your groups.</h1>
             <p className="mt-3 text-sm text-[var(--ink-soft)]">Play regularly with people who make the game better. Join as many as you like.</p>
           </div>
-          <button onClick={() => setCreating(!creating)} className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]">{creating ? <X size={17} /> : <Plus size={17} />}{creating ? "Close" : "Create group"}</button>
+          <button onClick={() => signedIn ? setCreating(!creating) : promptSignIn()} className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]">{creating ? <X size={17} /> : <Plus size={17} />}{creating ? "Close" : "Create group"}</button>
         </div>
 
         {notice && <p role="status" className={`mb-4 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}

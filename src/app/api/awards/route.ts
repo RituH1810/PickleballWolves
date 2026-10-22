@@ -10,8 +10,8 @@ import { weekLabel } from "@/lib/player-of-the-week";
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = new URL(request.url).searchParams.get("userId") || user.id;
+  const userId = new URL(request.url).searchParams.get("userId") || user?.id;
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const [awards, weekly] = await Promise.all([
     prisma.monthlyAward.findMany({ where: { userId }, orderBy: [{ month: "desc" }, { award: "asc" }] }),
@@ -22,13 +22,13 @@ export async function GET(request: Request) {
   const [groups, partners, myGroups] = await Promise.all([
     prisma.group.findMany({ where: { id: { in: groupIds } }, select: { id: true, name: true, visibility: true } }),
     prisma.user.findMany({ where: { id: { in: partnerIds } }, select: { id: true, name: true } }),
-    prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE, groupId: { in: groupIds } }, select: { groupId: true } }),
+    user ? prisma.membership.findMany({ where: { userId: user.id, status: MembershipStatus.ACTIVE, groupId: { in: groupIds } }, select: { groupId: true } }) : [],
   ]);
   const groupById = new Map(groups.map((group) => [group.id, group]));
   const partnerById = new Map(partners.map((partner) => [partner.id, partner.name]));
   const visible = new Set([...groups.filter((group) => group.visibility === "PUBLIC").map((group) => group.id), ...myGroups.map((membership) => membership.groupId)]);
 
-  const weeklyAwards = weekly.filter((entry) => userId === user.id || visible.has(entry.groupId)).map((entry) => ({
+  const weeklyAwards = weekly.filter((entry) => userId === user?.id || visible.has(entry.groupId)).map((entry) => ({
     id: entry.id,
     award: "PLAYER_OF_THE_WEEK",
     title: "Player of the Week",
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     sortKey: entry.weekStart.toISOString(),
   }));
   return NextResponse.json({
-    awards: [...weeklyAwards, ...awards.filter((award) => userId === user.id || visible.has(award.groupId)).map((award) => ({
+    awards: [...weeklyAwards, ...awards.filter((award) => userId === user?.id || visible.has(award.groupId)).map((award) => ({
       id: award.id,
       award: award.award,
       title: AWARD_LABELS[award.award as AwardKind]?.title ?? award.award,

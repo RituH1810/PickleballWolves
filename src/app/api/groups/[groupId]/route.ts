@@ -26,7 +26,8 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       roundRobins: { where: { status: { in: ["SETUP", "LIVE"] }, OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] }, orderBy: { scheduledAt: "asc" }, take: 6 },
     },
   });
-  if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
+  // Visitors who aren't signed in can browse public groups only.
+  if (!group || (!user && group.visibility === "PRIVATE")) return NextResponse.json({ error: "Group not found." }, { status: 404 });
   const myMembership = user ? group.memberships.find((membership) => membership.userId === user.id) : undefined;
   const myAnyMembership = user ? await prisma.membership.findUnique({ where: { groupId_userId: { groupId, userId: user.id } } }) : null;
   const isActiveMember = myMembership?.status === MembershipStatus.ACTIVE;
@@ -96,12 +97,15 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       location: group.location,
       description: group.description,
       memberCount: group.memberships.length,
-      members: group.memberships
+      // Names, ranks, and results are for members only (the page says so) -- don't send them to
+      // non-members or signed-out visitors either.
+      members: !isActiveMember ? [] : group.memberships
         .map((membership) => ({ id: membership.user.id, name: membership.user.name, photoUrl: membership.user.photoUrl, skillRating: membership.user.skillRating.toString(), role: membership.role, rank: leaderboard.find((entry) => entry.id === membership.user.id)?.rank ?? null }))
         .sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity)),
-      leaderboard,
-      recentResults,
-      events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: event.location, format: event.format })),
+      leaderboard: isActiveMember ? leaderboard : [],
+      recentResults: isActiveMember ? recentResults : [],
+      // Where a game is played is for signed-in players only.
+      events: group.events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, location: user ? event.location : null, format: event.format })),
       // Round robins are private to the group -- don't list them for non-members browsing the group page.
       roundRobins: isActiveMember ? group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })) : [],
       recentRoundRobins: recentRoundRobins.map((roundRobin) => {

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
+import { GuestShell } from "@/components/guest-shell";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,13 +25,16 @@ export const viewport: Viewport = {
   themeColor: "#0f1712",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Only decides whether to show the guest bar, so the Supabase session cookie is enough --
+  // the proxy and every API check the real session.
+  const signedIn = (await cookies()).getAll().some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("-auth-token"));
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col"><GuestShell signedIn={signedIn}>{children}</GuestShell></body>
     </html>
   );
 }

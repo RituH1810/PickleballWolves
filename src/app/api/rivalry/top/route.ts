@@ -6,7 +6,7 @@ import { loadTopRival } from "@/lib/load-rivalry";
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = new URL(request.url).searchParams.get("userId") || user.id;
+  const userId = new URL(request.url).searchParams.get("userId") || user?.id;
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   return NextResponse.json({ rival: await loadTopRival(userId) });
 }

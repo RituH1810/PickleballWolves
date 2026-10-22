@@ -7,9 +7,8 @@ import { loadAchievements } from "@/lib/load-achievements";
 export async function GET(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const userId = new URL(request.url).searchParams.get("userId") || user.id;
+  const userId = new URL(request.url).searchParams.get("userId") || user?.id;
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const achievements = await loadAchievements(userId);
   return NextResponse.json({ achievements, earned: achievements.filter((achievement) => achievement.unlocked).length, total: achievements.length });
 }

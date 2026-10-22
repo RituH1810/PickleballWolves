@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, MapPin, PawPrint, Search, X } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { DashboardLink, useViewer } from "@/components/guest-shell";
 
 type PlayerResult = { id: string; name: string; photoUrl: string | null; homeCourt: string | null; skillRating: number; matches: number; rank: number | null; isMe: boolean };
 type Filters = { q: string; court: string; minRating: string; maxRating: string; groupId: string; sort: string };
@@ -14,6 +15,7 @@ const RATING_STEPS = ["2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0", "5.5", "6
 const DEBOUNCE_MS = 250;
 
 export default function PlayersPage() {
+  const { signedIn } = useViewer();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [results, setResults] = useState<{ players: PlayerResult[]; total: number; key: string } | null>(null);
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
@@ -39,7 +41,7 @@ export default function PlayersPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-5xl">
-        <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
+        <DashboardLink className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</DashboardLink>
         <p className="mt-8 text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">PickleballWolves</p>
         <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Find players.</h1>
         <p className="mt-3 text-sm text-[var(--ink-soft)]">Look up a partner, scout an opponent, or find someone at your level.</p>
@@ -50,7 +52,7 @@ export default function PlayersPage() {
             <input value={filters.q} onChange={set("q")} placeholder="Search by name" aria-label="Search by name" autoFocus className="h-12 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] pl-11 pr-4 text-sm outline-none focus:border-[var(--lime-deep)]" />
           </div>
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <input value={filters.court} onChange={set("court")} placeholder="Home court" aria-label="Home court" className={fieldClass} />
+            {signedIn && <input value={filters.court} onChange={set("court")} placeholder="Home court" aria-label="Home court" className={fieldClass} />}
             <select value={filters.minRating} onChange={set("minRating")} aria-label="Minimum rating" className={fieldClass}><option value="">Min rating</option>{RATING_STEPS.map((step) => <option key={step} value={step}>{step}+</option>)}</select>
             <select value={filters.maxRating} onChange={set("maxRating")} aria-label="Maximum rating" className={fieldClass}><option value="">Max rating</option>{RATING_STEPS.map((step) => <option key={step} value={step}>Up to {step}</option>)}</select>
             <select value={filters.groupId} onChange={set("groupId")} aria-label="Group" className={fieldClass}><option value="">All groups</option>{groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select>
@@ -74,7 +76,7 @@ export default function PlayersPage() {
                   <Avatar name={player.name} photoUrl={player.photoUrl} className="h-12 w-12 shrink-0 rounded-full bg-[#22331f] text-sm font-black text-[var(--lime)]" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-extrabold text-[var(--foreground)]">{player.name}{player.isMe && <span className="ml-1.5 text-[10px] font-bold text-[var(--ink-soft)]">(you)</span>}</p>
-                    <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-[var(--ink-soft)]"><MapPin size={12} className="shrink-0" />{player.homeCourt || "No home court"}</p>
+                    {signedIn && <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-[var(--ink-soft)]"><MapPin size={12} className="shrink-0" />{player.homeCourt || "No home court"}</p>}
                     <p className="mt-1 text-[11px] text-[var(--ink-soft)]">{player.matches} match{player.matches === 1 ? "" : "es"}{player.rank && <> · <span className="font-bold text-[var(--lime-deep)]">#{player.rank}</span></>}</p>
                   </div>
                   <span className="shrink-0 rounded-xl bg-[#131f19] px-2.5 py-1.5 text-center"><span className="block text-base font-black leading-none">{player.skillRating.toFixed(1)}</span><span className="text-[9px] font-bold uppercase tracking-[.1em] text-[var(--ink-soft)]">rating</span></span>

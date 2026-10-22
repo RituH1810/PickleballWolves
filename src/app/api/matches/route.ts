@@ -8,11 +8,14 @@ import { ensureProfile } from "@/lib/server-profile";
 export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  // This is the signed-in player's own match history -- nothing for signed-out visitors (who'd
+  // otherwise see every recent match, private groups and addresses included).
+  if (!user) return NextResponse.json({ matches: [] });
   // Matches within the same round robin all share its scheduled date/time, so sorting by
   // scheduledAt can't tell which one was actually played/scored most recently. updatedAt is
   // touched every time a score is saved (see matches/[matchId]/score), so it reflects that.
   const matches = await prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null }, orderBy: { updatedAt: "desc" }, take: 50, include: { scores: true, players: { include: { user: { select: { id: true, name: true } } } }, event: { select: { title: true, location: true } } } });
-  const visible = user ? matches.filter((match) => match.players.some((player) => player.userId === user.id)) : matches;
+  const visible = matches.filter((match) => match.players.some((player) => player.userId === user.id));
   // Doubles ratings move as a team (the formula can only see the team's combined result, not
   // each partner's individual contribution, same reason DUPR predicts from team averages too),
   // but each player still has their own before/after rating -- show that per person rather

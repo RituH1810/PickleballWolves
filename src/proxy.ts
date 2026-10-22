@@ -1,10 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-
-// /install is public so the "how to install" link can be shared before people sign up; /t/<slug>
-// is an organizer's public tournament page (it only shows tournaments they've made public).
-// /brag/<code> is a card a player chose to share (codes are signed, so only those open).
-const PUBLIC_PREFIXES = ["/login", "/signup", "/auth", "/invite", "/install", "/t", "/brag"];
+import { isGuestPath } from "@/lib/guest-access";
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -29,13 +25,13 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname, search } = request.nextUrl;
 
+  // Visitors land on the groups list and can browse from there.
   if (pathname === "/") {
-    if (!user) return NextResponse.redirect(new URL("/login", request.url));
+    if (!user) return NextResponse.redirect(new URL("/groups", request.url));
     return supabaseResponse;
   }
 
-  const isPublic = PUBLIC_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-  if (!user && !isPublic) {
+  if (!user && !isGuestPath(pathname)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(loginUrl);

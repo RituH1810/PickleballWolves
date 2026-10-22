@@ -5,12 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { buildLeaderboard, MIN_MATCHES_FOR_RANKING } from "@/lib/leaderboard";
 
 // Public view of a player: only what other members already see on leaderboards, group pages, and
-// match history. Email and phone stay private.
+// match history. Email and phone stay private. Signed-out visitors also don't get the home court,
+// and only see public groups.
 export async function GET(_request: Request, context: { params: Promise<{ playerId: string }> }) {
   const { playerId } = await context.params;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const player = await prisma.user.findUnique({ where: { id: playerId }, select: { id: true, name: true, photoUrl: true, homeCourt: true, preferredHand: true, skillRating: true, createdAt: true } });
   if (!player) return NextResponse.json({ error: "Player not found." }, { status: 404 });
@@ -24,7 +24,7 @@ export async function GET(_request: Request, context: { params: Promise<{ player
     buildLeaderboard(),
     // Only groups the viewer could see anyway: public ones, or ones they're also in.
     prisma.group.findMany({
-      where: { memberships: { some: { userId: playerId, status: "ACTIVE" } }, OR: [{ visibility: "PUBLIC" }, { memberships: { some: { userId: user.id, status: "ACTIVE" } } }] },
+      where: { memberships: { some: { userId: playerId, status: "ACTIVE" } }, OR: [{ visibility: "PUBLIC" }, ...(user ? [{ memberships: { some: { userId: user.id, status: "ACTIVE" as const } } }] : [])] },
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
@@ -41,7 +41,7 @@ export async function GET(_request: Request, context: { params: Promise<{ player
 
   // Head-to-head with the viewer, from the viewer's side: matches against each other and together.
   const headToHead = { against: { wins: 0, losses: 0 }, together: { wins: 0, losses: 0 } };
-  if (user.id !== playerId) {
+  if (user && user.id !== playerId) {
     for (const { match, mine, won } of results) {
       const viewer = match.players.find((entry) => entry.userId === user.id);
       if (!viewer) continue;
@@ -51,13 +51,13 @@ export async function GET(_request: Request, context: { params: Promise<{ player
   }
 
   const entry = leaderboard.find((row) => row.id === playerId);
-  const nameFor = (matchPlayer: { user: { id: string; name: string } }) => ({ id: matchPlayer.user.id, name: matchPlayer.user.id === user.id ? "You" : matchPlayer.user.name });
+  const nameFor = (matchPlayer: { user: { id: string; name: string } }) => ({ id: matchPlayer.user.id, name: matchPlayer.user.id === user?.id ? "You" : matchPlayer.user.name });
   return NextResponse.json({
     player: {
       id: player.id,
       name: player.name,
       photoUrl: player.photoUrl,
-      homeCourt: player.homeCourt,
+      homeCourt: user ? player.homeCourt : null,
       preferredHand: player.preferredHand,
       skillRating: player.skillRating.toString(),
       memberSince: player.createdAt,
@@ -66,7 +66,7 @@ export async function GET(_request: Request, context: { params: Promise<{ player
       winRate: matches.length ? `${((wins / matches.length) * 100).toFixed(1)}%` : "0.0%",
       rank: entry?.rank ?? null,
       matchesToQualify: entry ? 0 : Math.max(0, MIN_MATCHES_FOR_RANKING - matches.length),
-      isMe: user.id === playerId,
+      isMe: user?.id === playerId,
     },
     groups,
     headToHead,
