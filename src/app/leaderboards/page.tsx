@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Crown, Medal, PawPrint, Trophy } from "lucide-react";
 import { Avatar } from "@/components/avatar";
-import { DashboardLink } from "@/components/guest-shell";
 
 type Leader = { rank: number; id: string; name: string; photoUrl: string | null; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number; matches: number };
 
@@ -28,7 +27,7 @@ export default function LeaderboardsPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-4xl">
-        <DashboardLink className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</DashboardLink>
+        <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
         <div className="mt-8 flex items-end justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">PickleballWolves</p>

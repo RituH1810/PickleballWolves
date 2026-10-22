@@ -1,5 +1,5 @@
 // Pages anyone can open: sign-in itself, shareable links, and the read-only parts of the site --
-// group, player, and competition pages. Personal pages (dashboard, profile, notifications, my
+// the dashboard (a guest version), group, player, and competition pages. Personal pages (dashboard, profile, notifications, my
 // matches) and create/edit screens still need an account. Each API decides what a guest may see.
 const AUTH_PREFIXES = ["/login", "/signup", "/auth", "/invite"];
 // /install is the "add to home screen" guide; /t/<slug> is an organizer's public tournament page;
@@ -17,6 +17,7 @@ function under(pathname: string, prefix: string) {
 export function isGuestPath(pathname: string) {
   if (SIGNED_IN_ONLY.some((pattern) => pattern.test(pathname))) return false;
   if ([...AUTH_PREFIXES, ...SHARED_PREFIXES, ...BROWSE_PREFIXES].some((prefix) => under(pathname, prefix))) return true;
+  if (pathname === "/dashboard") return true;
   // A single round robin (shared by link); /round-robin itself is the "start one" screen.
   return /^\/round-robin\/[^/]+$/.test(pathname);
 }

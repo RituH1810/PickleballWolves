@@ -3,13 +3,13 @@ import { isGuestPath, isStandalonePath } from "./guest-access";
 
 describe("isGuestPath", () => {
   it("opens the read-only pages", () => {
-    for (const path of ["/groups", "/groups/abc", "/players", "/players/abc", "/leaderboards", "/tournaments", "/tournaments/abc", "/leagues/s1", "/ladder", "/rivalry/a/b", "/round-robin/abc", "/t/spring-open", "/brag/x.y", "/login", "/signup"]) {
+    for (const path of ["/groups", "/groups/abc", "/players", "/players/abc", "/leaderboards", "/tournaments", "/tournaments/abc", "/leagues/s1", "/ladder", "/rivalry/a/b", "/round-robin/abc", "/dashboard", "/t/spring-open", "/brag/x.y", "/login", "/signup"]) {
       expect(isGuestPath(path), path).toBe(true);
     }
   });
 
   it("keeps personal and create/edit pages behind sign-in", () => {
-    for (const path of ["/", "/dashboard", "/profile", "/notifications", "/notifications/settings", "/matches", "/events", "/admin", "/round-robin", "/round-robin/abc/edit", "/tournaments/new", "/groupsx", "/playersearch"]) {
+    for (const path of ["/", "/dashboard/x", "/profile", "/notifications", "/notifications/settings", "/matches", "/events", "/admin", "/round-robin", "/round-robin/abc/edit", "/tournaments/new", "/groupsx", "/playersearch"]) {
       expect(isGuestPath(path), path).toBe(false);
     }
   });

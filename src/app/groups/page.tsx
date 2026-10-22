@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Check, ChevronRight, MapPin, PawPrint, Plus, Users, X } from "lucide-react";
 import { AddressInput } from "@/components/address-input";
-import { DashboardLink, useViewer } from "@/components/guest-shell";
+import { useViewer } from "@/components/guest-shell";
 
 type LiveGroup = { id: string; name: string; location: string; members: number; next: string; mark: string; isMember: boolean };
 
@@ -47,7 +47,7 @@ export default function GroupsPage() {
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <DashboardLink className="text-xs font-bold text-[var(--lime-deep)]">Back to dashboard</DashboardLink>
+            <Link href="/" className="text-xs font-bold text-[var(--lime-deep)]">Back to dashboard</Link>
             <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Community</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Find your groups.</h1>
             <p className="mt-3 text-sm text-[var(--ink-soft)]">Play regularly with people who make the game better. Join as many as you like.</p>

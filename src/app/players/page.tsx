@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, MapPin, PawPrint, Search, X } from "lucide-react";
 import { Avatar } from "@/components/avatar";
-import { DashboardLink, useViewer } from "@/components/guest-shell";
+import { useViewer } from "@/components/guest-shell";
 
 type PlayerResult = { id: string; name: string; photoUrl: string | null; homeCourt: string | null; skillRating: number; matches: number; rank: number | null; isMe: boolean };
 type Filters = { q: string; court: string; minRating: string; maxRating: string; groupId: string; sort: string };
@@ -41,7 +41,7 @@ export default function PlayersPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-5xl">
-        <DashboardLink className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</DashboardLink>
+        <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
         <p className="mt-8 text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">PickleballWolves</p>
         <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Find players.</h1>
         <p className="mt-3 text-sm text-[var(--ink-soft)]">Look up a partner, scout an opponent, or find someone at your level.</p>

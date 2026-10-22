@@ -25,9 +25,9 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname, search } = request.nextUrl;
 
-  // Visitors land on the groups list and can browse from there.
+  // Visitors land on the (guest) dashboard and can browse from there.
   if (pathname === "/") {
-    if (!user) return NextResponse.redirect(new URL("/groups", request.url));
+    if (!user) return NextResponse.redirect(new URL("/dashboard", request.url));
     return supabaseResponse;
   }
 

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Award, CalendarDays, MapPin, Plus, Users } from "lucide-react";
-import { DashboardLink } from "@/components/guest-shell";
 
 type TournamentSummary = {
   id: string;
@@ -35,7 +34,7 @@ export default function TournamentsPage() {
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
       <div className="mx-auto max-w-6xl">
-        <DashboardLink href="/dashboard" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</DashboardLink>
+        <Link href="/dashboard" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
         <div className="mt-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Bracket play</p>

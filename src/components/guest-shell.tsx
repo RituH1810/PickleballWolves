@@ -15,6 +15,7 @@ export function useViewer() {
 }
 
 const BROWSE_LINKS = [
+  { href: "/dashboard", label: "Home" },
   { href: "/groups", label: "Groups" },
   { href: "/players", label: "Players" },
   { href: "/leaderboards", label: "Leaderboards" },
@@ -43,6 +44,8 @@ export function GuestShell({ signedIn, children }: { signedIn: boolean; children
   const [prompting, setPrompting] = useState(false);
   const promptSignIn = useCallback(() => setPrompting(true), []);
   const guest = !signedIn && !isStandalonePath(pathname);
+  // The dashboard has its own header with Sign in / Join.
+  const showBar = guest && pathname !== "/dashboard";
 
   useEffect(() => {
     if (!guest) return;
@@ -61,10 +64,10 @@ export function GuestShell({ signedIn, children }: { signedIn: boolean; children
   const next = encodeURIComponent(pathname);
   return (
     <ViewerContext.Provider value={{ signedIn, promptSignIn }}>
-      {guest && (
+      {showBar && (
         <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[#0f1712]/95 backdrop-blur">
           <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-2.5 sm:px-6">
-            <Link href="/groups" className="shrink-0 text-sm font-extrabold tracking-tight">Pickleball<span className="text-[var(--lime-deep)]">Wolves</span></Link>
+            <Link href="/dashboard" className="shrink-0 text-sm font-extrabold tracking-tight">Pickleball<span className="text-[var(--lime-deep)]">Wolves</span></Link>
             <nav aria-label="Browse" className="flex min-w-0 flex-1 gap-1 overflow-x-auto text-xs font-bold [scrollbar-width:none]">
               {BROWSE_LINKS.map((link) => (
                 <Link key={link.href} href={link.href} className={`shrink-0 rounded-full px-2.5 py-1.5 ${pathname === link.href || pathname.startsWith(`${link.href}/`) ? "bg-[#1c2a1a] text-[var(--lime-deep)]" : "text-[var(--ink-soft)] hover:text-[var(--foreground)]"}`}>{link.label}</Link>
@@ -97,8 +100,3 @@ export function GuestShell({ signedIn, children }: { signedIn: boolean; children
   );
 }
 
-/** "Back to dashboard" -- only for signed-in players (guests have the browse bar instead). */
-export function DashboardLink({ href = "/", className, children }: { href?: string; className: string; children: React.ReactNode }) {
-  const { signedIn } = useViewer();
-  return signedIn ? <Link href={href} className={className}>{children}</Link> : null;
-}
