@@ -9,13 +9,14 @@ import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
 import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
+import { AddGuestPlayer } from "@/components/add-guest-player";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
 
 type Match = { id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
 type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
-type JoinedPlayer = { id: string; name: string; fromOutside?: boolean };
+type JoinedPlayer = { id: string; name: string; isGuest?: boolean; fromOutside?: boolean };
 type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null; playerRatings: Record<string, number> };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
@@ -411,7 +412,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
               {room.joinedPlayers.map((player) => (
                 <span key={player.id} className={`flex items-center gap-1 rounded-full bg-[#1e2b17] py-1.5 text-xs font-bold text-[#c7e572] ${room.isOwner ? "pl-3 pr-1.5" : "px-3"} ${removingPlayerId === player.id ? "opacity-50" : ""}`}>
-                  {player.name}{player.fromOutside && <span title="Not in the group -- added to this game by the organizer" className="rounded-full bg-[#0f1712] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Guest</span>}
+                  {player.name}{player.isGuest ? <span title="Added by name -- not on PickleballWolves" className="rounded-full bg-[#0f1712] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Guest</span> : player.fromOutside && <span title="Not in the group -- added to this game by the organizer" className="rounded-full bg-[#0f1712] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Outside</span>}
                   {room.isOwner && <button onClick={() => removePlayerFromRoster(player)} disabled={removingPlayerId === player.id} aria-label={`Remove ${player.name}`} title={`Remove ${player.name}`} className="grid h-5 w-5 place-items-center rounded-full text-[#c7e572] transition-colors hover:bg-[var(--coral)] hover:text-[#2e1a16]"><X size={12} /></button>}
                 </span>
               ))}
@@ -434,6 +435,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                     </div>
                   )}
                   {room.groupId && <OutsidePlayerSearch excludeIds={new Set([...rosterCandidates.map((member) => member.id), ...room.joinedPlayers.map((player) => player.id)])} onAdd={addPlayerToRoster} addingId={addingPlayerId} />}
+                  <AddGuestPlayer roundRobinId={roundRobinId} joinedIds={new Set(room.joinedPlayers.map((player) => player.id))} onAdded={loadRoom} onError={(message) => showNotice(message, "error")} />
                 </div>
               );
             })()}

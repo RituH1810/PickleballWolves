@@ -9,6 +9,6 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const admin = await prisma.user.findUnique({ where: { id: user.id }, select: { role: true } });
   if (admin?.role !== UserRole.ADMIN) return NextResponse.json({ error: "Admin access required." }, { status: 403 });
-  const [users, groups, events] = await Promise.all([prisma.user.count(), prisma.group.count(), prisma.event.count()]);
+  const [users, groups, events] = await Promise.all([prisma.user.count({ where: { isGuest: false } }), prisma.group.count(), prisma.event.count()]);
   return NextResponse.json({ stats: { users, groups, events } });
 }

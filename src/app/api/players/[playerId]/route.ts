@@ -12,7 +12,7 @@ export async function GET(_request: Request, context: { params: Promise<{ player
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const player = await prisma.user.findUnique({ where: { id: playerId }, select: { id: true, name: true, photoUrl: true, homeCourt: true, preferredHand: true, skillRating: true, createdAt: true } });
+  const player = await prisma.user.findUnique({ where: { id: playerId }, select: { id: true, name: true, photoUrl: true, homeCourt: true, preferredHand: true, skillRating: true, createdAt: true, isGuest: true } });
   if (!player) return NextResponse.json({ error: "Player not found." }, { status: 404 });
 
   const [matches, leaderboard, groups] = await Promise.all([
@@ -67,6 +67,7 @@ export async function GET(_request: Request, context: { params: Promise<{ player
       rank: entry?.rank ?? null,
       matchesToQualify: entry ? 0 : Math.max(0, MIN_MATCHES_FOR_RANKING - matches.length),
       isMe: user?.id === playerId,
+      isGuest: player.isGuest,
     },
     groups,
     headToHead,

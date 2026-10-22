@@ -31,6 +31,7 @@ export async function GET(request: Request) {
   if (Number.isFinite(minRating)) rating.gte = minRating;
   if (Number.isFinite(maxRating)) rating.lte = maxRating;
   const where: Prisma.UserWhereInput = {
+    isGuest: false,
     ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
     ...(court ? { homeCourt: { contains: court, mode: "insensitive" } } : {}),
     ...(Object.keys(rating).length ? { skillRating: rating } : {}),

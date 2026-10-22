@@ -64,7 +64,7 @@ export async function sendWeeklyDigests(siteUrl: string, now = new Date()) {
   if (!resend) return { sent: 0, skipped: "RESEND_API_KEY is not configured." };
 
   const [users, optedOut] = await Promise.all([
-    prisma.user.findMany({ select: { id: true, email: true } }),
+    prisma.user.findMany({ where: { isGuest: false }, select: { id: true, email: true } }),
     prisma.notificationPreference.findMany({ where: { weeklyDigest: false }, select: { userId: true } }),
   ]);
   const off = new Set(optedOut.map((row) => row.userId));

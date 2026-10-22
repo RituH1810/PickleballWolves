@@ -12,7 +12,7 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
     where: { id: roundRobinId },
     include: {
       group: { select: { id: true, name: true, location: true } },
-      rsvps: { include: { user: { select: { id: true, name: true } } } },
+      rsvps: { include: { user: { select: { id: true, name: true, isGuest: true } } } },
       rounds: { orderBy: { roundNumber: "asc" }, include: { matches: { where: { deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } } },
       // Matches created one-off via "Create match" instead of through generate/add-round --
       // they belong to the round robin directly but aren't attached to any numbered Round.
@@ -38,7 +38,7 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
   // In a group game, flag anyone the organizer brought in from outside the group.
   const joinedRsvps = roundRobin.rsvps.filter((rsvp) => rsvp.status === "JOINED");
   const memberIds = roundRobin.groupId ? new Set((await prisma.membership.findMany({ where: { groupId: roundRobin.groupId, status: MembershipStatus.ACTIVE, userId: { in: joinedRsvps.map((rsvp) => rsvp.userId) } }, select: { userId: true } })).map((membership) => membership.userId)) : null;
-  const joinedPlayers = joinedRsvps.map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name, fromOutside: memberIds ? !memberIds.has(rsvp.userId) : false }));
+  const joinedPlayers = joinedRsvps.map((rsvp) => ({ id: rsvp.user.id, name: rsvp.user.name, isGuest: rsvp.user.isGuest, fromOutside: memberIds ? !memberIds.has(rsvp.userId) : false }));
   // Skill ratings for anyone who can be put in a match, so "Suggest a match" can balance teams.
   const pickableIds = [...new Set([...joinedPlayers.map((player) => player.id), ...roundRobin.rounds.flatMap((round) => round.matches.flatMap((match) => match.players.map((player) => player.userId))), ...roundRobin.matches.flatMap((match) => match.players.map((player) => player.userId))])];
   const playerRatings = Object.fromEntries((await prisma.user.findMany({ where: { id: { in: pickableIds } }, select: { id: true, skillRating: true } })).map((player) => [player.id, Number(player.skillRating)]));

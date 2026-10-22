@@ -95,7 +95,7 @@ export async function GET() {
   }
 
   // Everyone with a profile row -- created on first sign-in, so it counts people who actually joined.
-  const totalPlayers = await prisma.user.count();
+  const totalPlayers = await prisma.user.count({ where: { isGuest: false } });
   return NextResponse.json({ userId: user?.id ?? null, totalPlayers, events: events.map((event) => ({ id: event.id, title: event.title, startsAt: event.startsAt, dateLabel: event.startsAt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }), timeLabel: event.startsAt.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }), location: event.location, format: event.format === "MIXED" ? "Mixed doubles" : event.format.charAt(0) + event.format.slice(1).toLowerCase(), spotsLeft: Math.max(0, event.playerCap - event.rsvps.filter((rsvp) => rsvp.status === "GOING").length), totalSpots: event.playerCap, group: event.group?.name ?? "Open play", accent: "lime", attending: user ? event.rsvps.some((rsvp) => rsvp.userId === user.id && rsvp.status === "GOING") : false })), groups: groups.map((group) => {
     // "Next up" for a group can come from either an event or a round robin -- whichever is soonest.
     const nextEvent = group.events[0];

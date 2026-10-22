@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { buildLeaderboard } from "@/lib/leaderboard";
 
 export async function GET() {
-  const players = await prisma.user.findMany({ orderBy: { name: "asc" }, take: 100, select: { id: true, name: true, preferredHand: true, skillRating: true, gender: true } });
+  const players = await prisma.user.findMany({ where: { isGuest: false }, orderBy: { name: "asc" }, take: 100, select: { id: true, name: true, preferredHand: true, skillRating: true, gender: true } });
   // Same ranking as the leaderboard: only players with enough matches to qualify get a rank.
   const rankById = new Map((await buildLeaderboard()).map((entry) => [entry.id, entry.rank]));
 

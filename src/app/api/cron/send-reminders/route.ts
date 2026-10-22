@@ -41,7 +41,7 @@ export async function GET(request: Request) {
 
   const events = await prisma.event.findMany({
     where: { status: "PUBLISHED", reminderSentAt: null, startsAt: { gte: now, lte: windowEnd } },
-    include: { rsvps: { where: { status: "GOING" }, include: { user: { select: { id: true, email: true, name: true } } } }, group: { select: { name: true } } },
+    include: { rsvps: { where: { status: "GOING", user: { isGuest: false } }, include: { user: { select: { id: true, email: true, name: true } } } }, group: { select: { name: true } } },
   });
   for (const event of events) {
     for (const rsvp of event.rsvps) {
@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
   const roundRobins = await prisma.roundRobin.findMany({
     where: { status: { in: ["SETUP", "LIVE"] }, groupId: { not: null }, reminderSentAt: null, scheduledAt: { gte: now, lte: windowEnd } },
-    include: { rsvps: { where: { status: "JOINED" }, include: { user: { select: { id: true, email: true, name: true } } } }, group: { select: { name: true, location: true } } },
+    include: { rsvps: { where: { status: "JOINED", user: { isGuest: false } }, include: { user: { select: { id: true, email: true, name: true } } } }, group: { select: { name: true, location: true } } },
   });
   for (const roundRobin of roundRobins) {
     for (const rsvp of roundRobin.rsvps) {

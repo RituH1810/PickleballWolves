@@ -6,7 +6,7 @@ export const MIN_MATCHES_FOR_RANKING = 20;
 
 /** The community leaderboard: qualified players ranked by win %, then point differential. */
 export async function buildLeaderboard() {
-  const players = await prisma.user.findMany({ take: 50, select: { id: true, name: true, skillRating: true, photoUrl: true } });
+  const players = await prisma.user.findMany({ where: { isGuest: false }, take: 50, select: { id: true, name: true, skillRating: true, photoUrl: true } });
   const completed = await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null }, include: { players: true, scores: true } });
   const entries = players.map((player) => {
     const matches = completed.filter((match) => match.players.some((matchPlayer) => matchPlayer.userId === player.id));

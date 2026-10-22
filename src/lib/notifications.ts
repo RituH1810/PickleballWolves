@@ -19,6 +19,9 @@ const PREFERENCE_FIELD: Partial<Record<NotificationCategory, "inAppReminders" | 
  * notification opens.
  */
 export async function notify(userId: string, category: NotificationCategory, type: string, title: string, body: string, url = "/notifications") {
+  // Guest players (added by name, no login) can't read notifications.
+  const recipient = await prisma.user.findUnique({ where: { id: userId }, select: { isGuest: true } });
+  if (!recipient || recipient.isGuest) return;
   const field = PREFERENCE_FIELD[category];
   if (field) {
     const preference = await prisma.notificationPreference.findUnique({ where: { userId } });
