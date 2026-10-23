@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { cookies } from "next/headers";
+import Script from "next/script";
 import "./globals.css";
 import { GuestShell } from "@/components/guest-shell";
 
@@ -34,7 +35,12 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col"><GuestShell signedIn={signedIn}>{children}</GuestShell></body>
+      <body className="min-h-full flex flex-col">
+        <GuestShell signedIn={signedIn}>{children}</GuestShell>
+        {/* Vercel Web Analytics: page views, referrers, countries, devices -- cookie-free. Served by
+            Vercel once Analytics is enabled for the project (it 404s harmlessly in local dev). */}
+        <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />
+      </body>
     </html>
   );
 }

@@ -42,6 +42,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // The service worker, app manifest, and home-screen icon load without signing in (phones fetch
-  // them in the background).
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|sw.js|manifest.webmanifest|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
+  // them in the background), and so does Vercel Web Analytics (/_vercel/insights/...), or visitors
+  // who aren't signed in would never be counted.
+  matcher: ["/((?!api|_next/static|_next/image|_vercel|favicon.ico|sitemap.xml|robots.txt|sw.js|manifest.webmanifest|apple-icon|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)"],
 };
