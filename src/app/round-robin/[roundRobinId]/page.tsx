@@ -12,10 +12,11 @@ import { OutsidePlayerSearch } from "@/components/outside-player-search";
 import { AddGuestPlayer } from "@/components/add-guest-player";
 import { GameWeatherChip } from "@/components/weather-chip";
 import { CoHostsPanel } from "@/components/co-hosts-panel";
+import { isUpset, type Prediction } from "@/lib/match-prediction";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
 
-type Match = { id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
+type Match = { prediction?: Prediction | null; id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
 type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string; isGuest?: boolean; fromOutside?: boolean };
@@ -612,11 +613,16 @@ function MatchCard({ match, onSave, onDelete, canManage, canScore }: { match: Ma
   const [sideA, setSideA] = useState(match.scores[0]?.sideAScore?.toString() ?? "");
   const [sideB, setSideB] = useState(match.scores[0]?.sideBScore?.toString() ?? "");
   const hasScore = match.scores.length > 0;
+  const prediction = match.prediction ?? null;
+  const winner = hasScore ? (match.scores[0].sideAScore > match.scores[0].sideBScore ? "A" : match.scores[0].sideBScore > match.scores[0].sideAScore ? "B" : null) : null;
+  const upset = isUpset(prediction, winner);
+  const chance = (side: "A" | "B") => (prediction ? (side === "A" ? prediction.chanceA : 100 - prediction.chanceA) : null);
   return (
     <article className="rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Court {match.courtNumber}</span>
         <div className="flex items-center gap-2">
+          {upset && winner && <span title={`Won with a ${chance(winner)}% chance going in`} className="rounded-full bg-[var(--coral)] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-[#2e1a16]">Upset!</span>}
           {hasScore ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
           {canManage && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[#2e1a16] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
         </div>
@@ -631,7 +637,11 @@ function MatchCard({ match, onSave, onDelete, canManage, canScore }: { match: Ma
           <div key={side}>
             {side === "B" && <p className="my-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">vs</p>}
             <div className="flex items-center justify-between gap-3">
-              <p className={`min-w-0 flex-1 text-sm font-bold ${saved !== null && !won ? "text-[var(--ink-soft)]" : "text-[var(--foreground)]"}`}>{names}</p>
+              <p className={`min-w-0 flex-1 text-sm font-bold ${saved !== null && !won ? "text-[var(--ink-soft)]" : "text-[var(--foreground)]"}`}>
+                {names}
+                {/* Before it's played: each side's chance, from ratings. */}
+                {!hasScore && prediction && <span title="Chance to win, from players' ratings" className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-black ${prediction.favorite === side ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{chance(side)}%</span>}
+              </p>
               {canScore ? (
                 <input value={side === "A" ? sideA : sideB} onChange={(event) => (side === "A" ? setSideA : setSideB)(event.target.value)} placeholder="0" type="number" inputMode="numeric" min={0} aria-label={`${names} score`} className={`h-11 w-16 shrink-0 rounded-lg border text-center text-base font-black ${won ? "border-[var(--lime-deep)] text-[var(--lime)]" : "border-[var(--line)]"}`} />
               ) : (

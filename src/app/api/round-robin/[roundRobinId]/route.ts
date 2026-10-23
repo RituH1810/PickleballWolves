@@ -3,6 +3,7 @@ import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin, isRoundRobinParticipant } from "@/lib/round-robin-access";
+import { predictMatch } from "@/lib/match-prediction";
 
 export async function GET(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const { roundRobinId } = await context.params;
@@ -48,6 +49,20 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
   const playerRatings = Object.fromEntries((await prisma.user.findMany({ where: { id: { in: pickableIds } }, select: { id: true, skillRating: true } })).map((player) => [player.id, Number(player.skillRating)]));
   const myRsvpStatus = user ? roundRobin.rsvps.find((rsvp) => rsvp.userId === user.id)?.status ?? null : null;
 
+  // Each match's win chances: scored matches use the ratings players had going in (so later rating
+  // moves don't rewrite them, and upsets stay upsets); matches still to play use current ratings.
+  type LoadedMatch = (typeof roundRobin.matches)[number];
+  const scoredIds = [...roundRobin.rounds.flatMap((round) => round.matches), ...roundRobin.matches].filter((match) => match.scores.length).map((match) => match.id);
+  const ratingBefore = new Map((scoredIds.length ? await prisma.ratingHistory.findMany({ where: { matchId: { in: scoredIds }, ladderId: null }, select: { matchId: true, userId: true, ratingBefore: true } }) : []).map((row) => [`${row.matchId}:${row.userId}`, Number(row.ratingBefore)]));
+  const predictionFor = (match: LoadedMatch) => {
+    const rating = (userId: string) => (match.scores.length ? ratingBefore.get(`${match.id}:${userId}`) : playerRatings[userId]);
+    const side = (name: "A" | "B") => match.players.filter((player) => player.side === name).map((player) => rating(player.userId)).filter((value): value is number => typeof value === "number");
+    const sideA = side("A");
+    const sideB = side("B");
+    // Only when every player has a rating -- a partial side would skew the average.
+    return sideA.length + sideB.length === match.players.length ? predictMatch(sideA, sideB) : null;
+  };
+
   return NextResponse.json({
     roundRobin: {
       ...roundRobin,
@@ -66,8 +81,8 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       myUserId: user?.id ?? null,
       myRsvpStatus,
       isGroupMember,
-      rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })),
-      manualMatches: roundRobin.matches.map((match) => ({ ...match, players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })),
+      rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, prediction: predictionFor(match), players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })),
+      manualMatches: roundRobin.matches.map((match) => ({ ...match, prediction: predictionFor(match), players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })),
     },
   });
 }

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { announceNewAchievements } from "@/lib/announce-achievements";
 import { notify } from "@/lib/notifications";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
+import { expectedWin, K_FACTOR, MAX_RATING, MIN_RATING } from "@/lib/match-prediction";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -67,15 +68,8 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const ratingById = new Map(players.map((player) => [player.id, Number(player.skillRating)]));
   const sideAIds = match.players.filter((player) => player.side === Side.A).map((player) => player.userId).filter((id) => ratingById.has(id));
   const sideBIds = match.players.filter((player) => player.side === Side.B).map((player) => player.userId).filter((id) => ratingById.has(id));
-  const MIN_RATING = 2;
-  const MAX_RATING = 6;
-  // Rating scale only spans 4 points (2.0-6.0), not the ~thousands chess Elo assumes -- using
-  // chess's 400-point divisor made the rating gap between any two players on this scale
-  // negligible, so expectedA was always ~0.5 regardless of actual skill gap, and the 32
-  // K-factor produced swings several times larger than the whole scale, clamping ratings to
-  // 2.0 or 6.0 after a single match. Scale both to the actual rating span instead.
-  const RATING_SPAN = MAX_RATING - MIN_RATING;
-  const K_FACTOR = 0.5;
+  // The rating model (scale, K-factor, expected result) lives in match-prediction, shared with
+  // the win chances shown before a match.
   const nameById = new Map(match.players.map((player) => [player.userId, player.user.name]));
   let ratingChanges: { userId: string; name: string; side: "A" | "B"; ratingBefore: number; ratingAfter: number; ratingDelta: number }[] = [];
   let opponentAvgRating: { A: number; B: number } | null = null;
@@ -86,7 +80,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     const avgA = avg(sideAIds);
     const avgB = avg(sideBIds);
     opponentAvgRating = { A: Math.round(avgA * 100) / 100, B: Math.round(avgB * 100) / 100 };
-    const expectedA = 1 / (1 + 10 ** ((avgB - avgA) / RATING_SPAN));
+    const expectedA = expectedWin(avgA, avgB);
     const actualA = winnerSide === Side.A ? 1 : 0;
     const delta = Math.round(K_FACTOR * (actualA - expectedA) * 100) / 100;
     const updates = [
