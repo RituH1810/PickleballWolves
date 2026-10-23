@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, Lock, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, Lock, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users, BarChart3 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { GroupAnnouncements } from "@/components/group-announcements";
 import { RecurringSchedules } from "@/components/recurring-schedules";
@@ -160,7 +160,12 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <h1 className="text-2xl font-black tracking-[-.03em] text-[var(--foreground)] sm:text-3xl">{group.name}</h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--ink-soft)]"><span className="flex items-center gap-1"><MapPin size={14} />{group.location}</span><DirectionsLink address={group.location} /></p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {group.myRole === "ORGANIZER" && (
+                <Link href={`/groups/${groupId}/insights`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]">
+                  <BarChart3 size={15} />Insights
+                </Link>
+              )}
               {group.isMember && (
                 <Link href={`/round-robin?groupId=${groupId}`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
                   <Repeat size={15} />Create round robin
