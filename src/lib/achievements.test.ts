@@ -74,6 +74,18 @@ describe("computeAchievements", () => {
     expect(compute([match(true)])["giant-slayer"].unlocked).toBe(false);
   });
 
+  it("awards Upset Artist on the fifth win with a 40% chance or less", () => {
+    const games = ["u1", "u2", "fav", "u3", "u4", "u5"].map((id) => match(true, { id }));
+    // 3.0 vs 4.4 is a 31% chance; the favorite's win and a loss don't count.
+    const ratingBefore = new Map(games.flatMap((game) => [[`${game.id}:me`, 3.0], [`${game.id}:opp-${game.id}`, game.id === "fav" ? 2.5 : 4.4]] as [string, number][]));
+    const lost = match(false, { id: "lost" });
+    ratingBefore.set("lost:me", 3.0).set("lost:opp-lost", 4.4);
+    const result = compute([...games, lost], { ratingBefore });
+    expect(result["upset-artist"].unlocked).toBe(true);
+    expect(result["upset-artist"].unlockedAt).toEqual(games[5].playedAt);
+    expect(compute(games.slice(0, 4), { ratingBefore })["upset-artist"].progress).toEqual({ current: 3, target: 5 });
+  });
+
   it("measures Rising Star from the first recorded rating", () => {
     const ratingHistory = [
       { ratingBefore: 3.0, ratingAfter: 3.2, createdAt: new Date(2026, 0, 1) },

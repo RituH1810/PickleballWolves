@@ -62,6 +62,17 @@ describe("computeRecap", () => {
     ])!;
     expect(recap.biggestRatingGain).toEqual({ userId: "Cy", name: "Cy", value: 0.1 });
   });
+
+  it("finds the biggest upset from the ratings going into each match", () => {
+    const before = (matchId: string, ratings: Record<string, number>) => Object.entries(ratings).map(([userId, ratingBefore]) => ({ userId, matchId, ratingDelta: 0, ratingBefore }));
+    const recap = computeRecap(matches, [
+      ...before("m1", { Ann: 3, Bo: 3, Cy: 4.4, Di: 4.4 }), // Ann & Bo win 11-3 with a 31% chance
+      ...before("m2", { Ann: 3, Cy: 3.6, Bo: 3, Di: 3.6 }), // even match
+      ...before("m3", { Ann: 3, Di: 3.2, Bo: 3.6, Cy: 3.6 }), // 43%: an underdog win, but not an upset
+    ])!;
+    expect(recap.biggestUpset).toEqual({ matchId: "m1", winners: [{ userId: "Ann", name: "Ann" }, { userId: "Bo", name: "Bo" }], losers: [{ userId: "Cy", name: "Cy" }, { userId: "Di", name: "Di" }], winnerScore: 11, loserScore: 3, chance: 31 });
+    expect(computeRecap(matches)!.biggestUpset).toBeNull();
+  });
 });
 
 describe("recapShareText", () => {

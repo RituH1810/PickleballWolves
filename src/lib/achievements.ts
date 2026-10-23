@@ -1,5 +1,7 @@
 export type AchievementTier = "bronze" | "silver" | "gold";
-export type AchievementIcon = "sparkles" | "star" | "repeat" | "target" | "medal" | "award" | "zap" | "flame" | "circle-dot" | "rotate-ccw" | "swords" | "handshake" | "users" | "trending-up" | "crown" | "trophy";
+import { isUpset, predictMatch, UPSET_MAX_CHANCE } from "./match-prediction";
+
+export type AchievementIcon = "sparkles" | "star" | "repeat" | "target" | "medal" | "award" | "zap" | "flame" | "circle-dot" | "rotate-ccw" | "swords" | "handshake" | "users" | "trending-up" | "crown" | "trophy" | "dices";
 
 export type Achievement = {
   id: string;
@@ -38,6 +40,8 @@ export type AchievementInput = {
 // Beating a side whose average pre-match rating is at least this much higher counts as an upset.
 export const GIANT_SLAYER_GAP = 0.5;
 export const RISING_STAR_GAIN = 0.5;
+// Upsets (wins with UPSET_MAX_CHANCE% or less going in) needed for Upset Artist.
+export const UPSET_ARTIST_UPSETS = 5;
 
 type Definition = Omit<Achievement, "unlocked" | "unlockedAt" | "progress"> & { target: number };
 
@@ -54,6 +58,7 @@ const DEFINITIONS: Definition[] = [
   { id: "bagel", name: "Bagel", description: "Win a game without giving up a point.", icon: "circle-dot", tier: "silver", target: 1 },
   { id: "comeback", name: "Comeback", description: "Lose the first game, then win the match.", icon: "rotate-ccw", tier: "silver", target: 1 },
   { id: "giant-slayer", name: "Giant Slayer", description: `Beat a side rated ${GIANT_SLAYER_GAP.toFixed(1)}+ higher than yours.`, icon: "swords", tier: "gold", target: 1 },
+  { id: "upset-artist", name: "Upset Artist", description: `Pull off ${UPSET_ARTIST_UPSETS} upsets -- win with a ${UPSET_MAX_CHANCE}% chance or less.`, icon: "dices", tier: "gold", target: UPSET_ARTIST_UPSETS },
   { id: "mixer", name: "Mixer", description: "Partner with 10 different players.", icon: "handshake", tier: "silver", target: 10 },
   { id: "round-robin-regular", name: "Round Robin Regular", description: "Play in 5 different round robins.", icon: "users", tier: "bronze", target: 5 },
   { id: "rising-star", name: "Rising Star", description: `Raise your skill rating by ${RISING_STAR_GAIN.toFixed(1)}.`, icon: "trending-up", tier: "gold", target: RISING_STAR_GAIN },
@@ -95,6 +100,7 @@ export function computeAchievements(input: AchievementInput): Achievement[] {
   let wins = 0;
   let streak = 0;
   const partners = new Set<string>();
+  let upsets = 0;
   const roundRobins = new Set<string>();
 
   const matches = [...input.matches].sort((a, b) => a.playedAt.getTime() - b.playedAt.getTime());
@@ -126,6 +132,14 @@ export function computeAchievements(input: AchievementInput): Achievement[] {
       const theirRating = averageRating(match, theirSide, input.ratingBefore);
       // Round to cents first so 3.0 vs 3.5 isn't lost to floating-point error.
       if (myRating !== null && theirRating !== null && Math.round((theirRating - myRating) * 100) >= Math.round(GIANT_SLAYER_GAP * 100)) bump("giant-slayer", 1, at);
+      // Same win chances as the match cards; every player needs a pre-match rating.
+      const sideRatings = (side: "A" | "B") => match.players.filter((player) => player.side === side).map((player) => input.ratingBefore.get(`${match.id}:${player.userId}`)).filter((value): value is number => value !== undefined);
+      const sideA = sideRatings("A");
+      const sideB = sideRatings("B");
+      if (sideA.length + sideB.length === match.players.length && isUpset(predictMatch(sideA, sideB), mine.side)) {
+        upsets += 1;
+        bump("upset-artist", upsets, at);
+      }
     }
 
     match.players.filter((player) => player.side === mine.side && player.userId !== input.userId).forEach((player) => partners.add(player.userId));

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Copy, Crown, Flame, Swords, Target, TrendingUp, type LucideIcon } from "lucide-react";
+import { Copy, Crown, Dices, Flame, Swords, Target, TrendingUp, type LucideIcon } from "lucide-react";
 import { BragButton } from "@/components/brag-button";
 import { recapShareText, type Recap } from "@/lib/round-robin-recap";
 
@@ -72,6 +72,7 @@ export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundR
           <div className="grid gap-3 sm:grid-cols-2">
             {recap.biggestWin && <Highlight icon={Flame} label="Biggest win"><Names players={recap.biggestWin.winners} /> <span className="text-[var(--lime-deep)]">{recap.biggestWin.winnerScore}-{recap.biggestWin.loserScore}</span></Highlight>}
             {recap.closestGame && <Highlight icon={Swords} label="Closest game"><Names players={recap.closestGame.winners} /> <span className="text-[var(--lime-deep)]">{recap.closestGame.winnerScore}-{recap.closestGame.loserScore}</span><span className="block text-xs font-semibold text-[var(--ink-soft)]">over <Names players={recap.closestGame.losers} /></span></Highlight>}
+            {recap.biggestUpset && <Highlight icon={Dices} label="Biggest upset"><Names players={recap.biggestUpset.winners} /> <span className="text-[var(--lime-deep)]">{recap.biggestUpset.winnerScore}-{recap.biggestUpset.loserScore}</span><span className="block text-xs font-semibold text-[var(--ink-soft)]">over <Names players={recap.biggestUpset.losers} /> · {recap.biggestUpset.chance}% chance going in</span></Highlight>}
             {recap.topScorer && <Highlight icon={Target} label="Most points"><Link href={`/players/${recap.topScorer.userId}`} className="hover:text-[var(--lime-deep)] hover:underline">{recap.topScorer.name}</Link> <span className="text-[var(--lime-deep)]">{recap.topScorer.value}</span></Highlight>}
             {recap.biggestRatingGain && <Highlight icon={TrendingUp} label="Biggest rating jump"><Link href={`/players/${recap.biggestRatingGain.userId}`} className="hover:text-[var(--lime-deep)] hover:underline">{recap.biggestRatingGain.name}</Link> <span className="text-[var(--lime-deep)]">+{recap.biggestRatingGain.value.toFixed(2)}</span></Highlight>}
           </div>

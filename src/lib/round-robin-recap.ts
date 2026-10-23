@@ -1,3 +1,8 @@
+import { isUpset, predictMatch } from "./match-prediction";
+
+// Rating history rows for a round robin's matches: the change, and (for upsets) the rating going in.
+export type RatingRow = { userId: string; matchId: string | null; ratingDelta: number; ratingBefore?: number };
+
 export type RecapMatch = {
   id: string;
   players: { userId: string; name: string; side: "A" | "B" }[];
@@ -45,6 +50,8 @@ export type Recap = {
   shutouts: number;
   topScorer: PlayerHighlight | null;
   biggestRatingGain: PlayerHighlight | null;
+  // Won with a 40% chance or less going in; the lowest chance wins. Null when there wasn't one.
+  biggestUpset: (GameHighlight & { chance: number }) | null;
 };
 
 function names(players: PlayerRef[]) {
@@ -52,7 +59,7 @@ function names(players: PlayerRef[]) {
 }
 
 /** Headline numbers for a finished round robin. Unscored matches are ignored. */
-export function computeRecap(matches: RecapMatch[], ratingDeltas: { userId: string; matchId: string | null; ratingDelta: number }[] = []): Recap | null {
+export function computeRecap(matches: RecapMatch[], ratingDeltas: RatingRow[] = []): Recap | null {
   const scored = matches.filter((match) => match.scores.length > 0);
   if (!scored.length) return null;
   const standings = computeRoundRobinStandings(scored);
@@ -75,6 +82,26 @@ export function computeRecap(matches: RecapMatch[], ratingDeltas: { userId: stri
   // Ties go to the higher-scoring game: 13-11 is more of a nail-biter than 5-3.
   const closestGame = games.reduce<GameHighlight | null>((best, game) => !best || margin(game) < margin(best) || (margin(game) === margin(best) && game.winnerScore > best.winnerScore) ? game : best, null);
 
+  // Biggest upset: the match won by the side with the smallest chance going in (same win chances
+  // as the match cards, from the ratings players had before that match). Total points decide it.
+  const ratingBefore = new Map(ratingDeltas.filter((row) => row.matchId && row.ratingBefore !== undefined).map((row) => [`${row.matchId}:${row.userId}`, row.ratingBefore!]));
+  let biggestUpset: Recap["biggestUpset"] = null;
+  for (const match of scored) {
+    const ratings = (side: "A" | "B") => match.players.filter((player) => player.side === side).map((player) => ratingBefore.get(`${match.id}:${player.userId}`)).filter((value): value is number => value !== undefined);
+    const sideA = ratings("A");
+    const sideB = ratings("B");
+    if (sideA.length + sideB.length !== match.players.length) continue;
+    const totalA = match.scores.reduce((total, score) => total + score.sideAScore, 0);
+    const totalB = match.scores.reduce((total, score) => total + score.sideBScore, 0);
+    const winner = totalA > totalB ? "A" : totalB > totalA ? "B" : null;
+    const prediction = predictMatch(sideA, sideB);
+    if (!winner || !isUpset(prediction, winner)) continue;
+    const chance = winner === "A" ? prediction!.chanceA : 100 - prediction!.chanceA;
+    if (biggestUpset && chance >= biggestUpset.chance) continue;
+    const people = (side: "A" | "B") => match.players.filter((player) => player.side === side).map(({ userId, name }) => ({ userId, name }));
+    biggestUpset = { matchId: match.id, winners: people(winner), losers: people(winner === "A" ? "B" : "A"), winnerScore: Math.max(totalA, totalB), loserScore: Math.min(totalA, totalB), chance };
+  }
+
   const scorer = [...standings].sort((a, b) => b.scored - a.scored)[0];
   const matchIds = new Set(scored.map((match) => match.id));
   const gains = new Map<string, number>();
@@ -93,6 +120,7 @@ export function computeRecap(matches: RecapMatch[], ratingDeltas: { userId: stri
     shutouts: games.filter((game) => game.loserScore === 0).length,
     topScorer: scorer ? { userId: scorer.userId, name: scorer.name, value: scorer.scored } : null,
     biggestRatingGain: gainer && gain > 0 ? { userId: gainer.userId, name: gainer.name, value: Math.round(gain * 100) / 100 } : null,
+    biggestUpset,
   };
 }
 
@@ -104,6 +132,7 @@ export function recapShareText(name: string, recap: Recap, url: string) {
   if (recap.biggestWin) lines.push(`Biggest win: ${names(recap.biggestWin.winners)} ${recap.biggestWin.winnerScore}-${recap.biggestWin.loserScore}`);
   if (recap.closestGame) lines.push(`Closest game: ${names(recap.closestGame.winners)} ${recap.closestGame.winnerScore}-${recap.closestGame.loserScore}`);
   if (recap.biggestRatingGain) lines.push(`Biggest rating jump: ${recap.biggestRatingGain.name} +${recap.biggestRatingGain.value.toFixed(2)}`);
+  if (recap.biggestUpset) lines.push(`Biggest upset: ${names(recap.biggestUpset.winners)} beat ${names(recap.biggestUpset.losers)} ${recap.biggestUpset.winnerScore}-${recap.biggestUpset.loserScore} with a ${recap.biggestUpset.chance}% chance`);
   lines.push(`${recap.totals.players} players · ${recap.totals.games} games · ${recap.totals.points} points`);
   lines.push(url);
   return lines.join("\n");
