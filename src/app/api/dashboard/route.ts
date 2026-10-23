@@ -50,7 +50,7 @@ export async function GET() {
       where: {
         status: { in: ["SETUP", "LIVE"] },
         AND: [
-          { OR: [{ createdById: user.id }, { rsvps: { some: { userId: user.id, status: "JOINED" } } }] },
+          { OR: [{ createdById: user.id }, { coHostIds: { has: user.id } }, { rsvps: { some: { userId: user.id, status: "JOINED" } } }] },
           { OR: [{ scheduledAt: null }, { scheduledAt: { gte: upcomingSince } }] },
         ],
       },
@@ -67,7 +67,7 @@ export async function GET() {
       partnerFormat: roundRobin.partnerFormat,
       status: roundRobin.status,
       scheduledAt: roundRobin.scheduledAt,
-      isOrganizer: roundRobin.createdById === user.id,
+      isOrganizer: roundRobin.createdById === user.id || roundRobin.coHostIds.includes(user.id),
       myRsvpStatus: roundRobin.rsvps[0]?.status ?? null,
     }));
 

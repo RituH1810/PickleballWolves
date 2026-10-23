@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { isRoundRobinParticipant } from "@/lib/round-robin-access";
+import { canRunRoundRobin, isRoundRobinParticipant } from "@/lib/round-robin-access";
 
 export async function GET(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const { roundRobinId } = await context.params;
@@ -29,10 +29,14 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
     const membership = user ? await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } }) : null;
     isGroupMember = Boolean(membership && membership.status === MembershipStatus.ACTIVE);
     // Players added from outside the group can see the game they're in.
-    if (!isGroupMember && roundRobin.createdById !== user?.id && !(user && await isRoundRobinParticipant(roundRobinId, user.id))) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
+    if (!isGroupMember && roundRobin.createdById !== user?.id && !(user && roundRobin.coHostIds.includes(user.id)) && !(user && await isRoundRobinParticipant(roundRobinId, user.id))) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
   }
 
-  const organizer = await prisma.user.findUnique({ where: { id: roundRobin.createdById }, select: { name: true } });
+  const [organizer, coHosts, canRun] = await Promise.all([
+    prisma.user.findUnique({ where: { id: roundRobin.createdById }, select: { name: true } }),
+    roundRobin.coHostIds.length ? prisma.user.findMany({ where: { id: { in: roundRobin.coHostIds } }, select: { id: true, name: true }, orderBy: { name: "asc" } }) : [],
+    user ? canRunRoundRobin(roundRobin, user.id) : false,
+  ]);
   const hasScores = roundRobin.rounds.some((round) => round.matches.some((match) => match.scores.length > 0)) || roundRobin.matches.some((match) => match.scores.length > 0);
 
   // In a group game, flag anyone the organizer brought in from outside the group.
@@ -49,6 +53,9 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       ...roundRobin,
       organizerName: organizer?.name ?? "Unknown",
       isOwner: user ? roundRobin.createdById === user.id : false,
+      // Organizer, co-host, or group organizer: can run the game (isOwner alone edits/deletes it).
+      canRun,
+      coHosts,
       hasScores,
       groupId: roundRobin.group?.id ?? null,
       groupName: roundRobin.group?.name ?? null,

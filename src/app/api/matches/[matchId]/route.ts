@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 export async function DELETE(_request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in to delete this match." }, { status: 401 });
   const { matchId } = await context.params;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { roundRobin: { select: { id: true, createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { roundRobin: { select: { id: true, createdById: true, coHostIds: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
   if (!match || match.deletedAt) return NextResponse.json({ error: "Match not found." }, { status: 404 });
   if (!match.roundRobin && !match.tournamentGroup && !match.leagueMatch) return NextResponse.json({ error: "This match isn't part of a round robin, tournament, or league." }, { status: 400 });
 
@@ -17,7 +18,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ mat
     // so can any member who's joined the round robin -- group and non-group alike. Deleting is
     // more destructive than scoring, so unlike scoring this doesn't extend to mere match
     // participants who haven't actually joined.
-    canManage = match.roundRobin.createdById === user.id;
+    canManage = await canRunRoundRobin(match.roundRobin, user.id);
     if (!canManage) {
       const myRsvp = await prisma.roundRobinRSVP.findUnique({ where: { roundRobinId_userId: { roundRobinId: match.roundRobin.id, userId: user.id } } });
       canManage = myRsvp?.status === "JOINED";

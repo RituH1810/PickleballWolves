@@ -3,6 +3,7 @@ import { MembershipStatus, RoundRobinRsvpStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notifications";
+import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 export async function POST(request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const supabase = await createClient();
@@ -18,7 +19,8 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   // The organizer can RSVP on behalf of any active group member -- e.g. adding someone to a
   // Dink Draft round robin's roster directly, instead of waiting for them to self-RSVP.
   const targetUserId = typeof body.userId === "string" && body.userId ? body.userId : user.id;
-  if (targetUserId !== user.id && roundRobin.createdById !== user.id) {
+  const canRun = await canRunRoundRobin(roundRobin, user.id);
+  if (targetUserId !== user.id && !canRun) {
     return NextResponse.json({ error: "Only the organizer can RSVP on someone else's behalf." }, { status: 403 });
   }
 
@@ -27,13 +29,13 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     const isMember = membership?.status === MembershipStatus.ACTIVE;
     // The organizer can also bring in a player from outside the group -- added to this game only,
     // not to the group. Everyone else has to be a member.
-    const organizerAddingSomeoneElse = roundRobin.createdById === user.id && targetUserId !== user.id && body.status === "JOINED";
+    const organizerAddingSomeoneElse = canRun && targetUserId !== user.id && body.status === "JOINED";
     if (!isMember && !organizerAddingSomeoneElse) return NextResponse.json({ error: "That player isn't an active member of this group." }, { status: 403 });
     if (!isMember && !(await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true } }))) return NextResponse.json({ error: "Player not found." }, { status: 404 });
   } else {
     // No group means no invites to answer: the organizer builds the roster (a Dink Draft's
     // players), and can add anyone with a profile.
-    if (roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can change this round robin's players." }, { status: 403 });
+    if (!canRun) return NextResponse.json({ error: "Only the organizer or a co-host can change this round robin's players." }, { status: 403 });
     if (body.status !== "JOINED") return NextResponse.json({ error: "Remove a player instead of declining for them." }, { status: 400 });
     if (!(await prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true } }))) return NextResponse.json({ error: "Player not found." }, { status: 404 });
   }
@@ -59,7 +61,7 @@ export async function DELETE(request: Request, context: { params: Promise<{ roun
 
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
-  if (roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the organizer can remove players." }, { status: 403 });
+  if (!(await canRunRoundRobin(roundRobin, user.id))) return NextResponse.json({ error: "Only the organizer or a co-host can remove players." }, { status: 403 });
   if (roundRobin.status === "COMPLETED") return NextResponse.json({ error: "This round robin has already ended." }, { status: 400 });
 
   const userId = new URL(request.url).searchParams.get("userId");

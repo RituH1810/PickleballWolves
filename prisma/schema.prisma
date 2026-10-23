@@ -267,6 +267,10 @@ model RoundRobin {
   reminderSentAt DateTime?
   // Set once the evening-before bad-weather alert has gone out, so it's sent at most once.
   weatherAlertSentAt DateTime?
+  // Players the organizer made co-hosts of this game: they can run it (players, rounds, matches,
+  // scores, ending it) but not edit its settings or delete it. Group organizers can always run
+  // their group's round robins, so they aren't listed here.
+  coHostIds   String[]  @default([])
   createdAt     DateTime @default(now())
   completedAt   DateTime?
   recurringScheduleId String?

@@ -114,6 +114,8 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       }),
       isMember: Boolean(myMembership),
       myRole: myMembership?.role ?? null,
+      // The creator is always an organizer; others can be made (or unmade) co-organizers.
+      createdById: group.createdById,
       myStatus: myAnyMembership?.status ?? null,
       pendingRequests,
     },

@@ -3,24 +3,26 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { GUEST_NAME_MAX, GUEST_RATING_MAX, GUEST_RATING_MIN } from "@/lib/guest-players";
+import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 async function organizerRoundRobin(roundRobinId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: NextResponse.json({ error: "Sign in to manage players." }, { status: 401 }) };
-  const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId }, select: { id: true, createdById: true } });
+  const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId }, select: { id: true, createdById: true, coHostIds: true, groupId: true } });
   if (!roundRobin) return { error: NextResponse.json({ error: "Round robin not found." }, { status: 404 }) };
-  if (roundRobin.createdById !== user.id) return { error: NextResponse.json({ error: "Only the organizer can add guests." }, { status: 403 }) };
-  return { userId: user.id };
+  if (!(await canRunRoundRobin(roundRobin, user.id))) return { error: NextResponse.json({ error: "Only the organizer or a co-host can add guests." }, { status: 403 }) };
+  // Guests either of them has brought before.
+  return { userId: user.id, hostIds: [...new Set([roundRobin.createdById, user.id])] };
 }
 
-// Guests this organizer has brought to any of their round robins before, so a regular guest can be
-// re-added (keeping one history and rating) instead of typed in again as a new player.
+// Guests this game's organizer (or the co-host asking) has brought to their round robins before,
+// so a regular guest can be re-added (keeping one history and rating) instead of typed in again.
 export async function GET(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const access = await organizerRoundRobin((await context.params).roundRobinId);
   if ("error" in access) return access.error;
   const guests = await prisma.user.findMany({
-    where: { isGuest: true, roundRobinRsvps: { some: { roundRobin: { createdById: access.userId } } } },
+    where: { isGuest: true, roundRobinRsvps: { some: { roundRobin: { createdById: { in: access.hostIds } } } } },
     orderBy: { name: "asc" },
     select: { id: true, name: true, skillRating: true },
   });
@@ -37,7 +39,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
 
   let guestId: string;
   if (typeof body?.guestId === "string") {
-    const known = await prisma.user.findFirst({ where: { id: body.guestId, isGuest: true, roundRobinRsvps: { some: { roundRobin: { createdById: access.userId } } } }, select: { id: true } });
+    const known = await prisma.user.findFirst({ where: { id: body.guestId, isGuest: true, roundRobinRsvps: { some: { roundRobin: { createdById: { in: access.hostIds } } } } }, select: { id: true } });
     if (!known) return NextResponse.json({ error: "Guest not found." }, { status: 404 });
     guestId = known.id;
   } else {

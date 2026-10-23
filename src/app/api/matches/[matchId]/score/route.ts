@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { announceNewAchievements } from "@/lib/announce-achievements";
 import { notify } from "@/lib/notifications";
+import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -15,13 +16,13 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const sideBScore = Number(body.sideBScore);
   if (!Number.isInteger(sideAScore) || !Number.isInteger(sideBScore) || sideAScore < 0 || sideBScore < 0 || sideAScore === sideBScore) return NextResponse.json({ error: "Enter two different non-negative scores." }, { status: 400 });
   const winnerSide = sideAScore > sideBScore ? Side.A : Side.B;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: { include: { user: { select: { name: true } } } }, roundRobin: { select: { createdById: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: { include: { user: { select: { name: true } } } }, roundRobin: { select: { createdById: true, coHostIds: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
   if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 });
   if (match.roundRobin) {
     // The organizer can always score. So can anyone actually playing in this match (added by
     // the organizer or self-RSVP'd), and any member who's joined the round robin overall --
     // this applies to group and non-group round robins alike.
-    let canEnterScore = match.roundRobin.createdById === user.id || match.players.some((player) => player.userId === user.id);
+    let canEnterScore = match.players.some((player) => player.userId === user.id) || await canRunRoundRobin(match.roundRobin, user.id);
     if (!canEnterScore) {
       const myRsvp = await prisma.roundRobinRSVP.findUnique({ where: { roundRobinId_userId: { roundRobinId: match.roundRobinId!, userId: user.id } } });
       canEnterScore = myRsvp?.status === "JOINED";

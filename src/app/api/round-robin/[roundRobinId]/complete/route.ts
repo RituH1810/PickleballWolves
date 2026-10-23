@@ -5,6 +5,7 @@ import { notify } from "@/lib/notifications";
 import { loadPlayerRecaps } from "@/lib/load-recap";
 import { playerRecapHeadline } from "@/lib/round-robin-recap";
 import { announceNewAchievements } from "@/lib/announce-achievements";
+import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 export async function POST(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ export async function POST(_request: Request, context: { params: Promise<{ round
   const { roundRobinId } = await context.params;
   const roundRobin = await prisma.roundRobin.findUnique({ where: { id: roundRobinId } });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
-  if (roundRobin.createdById !== user.id) return NextResponse.json({ error: "Only the round robin organizer can end it." }, { status: 403 });
+  if (!(await canRunRoundRobin(roundRobin, user.id))) return NextResponse.json({ error: "Only the organizer or a co-host can end this round robin." }, { status: 403 });
   const updated = await prisma.roundRobin.update({ where: { id: roundRobinId }, data: { status: "COMPLETED", completedAt: new Date() } });
   // Each player gets their own night in one line; the full recap is on the round robin page and
   // their personal recap card stays on the dashboard for a day.

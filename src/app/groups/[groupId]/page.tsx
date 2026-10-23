@@ -19,7 +19,7 @@ type GroupEvent = { id: string; title: string; startsAt: string; location: strin
 type GroupRoundRobin = { id: string; name: string; scheduledAt: string | null; playFormat: string; partnerFormat: string };
 type RecentRoundRobin = { id: string; name: string; status: string; scheduledAt: string | null; playFormat: string; partnerFormat: string; gameCount: number; champions: { id: string; name: string; wins: number; losses: number }[] };
 type PendingRequest = { id: string; name: string; photoUrl: string | null };
-type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; recentRoundRobins: RecentRoundRobin[]; isMember: boolean; myRole: string | null; myStatus: "ACTIVE" | "PENDING" | "DECLINED" | null; pendingRequests: PendingRequest[] };
+type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; recentRoundRobins: RecentRoundRobin[]; isMember: boolean; myRole: string | null; createdById: string; myStatus: "ACTIVE" | "PENDING" | "DECLINED" | null; pendingRequests: PendingRequest[] };
 
 const groupPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
@@ -95,6 +95,18 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
     setInviteEmail("");
     setNotice({ text: `Invite email sent to ${data.invitedEmail}.`, type: "success" });
     setSendingEmailInvite(false);
+  }
+
+  const [roleUpdatingId, setRoleUpdatingId] = useState<string | null>(null);
+  async function setMemberRole(member: Member, role: "MEMBER" | "ORGANIZER") {
+    if (role === "MEMBER" && !window.confirm(`Remove ${member.name} as a co-organizer?`)) return;
+    setRoleUpdatingId(member.id);
+    const response = await fetch(`/api/groups/${groupId}/members/${member.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role }) });
+    const data = await response.json().catch(() => null);
+    setRoleUpdatingId(null);
+    if (!response.ok) { setNotice({ text: data?.error ?? "Unable to update this member.", type: "error" }); return; }
+    setNotice({ text: role === "ORGANIZER" ? `${member.name} is now a co-organizer.` : `${member.name} is no longer a co-organizer.`, type: "success" });
+    await loadGroup();
   }
 
   async function toggleMembership() {
@@ -263,7 +275,12 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                       <Link href={`/players/${member.id}`} className="block truncate text-sm font-bold hover:text-[var(--lime-deep)] hover:underline">{member.name}</Link>
                       <p className="text-[11px] text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"} · {member.skillRating} rating</p>
                     </div>
-                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">Organizer</span>}
+                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">{member.id === group.createdById ? "Organizer" : "Co-organizer"}</span>}
+                    {group.myRole === "ORGANIZER" && member.id !== group.createdById && (
+                      <button onClick={() => setMemberRole(member, member.role === "ORGANIZER" ? "MEMBER" : "ORGANIZER")} disabled={roleUpdatingId === member.id} title={member.role === "ORGANIZER" ? "Remove co-organizer" : "Make co-organizer: they can run the group's round robins, post announcements, and set up recurring games"} className="shrink-0 rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)] hover:border-[var(--lime-deep)] hover:text-[var(--foreground)] disabled:opacity-50">
+                        {roleUpdatingId === member.id ? "..." : member.role === "ORGANIZER" ? "Remove" : "Make co-organizer"}
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>

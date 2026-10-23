@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 function shuffle<T>(items: T[]): T[] {
   const array = [...items];
@@ -24,7 +25,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
 
   // Same permission model as generating the initial schedule: organizer always, or for group
   // round robins any active group member.
-  let canManage = roundRobin.createdById === user.id;
+  let canManage = await canRunRoundRobin(roundRobin, user.id);
   if (!canManage && roundRobin.groupId) {
     const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } });
     canManage = membership?.status === MembershipStatus.ACTIVE;

@@ -11,6 +11,7 @@ import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
 import { AddGuestPlayer } from "@/components/add-guest-player";
 import { GameWeatherChip } from "@/components/weather-chip";
+import { CoHostsPanel } from "@/components/co-hosts-panel";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
 
@@ -18,7 +19,7 @@ type Match = { id: string; createdAt: string; courtNumber: number | null; player
 type Round = { id: string; roundNumber: number; matches: Match[] };
 type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string; isGuest?: boolean; fromOutside?: boolean };
-type RoomInfo = { name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null; playerRatings: Record<string, number> };
+type RoomInfo = { createdById: string; canRun: boolean; coHosts: { id: string; name: string }[]; name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null; playerRatings: Record<string, number> };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
@@ -84,10 +85,10 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     }).finally(() => setLoading(false));
   }, [roundRobinId]);
 
-  // Who the organizer can add straight to the roster: the group's members, or -- for a Dink Draft
-  // outside any group -- every player.
+  // Who the organizer (or a co-host) can add straight to the roster: the group's members, or -- for
+  // a Dink Draft outside any group -- every player.
   useEffect(() => {
-    if (!room?.isOwner) return;
+    if (!room?.canRun) return;
     if (room.groupId) {
       fetch(`/api/groups/${room.groupId}`).then((response) => response.ok ? response.json() : null).then((data) => {
         const members = data?.group?.members as { id: string; name: string }[] | undefined;
@@ -99,7 +100,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         setRosterCandidates(players?.map((player) => ({ id: player.id, name: player.name })) ?? []);
       });
     }
-  }, [room?.isOwner, room?.groupId, room?.partnerFormat]);
+  }, [room?.canRun, room?.groupId, room?.partnerFormat]);
 
   // Keep other viewers' screens live while scores are still being entered -- someone scoring a
   // match court-side shouldn't be the only one who sees it update. Stops once completed, since
@@ -351,9 +352,20 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           <div>
             <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{partnerFormatLabels[room.partnerFormat] ?? room.partnerFormat} · {playFormatLabels[room.playFormat] ?? room.playFormat}</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{room.name}</h1>
-            <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{room.isOwner ? "you" : room.organizerName}</span>{room.groupName && <> for <span className="font-bold text-[var(--foreground)]">{room.groupName}</span></>}</p>
+            <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{room.isOwner ? "you" : room.organizerName}</span>{room.coHosts.length > 0 && <>, co-hosted by <span className="font-bold text-[var(--foreground)]">{room.coHosts.map((coHost) => coHost.id === room.myUserId ? "you" : coHost.name).join(", ")}</span></>}{room.groupName && <> for <span className="font-bold text-[var(--foreground)]">{room.groupName}</span></>}</p>
             {room.location && <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--ink-soft)]"><MapPin size={15} />{room.location}<DirectionsLink address={room.location} /></p>}
             {room.scheduledAt && room.status !== "COMPLETED" && <GameWeatherChip roundRobinId={roundRobinId} className="mt-2" />}
+            {/* The organizer and group organizers pick co-hosts; co-hosts themselves don't. */}
+            {room.status !== "COMPLETED" && (room.isOwner || (room.canRun && !room.coHosts.some((coHost) => coHost.id === room.myUserId))) && (
+              <CoHostsPanel
+                roundRobinId={roundRobinId}
+                coHosts={room.coHosts}
+                candidates={[...new Map([...room.joinedPlayers.filter((player) => !player.isGuest), ...rosterCandidates].filter((person) => person.id !== room.createdById).map((person) => [person.id, { id: person.id, name: person.name }])).values()].sort((a, b) => a.name.localeCompare(b.name))}
+                canManage
+                onChange={loadRoom}
+                onError={(message) => showNotice(message, "error")}
+              />
+            )}
             {room.scheduledAt && <p className="mt-1 flex items-center gap-2 text-sm font-bold text-[var(--lime-deep)]"><CalendarDays size={15} />{new Date(room.scheduledAt).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -361,7 +373,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             {room.scheduledAt && room.status !== "COMPLETED" && <AddToCalendar items={[{ uid: `roundRobin-${roundRobinId}`, title: room.groupName ? `${room.groupName} - ${room.name}` : room.name, start: room.scheduledAt, location: room.location, description: `Organized by ${room.organizerName}.`, url: `/round-robin/${roundRobinId}` }]} />}
             <button onClick={toggleShare} className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
             {room.isOwner && !room.hasScores && <Link href={`/round-robin/${roundRobinId}/edit`} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Edit round robin</Link>}
-            {room.isOwner && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
+            {room.canRun && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
             {room.isOwner && !room.hasScores && <button onClick={deleteRoundRobin} disabled={deleting} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--coral)] px-4 text-xs font-bold text-[var(--coral)] transition-colors hover:bg-[#2e1a16] disabled:cursor-not-allowed disabled:opacity-60">{deleting ? "Deleting..." : "Delete round robin"}</button>}
           </div>
         </div>
@@ -396,7 +408,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
         )}
 
-        {(room.groupId || (room.partnerFormat === "MANUAL" && room.isOwner)) && (room.status === "SETUP" || (room.partnerFormat === "MANUAL" && room.status === "LIVE")) && (
+        {(room.groupId || (room.partnerFormat === "MANUAL" && room.canRun)) && (room.status === "SETUP" || (room.partnerFormat === "MANUAL" && room.status === "LIVE")) && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -413,13 +425,13 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <div className="mt-4 flex flex-wrap gap-2">
               {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
               {room.joinedPlayers.map((player) => (
-                <span key={player.id} className={`flex items-center gap-1 rounded-full bg-[#1e2b17] py-1.5 text-xs font-bold text-[#c7e572] ${room.isOwner ? "pl-3 pr-1.5" : "px-3"} ${removingPlayerId === player.id ? "opacity-50" : ""}`}>
+                <span key={player.id} className={`flex items-center gap-1 rounded-full bg-[#1e2b17] py-1.5 text-xs font-bold text-[#c7e572] ${room.canRun ? "pl-3 pr-1.5" : "px-3"} ${removingPlayerId === player.id ? "opacity-50" : ""}`}>
                   {player.name}{player.isGuest ? <span title="Added by name -- not on PickleballWolves" className="rounded-full bg-[#0f1712] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Guest</span> : player.fromOutside && <span title="Not in the group -- added to this game by the organizer" className="rounded-full bg-[#0f1712] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Outside</span>}
-                  {room.isOwner && <button onClick={() => removePlayerFromRoster(player)} disabled={removingPlayerId === player.id} aria-label={`Remove ${player.name}`} title={`Remove ${player.name}`} className="grid h-5 w-5 place-items-center rounded-full text-[#c7e572] transition-colors hover:bg-[var(--coral)] hover:text-[#2e1a16]"><X size={12} /></button>}
+                  {room.canRun && <button onClick={() => removePlayerFromRoster(player)} disabled={removingPlayerId === player.id} aria-label={`Remove ${player.name}`} title={`Remove ${player.name}`} className="grid h-5 w-5 place-items-center rounded-full text-[#c7e572] transition-colors hover:bg-[var(--coral)] hover:text-[#2e1a16]"><X size={12} /></button>}
                 </span>
               ))}
             </div>
-            {room.isOwner && (() => {
+            {room.canRun && (() => {
               const notYetJoined = rosterCandidates.filter((member) => !room.joinedPlayers.some((player) => player.id === member.id));
               return (
                 <div className="mt-4 border-t border-[var(--line)] pt-4">
@@ -443,7 +455,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             })()}
             {room.partnerFormat === "MANUAL" ? (
               <p className="mt-5 border-t border-[var(--line)] pt-5 text-sm text-[var(--ink-soft)]">This round robin is set to Dink Draft -- build the schedule yourself with Create a match below instead of generating one.</p>
-            ) : (room.isOwner || room.isGroupMember) && (
+            ) : (room.canRun || room.isGroupMember) && (
               <div className="mt-5 border-t border-[var(--line)] pt-5">
                 {needsFixedTeams ? (
                   <>
@@ -482,7 +494,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
         )}
 
-        {room.status !== "COMPLETED" && (room.isOwner || (room.groupId && room.isGroupMember)) && (room.groupId || room.partnerFormat === "MANUAL") && (
+        {room.status !== "COMPLETED" && (room.canRun || (room.groupId && room.isGroupMember)) && (room.groupId || room.partnerFormat === "MANUAL") && (
           <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-extrabold">Create a match</h2>
@@ -532,14 +544,14 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         )}
 
         {room.status === "COMPLETED" && <RoundRobinRecap roundRobinId={roundRobinId} name={room.name} played={[...rounds.flatMap((round) => round.matches), ...manualMatches].some((match) => match.scores.length > 0 && match.players.some((player) => player.userId === room.myUserId))} />}
-        {(room.isOwner || room.isGroupMember || room.myRsvpStatus === "JOINED") && <GameChat roundRobinId={roundRobinId} />}
+        {(room.canRun || room.isGroupMember || room.myRsvpStatus === "JOINED") && <GameChat roundRobinId={roundRobinId} />}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
               <div className="flex items-center gap-4">
-                {rounds.length > 0 && room.partnerFormat !== "MANUAL" && (room.isOwner || room.isGroupMember) && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
+                {rounds.length > 0 && room.partnerFormat !== "MANUAL" && (room.canRun || room.isGroupMember) && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
                 <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
               </div>
             </div>
@@ -551,7 +563,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                   <span className="text-xs text-[var(--ink-soft)]">{manualMatches.length} match{manualMatches.length === 1 ? "" : "es"}</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {manualMatches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canManage={room.isOwner || room.myRsvpStatus === "JOINED"} canScore={room.isOwner || room.myRsvpStatus === "JOINED" || match.players.some((player) => player.userId === room.myUserId)} />)}
+                  {manualMatches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canManage={room.canRun || room.myRsvpStatus === "JOINED"} canScore={room.canRun || room.myRsvpStatus === "JOINED" || match.players.some((player) => player.userId === room.myUserId)} />)}
                 </div>
               </section>
             )}
@@ -562,7 +574,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                   <span className="text-xs text-[var(--ink-soft)]">{round.matches.length} courts active</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {round.matches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canManage={room.isOwner || room.myRsvpStatus === "JOINED"} canScore={room.isOwner || room.myRsvpStatus === "JOINED" || match.players.some((player) => player.userId === room.myUserId)} />)}
+                  {round.matches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canManage={room.canRun || room.myRsvpStatus === "JOINED"} canScore={room.canRun || room.myRsvpStatus === "JOINED" || match.players.some((player) => player.userId === room.myUserId)} />)}
                 </div>
               </section>
             ))}

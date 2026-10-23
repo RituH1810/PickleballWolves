@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 export async function POST(request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const supabase = await createClient();
@@ -12,7 +13,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
   // Same permission model as starting/extending the schedule: organizer or any active group member.
   // A round robin outside a group has no members, so only its organizer can add matches.
-  let canManage = roundRobin.createdById === user.id;
+  let canManage = await canRunRoundRobin(roundRobin, user.id);
   if (!canManage && roundRobin.groupId) {
     const membership = await prisma.membership.findUnique({ where: { groupId_userId: { groupId: roundRobin.groupId, userId: user.id } } });
     canManage = membership?.status === MembershipStatus.ACTIVE;
