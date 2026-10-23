@@ -17,11 +17,15 @@ type Insights = {
   notYet: MemberRow[];
 };
 
+// Calendar days in the viewer's time zone, not 24-hour periods -- a game last night at 6:30 PM is
+// "Yesterday" this morning, even though fewer than 24 hours have passed.
 function ago(iso: string | null) {
   if (!iso) return "Never";
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  const midnight = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const days = Math.round((midnight(new Date()) - midnight(new Date(iso))) / 86_400_000);
   if (days < 1) return "Today";
-  if (days < 7) return `${days} day${days === 1 ? "" : "s"} ago`;
+  if (days === 1) return "Yesterday";
+  if (days < 7) return `${days} days ago`;
   const weeks = Math.floor(days / 7);
   return `${weeks} week${weeks === 1 ? "" : "s"} ago`;
 }
