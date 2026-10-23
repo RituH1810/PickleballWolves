@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getResend, REMINDER_FROM_EMAIL } from "@/lib/resend";
 import { notify } from "@/lib/notifications";
+import { formatGameTime } from "@/lib/app-time";
 
 const REMINDER_WINDOW_MS = 60 * 60 * 1000;
 
 function formatWhen(date: Date) {
-  return date.toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatGameTime(date);
 }
 
 async function emailAllowed(userId: string) {

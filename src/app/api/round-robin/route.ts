@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { ensureProfile } from "@/lib/server-profile";
 import { notify } from "@/lib/notifications";
+import { APP_TIME_ZONE } from "@/lib/app-time";
 
 export async function GET() {
   const supabase = await createClient();
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
   // Group round robins are named after the group and the day they're scheduled to be played,
   // rather than a freeform title, so the group's list stays consistent regardless of who
   // organizes each one.
-  const name = group ? `${group.name} - ${(scheduledAt ?? new Date()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : (body.name?.trim() || "New round robin");
+  const name = group ? `${group.name} - ${(scheduledAt ?? new Date()).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: APP_TIME_ZONE })}` : (body.name?.trim() || "New round robin");
   const roundRobin = await prisma.roundRobin.create({ data: { name, createdById: profile.id, groupId, scheduledAt, format: body.format || "POPCORN", partnerFormat, playFormat, courtCount: Number(body.courtCount) || 2, roundCount: Number(body.roundCount) || 4, pointsToWin: [11, 15, 21].includes(Number(body.pointsToWin)) ? Number(body.pointsToWin) : 11, winBy: Number(body.winBy) === 2 ? 2 : 1, skillBalanced: Boolean(body.skillBalanced) } });
   // Let the rest of the group know there's a new session to RSVP to (shows under Activity).
   if (groupId && group) {
