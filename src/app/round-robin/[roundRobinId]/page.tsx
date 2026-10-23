@@ -10,6 +10,7 @@ import { RoundRobinRecap } from "@/components/round-robin-recap";
 import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
 import { AddGuestPlayer } from "@/components/add-guest-player";
+import { GameWeatherChip } from "@/components/weather-chip";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
 
@@ -352,6 +353,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{room.name}</h1>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{room.isOwner ? "you" : room.organizerName}</span>{room.groupName && <> for <span className="font-bold text-[var(--foreground)]">{room.groupName}</span></>}</p>
             {room.location && <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--ink-soft)]"><MapPin size={15} />{room.location}<DirectionsLink address={room.location} /></p>}
+            {room.scheduledAt && room.status !== "COMPLETED" && <GameWeatherChip roundRobinId={roundRobinId} className="mt-2" />}
             {room.scheduledAt && <p className="mt-1 flex items-center gap-2 text-sm font-bold text-[var(--lime-deep)]"><CalendarDays size={15} />{new Date(room.scheduledAt).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-3">

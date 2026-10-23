@@ -226,6 +226,8 @@ model Event {
   recurrenceRule String?
   status         EventStatus @default(DRAFT)
   reminderSentAt DateTime?
+  // Set once the evening-before bad-weather alert has gone out, so it's sent at most once.
+  weatherAlertSentAt DateTime?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   group          Group?      @relation(fields: [groupId], references: [id], onDelete: SetNull)
@@ -263,6 +265,8 @@ model RoundRobin {
   status        String   @default("SETUP")
   scheduledAt   DateTime?
   reminderSentAt DateTime?
+  // Set once the evening-before bad-weather alert has gone out, so it's sent at most once.
+  weatherAlertSentAt DateTime?
   createdAt     DateTime @default(now())
   completedAt   DateTime?
   recurringScheduleId String?

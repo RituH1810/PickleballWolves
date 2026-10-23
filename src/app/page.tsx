@@ -12,6 +12,8 @@ import { LivePulse, PaddleIcon, PickleballIcon } from "@/components/pickleball-a
 import { Avatar } from "@/components/avatar";
 import { DirectionsLink } from "@/components/directions-link";
 import { useViewer } from "@/components/guest-shell";
+import { WeatherChip } from "@/components/weather-chip";
+import type { GameWeather } from "@/lib/weather";
 
 type DashboardEvent = { id: string; title: string; startsAt: string; dateLabel: string; timeLabel: string; location: string; format: string; spotsLeft: number; totalSpots: number; group: string; accent: "lime" | "coral" | "blue"; attending?: boolean };
 type DashboardGroup = { id: string; name: string; members: number; next: string; mark: string; color?: string };
@@ -28,17 +30,17 @@ function Logo() {
   return <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#1b211e] text-sm font-black tracking-tight text-[var(--lime)]">PW</div><div><p className="text-[15px] font-extrabold tracking-tight">Pickleball<span className="text-[var(--lime-deep)]">Wolves</span></p><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[var(--ink-soft)]">Find your pack</p></div></div>;
 }
 
-function EventCard({ event, onToggle }: { event: DashboardEvent; onToggle: (id: string) => void }) {
+function EventCard({ event, weather, onToggle }: { event: DashboardEvent; weather?: GameWeather; onToggle: (id: string) => void }) {
   const color = event.accent === "lime" ? "#d8f24e" : event.accent === "coral" ? "#f17e62" : "#8cc9df";
   return <article className="panel group relative overflow-hidden rounded-[20px] p-5 transition-transform hover:-translate-y-1 sm:p-6">
     <div className="absolute inset-x-0 top-0 h-1" style={{ background: color }} />
     <div className="mb-5 flex items-start justify-between gap-4"><div><p className="mb-1 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{event.dateLabel}</p><h3 className="text-[17px] font-bold tracking-tight">{event.title}</h3></div><span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: `${color}33`, color }}>{event.format}</span></div>
-    <div className="space-y-2 text-sm text-[var(--ink-soft)]"><p className="flex items-center gap-2"><CalendarDays size={15} />{event.timeLabel}</p><p className="flex flex-wrap items-center gap-2"><MapPin size={15} />{event.location}<DirectionsLink address={event.location} /></p></div>
+    <div className="space-y-2 text-sm text-[var(--ink-soft)]"><p className="flex items-center gap-2"><CalendarDays size={15} />{event.timeLabel}</p><p className="flex flex-wrap items-center gap-2"><MapPin size={15} />{event.location}<DirectionsLink address={event.location} /></p>{weather && <WeatherChip weather={weather} />}</div>
     <div className="mt-5 flex items-center justify-between border-t border-[var(--line)] pt-4"><span className="text-xs font-semibold text-[var(--ink-soft)]"><strong className="text-[var(--foreground)]">{event.spotsLeft}</strong> spots left</span><button onClick={() => onToggle(event.id)} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${event.attending ? "bg-[var(--lime)] text-[#0f1712]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>{event.attending ? "You’re in" : "Join game"}</button></div>
   </article>;
 }
 
-function RoundRobinUpcomingCard({ roundRobin }: { roundRobin: MyRoundRobin }) {
+function RoundRobinUpcomingCard({ roundRobin, weather }: { roundRobin: MyRoundRobin; weather?: GameWeather }) {
   return <Link href={`/round-robin/${roundRobin.id}`} className="panel group relative block overflow-hidden rounded-[20px] p-5 transition-transform hover:-translate-y-1 sm:p-6">
     <div className="absolute inset-x-0 top-0 h-1" style={{ background: "var(--coral)" }} />
     <div className="mb-5 flex items-start justify-between gap-4">
@@ -51,6 +53,7 @@ function RoundRobinUpcomingCard({ roundRobin }: { roundRobin: MyRoundRobin }) {
     <div className="space-y-2 text-sm text-[var(--ink-soft)]">
       {roundRobin.scheduledAt && <p className="flex items-center gap-2"><CalendarDays size={15} />{new Date(roundRobin.scheduledAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</p>}
       <p className="flex items-center gap-2"><Users size={15} />{roundRobin.groupName ?? "No group"}</p>
+      {weather && <WeatherChip weather={weather} />}
     </div>
     <div className="mt-5 flex items-center justify-between border-t border-[var(--line)] pt-4">
       <span className="text-xs font-semibold text-[var(--ink-soft)]">{roundRobin.isOrganizer ? "You're organizing" : "You're in"}</span>
@@ -143,6 +146,14 @@ export function DashboardPage() {
       fetch("/api/notifications/inbox").then((response) => response.ok ? response.json() : null),
     ]).then(([feed, inbox]) => setNotificationCount((feed?.notifications ?? []).filter((notification: { readAt: string | null }) => !notification.readAt).length + (inbox?.invites?.length ?? 0) + (inbox?.requests?.length ?? 0)));
   }, [signedIn]);
+  // Forecasts for the upcoming games shown below (only those within a week come back).
+  const [weatherById, setWeatherById] = useState<Record<string, GameWeather>>({});
+  const weatherQuery = signedIn ? `roundRobinIds=${myRoundRobins.map((roundRobin) => roundRobin.id).join(",")}&eventIds=${eventList.map((event) => event.id).join(",")}` : "";
+  useEffect(() => {
+    if (!weatherQuery || (!myRoundRobins.length && !eventList.length)) return;
+    fetch(`/api/weather?${weatherQuery}`).then((response) => response.ok ? response.json() : null).then((data) => { if (data?.weather) setWeatherById(data.weather); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- the query string already captures the ids
+  }, [weatherQuery]);
   const toggleEvent = async (id: string) => { const event = eventList.find((item) => item.id === id); if (!event || event.id.length < 20) return; const response = await fetch(`/api/events/${id}/rsvp`, { method: event.attending ? "DELETE" : "POST" }); if (response.ok) setEventList((items) => items.map((item) => item.id === id ? { ...item, attending: !item.attending, spotsLeft: item.attending ? item.spotsLeft + 1 : Math.max(0, item.spotsLeft - 1) } : item)); };
   const respondRoundRobin = async (id: string, status: "JOINED" | "DECLINED") => {
     const response = await fetch(`/api/round-robin/${id}/rsvp`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
@@ -196,7 +207,7 @@ export function DashboardPage() {
         <DailyTip />
         <InstallBanner />
         <MyRecaps />
-        {signedIn && <section className="mt-10" id="events"><div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><h2 className="text-xl font-extrabold tracking-tight">Your upcoming games</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Keep your edge sharp with the right competition.</p></div><div className="flex gap-1 rounded-full bg-[#1a2a1c] p-1">{(["All", "Doubles", "Mixed doubles"] as const).map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${filter === item ? "bg-[var(--panel)] text-[var(--foreground)] shadow-sm" : "text-[var(--ink-soft)]"}`}>{item}</button>)}</div></div><div className="grid gap-4 lg:grid-cols-3">{loadingDashboard ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-[220px] rounded-[20px]" />) : upcomingItems.length === 0 ? <div className="flex items-center gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)] lg:col-span-3"><PawPrint size={18} className="shrink-0 text-[var(--lime-deep)]" /><p>No upcoming games yet. <a href="/events" className="font-bold text-[var(--lime-deep)]">Create one</a> to get the pack together.</p></div> : upcomingItems.map((item) => item.kind === "event" ? <EventCard key={`event-${item.id}`} event={item.event} onToggle={toggleEvent} /> : <RoundRobinUpcomingCard key={`rr-${item.id}`} roundRobin={item.roundRobin} />)}</div></section>}
+        {signedIn && <section className="mt-10" id="events"><div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><h2 className="text-xl font-extrabold tracking-tight">Your upcoming games</h2><p className="mt-1 text-sm text-[var(--ink-soft)]">Keep your edge sharp with the right competition.</p></div><div className="flex gap-1 rounded-full bg-[#1a2a1c] p-1">{(["All", "Doubles", "Mixed doubles"] as const).map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${filter === item ? "bg-[var(--panel)] text-[var(--foreground)] shadow-sm" : "text-[var(--ink-soft)]"}`}>{item}</button>)}</div></div><div className="grid gap-4 lg:grid-cols-3">{loadingDashboard ? Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-[220px] rounded-[20px]" />) : upcomingItems.length === 0 ? <div className="flex items-center gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)] lg:col-span-3"><PawPrint size={18} className="shrink-0 text-[var(--lime-deep)]" /><p>No upcoming games yet. <a href="/events" className="font-bold text-[var(--lime-deep)]">Create one</a> to get the pack together.</p></div> : upcomingItems.map((item) => item.kind === "event" ? <EventCard key={`event-${item.id}`} event={item.event} weather={weatherById[item.id]} onToggle={toggleEvent} /> : <RoundRobinUpcomingCard key={`rr-${item.id}`} roundRobin={item.roundRobin} weather={weatherById[item.id]} />)}</div></section>}
 
         {!loadingDashboard && pendingRoundRobins.length > 0 && (
           <section className="mt-10" id="round-robin-invites">
