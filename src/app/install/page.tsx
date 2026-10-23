@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft, Bell, CheckCircle2, Download, EllipsisVertical, Laptop, MonitorDown, Share, Smartphone, SquarePlus } from "lucide-react";
 import { useInstallApp, type Platform } from "@/lib/install-app";
+import { openInChromeUrl } from "@/lib/install-browser";
 
 type Step = { icon: typeof Share; text: React.ReactNode };
 
@@ -21,6 +22,7 @@ const STEPS: Record<Platform, { title: string; icon: typeof Share; note?: string
   },
   android: {
     title: "Android",
+    note: "Use Google Chrome -- installs from Edge, Brave, Opera, or Samsung Internet can be blocked by Google Play Protect.",
     icon: Smartphone,
     steps: [
       { icon: Download, text: <>Tap <strong>Install app</strong> above if you see it. Otherwise open this site in <strong>Chrome</strong>.</> },
@@ -62,7 +64,7 @@ function Guide({ which, primary }: { which: Platform; primary: boolean }) {
 
 /** Step-by-step "add to home screen" guide, public so it can be shared before people sign up. */
 export default function InstallPage() {
-  const { ready, platform, installed, iosNotSafari, canPrompt, install } = useInstallApp();
+  const { ready, platform, installed, iosNotSafari, androidOtherBrowser, canPrompt, install } = useInstallApp();
   const [result, setResult] = useState("");
 
   const current = platform ?? "android";
@@ -94,6 +96,12 @@ export default function InstallPage() {
             {/* iPhones never offer a one-tap install; only show it where the browser does. */}
             {canPrompt && platform !== "ios" && (
               <button onClick={installNow} className="mt-8 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]"><Download size={17} />Install app</button>
+            )}
+            {ready && androidOtherBrowser && (
+              <div className="mt-6 rounded-xl bg-[#2e1a16] px-4 py-3 text-sm font-semibold text-[#f2a08c]">
+                <p>You&apos;re in {androidOtherBrowser}. On Android, install from <strong className="text-[#fbd3c7]">Google Chrome</strong> -- apps installed from other browsers can be blocked by Google Play Protect (&quot;Unsafe app blocked&quot;).</p>
+                <a href={openInChromeUrl(`${window.location.origin}/install`)} className="mt-3 inline-flex h-10 items-center rounded-full bg-[var(--lime)] px-4 text-xs font-bold text-[#0f1712]">Open in Chrome</a>
+              </div>
             )}
             {result && <p role="status" className="mt-3 text-sm font-bold text-[var(--lime-deep)]">{result}</p>}
             {ready && iosNotSafari && <p className="mt-6 rounded-xl bg-[#2e1a16] px-4 py-3 text-sm font-semibold text-[#f2a08c]">You&apos;re in Chrome or another app on iPhone. Copy this page&apos;s link and open it in <strong>Safari</strong> to install.</p>}

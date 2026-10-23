@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { androidNonChromeBrowser } from "./install-browser";
 
 export type Platform = "ios" | "android" | "desktop";
 
@@ -15,7 +16,9 @@ function detect() {
   const installed = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
   // On iPhone only Safari can add to the home screen with full app behavior.
   const iosNotSafari = ios && /CriOS|FxiOS|EdgiOS|GSA\//.test(agent);
-  return { platform, installed, iosNotSafari };
+  // On Android only Chrome's installs pass Play Protect (see install-browser).
+  const androidOtherBrowser = androidNonChromeBrowser(agent, Boolean((navigator as Navigator & { brave?: unknown }).brave));
+  return { platform, installed, iosNotSafari, androidOtherBrowser };
 }
 
 /**
@@ -23,7 +26,7 @@ function detect() {
  * install prompt when it offers one (Chrome/Edge on Android and desktop). `install()` shows it.
  */
 export function useInstallApp() {
-  const [state, setState] = useState<{ platform: Platform; installed: boolean; iosNotSafari: boolean } | null>(null);
+  const [state, setState] = useState<{ platform: Platform; installed: boolean; iosNotSafari: boolean; androidOtherBrowser: string | null } | null>(null);
   const [prompt, setPrompt] = useState<InstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -44,5 +47,7 @@ export function useInstallApp() {
     return outcome === "accepted";
   }
 
-  return { ...state, ready: state !== null, canPrompt: prompt !== null, install };
+  // Edge, Brave, etc. offer an install prompt on Android too, but Play Protect blocks the result --
+  // so don't offer it there; the install page and banner point to Chrome instead.
+  return { ...state, ready: state !== null, canPrompt: prompt !== null && !state?.androidOtherBrowser, install };
 }

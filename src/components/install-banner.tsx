@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
 import { useInstallApp } from "@/lib/install-app";
+import { openInChromeUrl } from "@/lib/install-browser";
 
 const DISMISSED_KEY = "pw:installBannerDismissed";
 
 /** "Get the app" nudge on the dashboard, until the player installs it or dismisses it. */
 export function InstallBanner() {
-  const { ready, installed, canPrompt, install } = useInstallApp();
+  const { ready, installed, canPrompt, androidOtherBrowser, install } = useInstallApp();
   const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
@@ -33,10 +34,12 @@ export function InstallBanner() {
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--lime)] text-xs font-black text-[#0f1712]">PW</span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-extrabold">Get the app</p>
-        <p className="text-xs text-[var(--ink-soft)]">Add Wolves to your home screen for one-tap access and game notifications.</p>
+        <p className="text-xs text-[var(--ink-soft)]">{androidOtherBrowser ? "Install from Google Chrome -- installs from other browsers can be blocked by Play Protect." : "Add Wolves to your home screen for one-tap access and game notifications."}</p>
       </div>
       <div className="flex items-center gap-2">
-        {canPrompt
+        {androidOtherBrowser
+          ? <a href={openInChromeUrl(`${window.location.origin}/install`)} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Open in Chrome</a>
+          : canPrompt
           ? <button onClick={() => install()} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]"><Download size={14} />Install</button>
           : <Link href="/install" className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">How to install</Link>}
         <button onClick={dismiss} aria-label="Dismiss" className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[#1c2a1a]"><X size={15} /></button>
