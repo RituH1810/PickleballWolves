@@ -29,7 +29,7 @@ const SECTIONS: { title: string; items: { key: PreferenceKey; label: string; det
   {
     title: "Email",
     items: [
-      { key: "weeklyDigest", label: "Weekly digest", detail: "Monday morning: your games this week, last week's results, rating change, and new badges.", icon: Newspaper },
+      { key: "weeklyDigest", label: "Weekly digest", detail: "Monday morning: your games this week, last week's results, rating change, and new badges. Organizers also get a summary of their group's turnout.", icon: Newspaper },
     ],
   },
 ];

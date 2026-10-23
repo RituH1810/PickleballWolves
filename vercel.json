@@ -6,6 +6,7 @@
     { "path": "/api/cron/monthly-awards", "schedule": "0 13 1 * *" },
     { "path": "/api/cron/weekly-digest", "schedule": "0 12 * * 1" },
     { "path": "/api/cron/player-of-the-week", "schedule": "0 13 * * 1" },
-    { "path": "/api/cron/weather-alerts", "schedule": "0 22 * * *" }
+    { "path": "/api/cron/weather-alerts", "schedule": "0 22 * * *" },
+    { "path": "/api/cron/organizer-summary", "schedule": "15 13 * * 1" }
   ]
 }

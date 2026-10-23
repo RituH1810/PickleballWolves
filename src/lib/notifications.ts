@@ -1,14 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { sendPush } from "@/lib/push";
 
-export type NotificationCategory = "reminder" | "scoreDispute" | "challenge" | "achievement" | "gameChat" | "general";
+export type NotificationCategory = "reminder" | "scoreDispute" | "challenge" | "achievement" | "gameChat" | "digest" | "general";
 
-const PREFERENCE_FIELD: Partial<Record<NotificationCategory, "inAppReminders" | "scoreDisputeAlerts" | "challengeAlerts" | "achievementAlerts" | "gameChatAlerts">> = {
+const PREFERENCE_FIELD: Partial<Record<NotificationCategory, "inAppReminders" | "scoreDisputeAlerts" | "challengeAlerts" | "achievementAlerts" | "gameChatAlerts" | "weeklyDigest">> = {
   reminder: "inAppReminders",
   scoreDispute: "scoreDisputeAlerts",
   challenge: "challengeAlerts",
   achievement: "achievementAlerts",
   gameChat: "gameChatAlerts",
+  // Weekly summaries (the organizer summary) follow the same switch as the weekly digest email.
+  digest: "weeklyDigest",
 };
 
 /**

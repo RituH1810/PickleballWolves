@@ -3,6 +3,7 @@ import { MembershipRole, MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { computeAttendance } from "@/lib/attendance";
+import { loadGroupAttendance } from "@/lib/load-attendance";
 import { APP_TIME_ZONE } from "@/lib/app-time";
 
 const PERIODS = [30, 90, 180];
@@ -23,32 +24,13 @@ export async function GET(request: Request, context: { params: Promise<{ groupId
   const now = new Date();
   const from = new Date(now.getTime() - days * 86_400_000);
 
-  const [group, roundRobins, memberships] = await Promise.all([
+  const [group, { games, members }] = await Promise.all([
     prisma.group.findUnique({ where: { id: groupId }, select: { name: true } }),
-    prisma.roundRobin.findMany({
-      where: { groupId, OR: [{ scheduledAt: { gte: from, lte: now } }, { scheduledAt: null, createdAt: { gte: from, lte: now } }], matches: { some: { deletedAt: null, scores: { some: {} } } } },
-      select: {
-        id: true,
-        scheduledAt: true,
-        createdAt: true,
-        rsvps: { where: { status: "JOINED" }, select: { userId: true } },
-        matches: { where: { deletedAt: null, scores: { some: {} } }, select: { players: { select: { userId: true } } } },
-      },
-    }),
-    prisma.membership.findMany({ where: { groupId, status: MembershipStatus.ACTIVE }, select: { userId: true, joinedAt: true, user: { select: { name: true } } } }),
+    // lte now: a game that started a moment ago still counts.
+    loadGroupAttendance(groupId, from, new Date(now.getTime() + 1)),
   ]);
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
 
-  const insights = computeAttendance(
-    roundRobins.map((roundRobin) => ({
-      id: roundRobin.id,
-      at: roundRobin.scheduledAt ?? roundRobin.createdAt,
-      playedIds: [...new Set(roundRobin.matches.flatMap((match) => match.players.map((player) => player.userId)))],
-      joinedIds: roundRobin.rsvps.map((rsvp) => rsvp.userId),
-    })),
-    memberships.map((member) => ({ id: member.userId, name: member.user.name, joinedAt: member.joinedAt })),
-    now,
-    APP_TIME_ZONE,
-  );
+  const insights = computeAttendance(games, members, now, APP_TIME_ZONE);
   return NextResponse.json({ groupName: group.name, days, periods: PERIODS, ...insights });
 }
