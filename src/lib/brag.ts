@@ -1,9 +1,24 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-/** A brag card: one player's unlocked badge, or how they did in one ended round robin. */
-export type BragCard = { kind: "achievement"; userId: string; achievementId: string } | { kind: "recap"; userId: string; roundRobinId: string };
+/**
+ * A shareable card, made by the player who shared it (userId): their unlocked badge, how they did in
+ * an ended round robin, a whole round robin's recap, or a group's monthly leaderboard.
+ */
+export type BragCard =
+  | { kind: "achievement"; userId: string; achievementId: string }
+  | { kind: "recap"; userId: string; roundRobinId: string }
+  | { kind: "roundRobin"; userId: string; roundRobinId: string }
+  | { kind: "leaderboard"; userId: string; groupId: string; month: string };
 
-const KIND_CODES = { achievement: "a", recap: "r" } as const;
+const KIND_CODES = { achievement: "a", recap: "r", roundRobin: "g", leaderboard: "l" } as const;
+
+function cardRef(card: BragCard) {
+  switch (card.kind) {
+    case "achievement": return card.achievementId;
+    case "leaderboard": return `${card.groupId}:${card.month}`;
+    default: return card.roundRobinId;
+  }
+}
 
 function signature(body: string, secret: string) {
   return createHmac("sha256", secret).update(`brag:${body}`).digest("base64url").slice(0, 22);
@@ -14,8 +29,7 @@ function signature(body: string, secret: string) {
  * chose to share -- nobody can mint one for someone else by guessing ids.
  */
 export function encodeBragCode(card: BragCard, secret: string) {
-  const ref = card.kind === "achievement" ? card.achievementId : card.roundRobinId;
-  const body = Buffer.from(`${KIND_CODES[card.kind]}|${card.userId}|${ref}`).toString("base64url");
+  const body = Buffer.from(`${KIND_CODES[card.kind]}|${card.userId}|${cardRef(card)}`).toString("base64url");
   return `${body}.${signature(body, secret)}`;
 }
 
@@ -30,6 +44,11 @@ export function decodeBragCode(code: string, secret: string): BragCard | null {
   if (!userId || !ref || extra.length) return null;
   if (kind === KIND_CODES.achievement) return { kind: "achievement", userId, achievementId: ref };
   if (kind === KIND_CODES.recap) return { kind: "recap", userId, roundRobinId: ref };
+  if (kind === KIND_CODES.roundRobin) return { kind: "roundRobin", userId, roundRobinId: ref };
+  if (kind === KIND_CODES.leaderboard) {
+    const [groupId, month, ...rest] = ref.split(":");
+    return groupId && /^\d{4}-\d{2}$/.test(month ?? "") && !rest.length ? { kind: "leaderboard", userId, groupId, month } : null;
+  }
   return null;
 }
 

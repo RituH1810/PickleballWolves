@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Copy, Crown, Flame, MessageCircle, Swords, Target, TrendingUp, type LucideIcon } from "lucide-react";
+import { Copy, Crown, Flame, Swords, Target, TrendingUp, type LucideIcon } from "lucide-react";
 import { BragButton } from "@/components/brag-button";
 import { recapShareText, type Recap } from "@/lib/round-robin-recap";
 
@@ -78,9 +78,9 @@ export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundR
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--line)] pt-5">
-          <a href={`https://wa.me/?text=${encodeURIComponent(typeof window === "undefined" ? "" : shareText())}`} target="_blank" rel="noopener noreferrer" className={`${shareButton} bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]`}><MessageCircle size={14} />Share on WhatsApp</a>
+          <BragButton card={{ kind: "roundRobin", roundRobinId }} label="Share this recap as a picture" text="Share recap" align="left" />
           <button onClick={copy} className={`${shareButton} border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]`}><Copy size={14} />{copied ? "Copied!" : "Copy recap"}</button>
-          {played && <div className="ml-auto"><BragButton card={{ kind: "recap", roundRobinId }} label="Share my result card" /></div>}
+          {played && <div className="ml-auto"><BragButton card={{ kind: "recap", roundRobinId }} label="Share my result as a picture" text="Share my result" /></div>}
         </div>
       </div>
     </section>

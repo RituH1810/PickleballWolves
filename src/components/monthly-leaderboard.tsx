@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarRange, Copy, Crown, Medal, MessageCircle, Share2 } from "lucide-react";
+import { CalendarRange, Crown, Medal } from "lucide-react";
+import { BragButton } from "@/components/brag-button";
 import { Avatar } from "@/components/avatar";
 
 type Entry = { userId: string; name: string; photoUrl: string | null; matches: number; wins: number; losses: number; winPct: number; avgPointDiff: number; differential: number; rank?: number };
@@ -11,21 +12,9 @@ type Month = { key: string; label: string; isCurrent: boolean; matchCount: numbe
 const MEDALS = ["text-[var(--lime-deep)]", "text-[#c7d0d8]", "text-[#d69a63]"];
 
 /** This month's group standings (fresh every 1st) with the two previous months a tap away. */
-// How many places the shared summary lists before "See it all".
-const SHARE_TOP = 5;
-
-/** Plain-text standings for WhatsApp / group chats, ending with a link to that month. */
-function shareText(groupName: string, month: Month, url: string) {
-  const title = `🏆 ${groupName} -- ${month.label} leaderboard${month.isCurrent ? " (so far)" : ""}`;
-  const lines = month.ranked.slice(0, SHARE_TOP).map((entry) => `${entry.rank}. ${entry.name} ${entry.wins}-${entry.losses} (${Math.round(entry.winPct * 100)}%)`);
-  return [title, ...(lines.length ? lines : ["No one has qualified yet -- get your matches in!"]), "", `See it all: ${url}`].join("\n");
-}
-
-export function MonthlyLeaderboard({ groupId, groupName }: { groupId: string; groupName: string }) {
+export function MonthlyLeaderboard({ groupId }: { groupId: string }) {
   const [data, setData] = useState<{ minMatches: number; months: Month[] } | null>(null);
   const [selected, setSelected] = useState(0);
-  const [shareOpen, setShareOpen] = useState(false);
-  const [shareNotice, setShareNotice] = useState("");
 
   useEffect(() => {
     fetch(`/api/groups/${groupId}/monthly-leaderboard`).then((response) => response.ok ? response.json() : null).then((body) => {
@@ -42,33 +31,6 @@ export function MonthlyLeaderboard({ groupId, groupName }: { groupId: string; gr
     });
   }, [groupId]);
 
-  function linkFor(entry: Month) {
-    return `${window.location.origin}/groups/${groupId}?month=${entry.key}#monthly-leaderboard`;
-  }
-
-  async function share() {
-    if (!data) return;
-    const entry = data.months[selected];
-    const text = shareText(groupName, entry, linkFor(entry));
-    setShareNotice("");
-    // Phones: the native share sheet (WhatsApp, Messages...). Elsewhere: WhatsApp / copy options.
-    if (typeof navigator.share === "function" && window.matchMedia("(pointer: coarse)").matches) {
-      try { await navigator.share({ title: `${groupName} -- ${entry.label} leaderboard`, text }); return; } catch { /* cancelled -- fall back to the options */ }
-    }
-    setShareOpen((open) => !open);
-  }
-
-  async function copy() {
-    if (!data) return;
-    const entry = data.months[selected];
-    try {
-      await navigator.clipboard.writeText(shareText(groupName, entry, linkFor(entry)));
-      setShareNotice("Copied -- paste it into your group chat.");
-    } catch {
-      setShareNotice("Couldn't copy.");
-    }
-  }
-
   if (!data) return null;
   const month = data.months[selected];
   const leader = month.ranked[0];
@@ -78,24 +40,16 @@ export function MonthlyLeaderboard({ groupId, groupName }: { groupId: string; gr
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2"><CalendarRange size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Monthly leaderboard</h2></div>
         <div className="flex flex-wrap items-center gap-2">
-        <button onClick={share} aria-expanded={shareOpen} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Share2 size={13} />Share</button>
+        {month.ranked.length > 0 && <BragButton key={month.key} card={{ kind: "leaderboard", groupId, month: month.key }} label={`Share the ${month.label} leaderboard as a picture`} />}
         <div role="tablist" aria-label="Month" className="flex rounded-full bg-[#131f19] p-1">
           {data.months.map((entry, index) => (
-            <button key={entry.key} role="tab" aria-selected={index === selected} onClick={() => { setSelected(index); setShareNotice(""); }} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${index === selected ? "bg-[var(--lime)] text-[#0f1712]" : "text-[var(--ink-soft)] hover:text-[var(--foreground)]"}`}>
+            <button key={entry.key} role="tab" aria-selected={index === selected} onClick={() => setSelected(index)} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${index === selected ? "bg-[var(--lime)] text-[#0f1712]" : "text-[var(--ink-soft)] hover:text-[var(--foreground)]"}`}>
               {entry.isCurrent ? "This month" : entry.label.split(" ")[0]}
             </button>
           ))}
         </div>
         </div>
       </div>
-      {shareOpen && (
-        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-2xl bg-[#131f19] p-3">
-          <p className="w-full text-[11px] text-[var(--ink-soft)]">Share {month.label}{month.isCurrent ? " so far" : ""} -- the link opens this month for group members.</p>
-          <a href={`https://wa.me/?text=${encodeURIComponent(shareText(groupName, month, linkFor(month)))}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-3.5 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]"><MessageCircle size={13} />WhatsApp</a>
-          <button onClick={copy} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3.5 py-2 text-xs font-bold hover:bg-[#1c2a1a]"><Copy size={13} />Copy text & link</button>
-          {shareNotice && <span role="status" className="text-[11px] font-bold text-[var(--lime-deep)]">{shareNotice}</span>}
-        </div>
-      )}
       <p className="mt-1 text-xs text-[var(--ink-soft)]">
         {month.label}{month.isCurrent ? " so far -- resets on the 1st" : " final"} · {month.matchCount} match{month.matchCount === 1 ? "" : "es"} · ranked by win %, then average point difference · {data.minMatches}+ matches to qualify
       </p>

@@ -27,6 +27,19 @@ export function recentMonths(now = new Date(), count = MONTHS_SHOWN, timeZone = 
   });
 }
 
+/** One month by its key ("2026-10"), or null for a malformed key or a month that hasn't started. */
+export function monthWindow(key: string, now = new Date(), timeZone = LEADERBOARD_TIME_ZONE): MonthWindow | null {
+  const match = /^(\d{4})-(\d{2})$/.exec(key);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return null;
+  const local = zonedParts(now, timeZone);
+  const back = local.year * 12 + (local.month - 1) - (year * 12 + month - 1);
+  if (back < 0) return null;
+  return recentMonths(now, back + 1, timeZone)[back];
+}
+
 export type LeaderboardMatch = { playedAt: Date; players: { userId: string; side: "A" | "B" }[]; scores: { sideAScore: number; sideBScore: number }[] };
 export type MonthlyEntry = { userId: string; matches: number; wins: number; losses: number; scored: number; conceded: number; differential: number; winPct: number; avgPointDiff: number };
 

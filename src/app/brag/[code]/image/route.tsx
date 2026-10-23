@@ -105,13 +105,80 @@ function RecapCard({ view }: { view: Extract<BragView, { kind: "recap" }> }) {
   );
 }
 
+const signed = (value: number) => `${value > 0 ? "+" : ""}${value}`;
+const fitName = (text: string, roomy: number, tight: number) => (text.length > 26 ? tight : roomy);
+
+// The whole night: champion(s) up top, the podium, and how much pickleball got played.
+function RoundRobinCard({ view }: { view: Extract<BragView, { kind: "roundRobin" }> }) {
+  const champions = view.champions.map((entry) => entry.name).join(" & ");
+  return (
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: LIME, padding: 60, color: INK, fontFamily: "Geist" }}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 28, fontWeight: 800, textTransform: "uppercase", letterSpacing: 4 }}>
+          <Icon name="crown" size={36} strokeWidth={2.5} />
+          {view.champions.length > 1 ? "Round robin co-champions" : view.undefeated ? "Undefeated champion" : "Round robin champion"}
+        </div>
+        <div style={{ marginTop: 12, fontSize: fitName(champions, 92, 64), fontWeight: 800, lineHeight: 1, letterSpacing: -3 }}>{champions}</div>
+        <div style={{ marginTop: 16, fontSize: 30, color: "#3c4a1e" }}>{[view.roundRobinName, view.groupName, bragDate(view.endedAt)].filter((part, index, parts): part is string => !!part && (index === 0 || !parts[0]!.includes(part))).join(" · ")}</div>
+      </div>
+      <div style={{ display: "flex", gap: 18 }}>
+        {view.podium.map((entry) => (
+          <div key={`${entry.rank}-${entry.name}`} style={{ display: "flex", flexDirection: "column", flexGrow: 1, flexBasis: 0, background: "rgba(15,23,18,0.1)", borderRadius: 22, padding: "18px 24px" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#3c4a1e" }}>{ordinal(entry.rank)}</div>
+            <div style={{ marginTop: 4, fontSize: 32, fontWeight: 800, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{entry.name}</div>
+            <div style={{ marginTop: 4, fontSize: 24, color: "#3c4a1e" }}>{`${entry.wins}-${entry.losses} · ${signed(entry.differential)}`}</div>
+          </div>
+        ))}
+      </div>
+      <Footer color="#3c4a1e">
+        <div style={{ display: "flex" }}>{`${view.totals.players} players · ${view.totals.games} games · ${view.totals.points} points`}</div>
+      </Footer>
+    </div>
+  );
+}
+
+// A group's month: the top five, with records and win %.
+function LeaderboardCard({ view }: { view: Extract<BragView, { kind: "leaderboard" }> }) {
+  return (
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: INK, padding: "52px 60px", color: "#eef3ea", fontFamily: "Geist" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: LIME, textTransform: "uppercase", letterSpacing: 4 }}>{`${view.monthLabel} leaderboard${view.isCurrent ? " · so far" : ""}`}</div>
+          <div style={{ marginTop: 8, fontSize: fitName(view.groupName, 60, 46), fontWeight: 800, letterSpacing: -2 }}>{view.groupName}</div>
+        </div>
+        <div style={{ display: "flex", fontSize: 22, color: SOFT }}>Win % · record</div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {view.places.map((entry, index) => (
+          <div key={`${entry.rank}-${entry.name}`} style={{ display: "flex", alignItems: "center", gap: 22, background: index === 0 ? LIME : "#1b2a20", color: index === 0 ? INK : "#eef3ea", borderRadius: 18, padding: "10px 24px" }}>
+            <div style={{ display: "flex", width: 44, fontSize: 30, fontWeight: 800 }}>{String(entry.rank)}</div>
+            <div style={{ display: "flex", flexGrow: 1, fontSize: 32, fontWeight: 800, overflow: "hidden", whiteSpace: "nowrap" }}>{entry.name}</div>
+            <div style={{ display: "flex", fontSize: 30, fontWeight: 800 }}>{`${entry.winPct}%`}</div>
+            <div style={{ display: "flex", width: 110, justifyContent: "flex-end", fontSize: 26, color: index === 0 ? "#3c4a1e" : SOFT }}>{`${entry.wins}-${entry.losses}`}</div>
+          </div>
+        ))}
+      </div>
+      <Footer color={SOFT} />
+    </div>
+  );
+}
+
+function CardFor({ view }: { view: BragView }) {
+  switch (view.kind) {
+    case "achievement": return <AchievementCard view={view} />;
+    case "recap": return <RecapCard view={view} />;
+    case "roundRobin": return <RoundRobinCard view={view} />;
+    case "leaderboard": return <LeaderboardCard view={view} />;
+  }
+}
+
 // The card as a PNG: the link preview for /brag/<code>, and the image players download or post.
 export async function GET(request: Request, context: { params: Promise<{ code: string }> }) {
   const card = decodeBragCode((await context.params).code, bragSecret());
   const view = card ? await loadBragView(card) : null;
   if (!view) return new Response("Card not found", { status: 404 });
   const download = new URL(request.url).searchParams.has("download");
-  return new ImageResponse(view.kind === "achievement" ? <AchievementCard view={view} /> : <RecapCard view={view} />, {
+  return new ImageResponse(<CardFor view={view} />, {
     ...SIZE,
     fonts: await loadFonts(),
     headers: {

@@ -347,7 +347,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         )}
 
         {group.isMember && <PlayerOfTheWeek groupId={groupId} />}
-        {group.isMember && <MonthlyLeaderboard groupId={groupId} groupName={group.name} />}
+        {group.isMember && <MonthlyLeaderboard groupId={groupId} />}
 
         <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
           <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
