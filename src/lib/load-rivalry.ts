@@ -1,5 +1,6 @@
 import { MatchStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { computePartners } from "@/lib/partners";
 import { computeRivalry, findTopRival, type RivalryMatch } from "@/lib/rivalry";
 
 const MATCH_SELECT = {
@@ -45,4 +46,14 @@ export async function loadTopRival(userId: string) {
   if (!rival) return null;
   const photo = await prisma.user.findUnique({ where: { id: rival.userId }, select: { photoUrl: true } });
   return { ...rival, photoUrl: photo?.photoUrl ?? null };
+}
+
+/** Partner chemistry: the player's record with each partner and their best partner, with photos. */
+export async function loadPartners(userId: string) {
+  const matches = await prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId } } }, select: MATCH_SELECT });
+  const { best, partners } = computePartners((matches as LoadedMatch[]).map(toRivalryMatch), userId);
+  const photos = await prisma.user.findMany({ where: { id: { in: partners.map((partner) => partner.userId) } }, select: { id: true, photoUrl: true } });
+  const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
+  const withPhoto = <T extends { userId: string }>(partner: T) => ({ ...partner, photoUrl: photoOf.get(partner.userId) ?? null });
+  return { best: best && withPhoto(best), partners: partners.map(withPhoto) };
 }

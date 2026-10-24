@@ -19,7 +19,7 @@ export type Meeting = {
 };
 
 /** Who won a match, by total points (the same rule as leaderboards and head-to-head). */
-function sideTotals(match: RivalryMatch, side: "A" | "B") {
+export function sideTotals(match: RivalryMatch, side: "A" | "B") {
   return match.scores.reduce((total, score) => total + (side === "A" ? score.sideAScore : score.sideBScore), 0);
 }
 

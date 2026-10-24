@@ -6,6 +6,7 @@ import { ArrowLeft, CalendarDays, MapPin, Pencil, Swords, Users } from "lucide-r
 import { Avatar } from "@/components/avatar";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
+import { PartnerCard } from "@/components/partner-card";
 import { RivalCard } from "@/components/rival-card";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 import { DirectionsLink } from "@/components/directions-link";
@@ -118,6 +119,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
         </section>
 
         <RivalCard userId={player.id} isMe={player.isMe} playerName={player.name} />
+        <PartnerCard userId={player.id} isMe={player.isMe} />
         <AwardsPanel userId={player.id} />
         <AchievementsPanel userId={player.id} />
       </div>
