@@ -25,6 +25,11 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   const { pathname, search } = request.nextUrl;
 
+  // Signed in with a temporary password an admin gave them: choose their own before anything else.
+  if (user?.user_metadata?.must_change_password && pathname !== "/reset-password" && !pathname.startsWith("/auth")) {
+    return NextResponse.redirect(new URL("/reset-password?required=1", request.url));
+  }
+
   // Visitors land on the (guest) dashboard and can browse from there.
   if (pathname === "/") {
     if (!user) return NextResponse.redirect(new URL("/dashboard", request.url));
