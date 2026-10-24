@@ -564,7 +564,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                   <span className="text-xs text-[var(--ink-soft)]">{manualMatches.length} match{manualMatches.length === 1 ? "" : "es"}</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
-                  {manualMatches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canManage={room.canRun || room.myRsvpStatus === "JOINED"} canScore={room.canRun || room.myRsvpStatus === "JOINED" || match.players.some((player) => player.userId === room.myUserId)} />)}
+                  {manualMatches.map((match, index) => <MatchCard number={index + 1} key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canManage={room.canRun || room.myRsvpStatus === "JOINED"} canScore={room.canRun || room.myRsvpStatus === "JOINED" || match.players.some((player) => player.userId === room.myUserId)} />)}
                 </div>
               </section>
             )}
@@ -609,7 +609,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   );
 }
 
-function MatchCard({ match, onSave, onDelete, canManage, canScore }: { match: Match; onSave: (matchId: string, sideA: string, sideB: string) => void; onDelete: (matchId: string) => void; canManage: boolean; canScore: boolean }) {
+function MatchCard({ match, number, onSave, onDelete, canManage, canScore }: { match: Match; number?: number; onSave: (matchId: string, sideA: string, sideB: string) => void; onDelete: (matchId: string) => void; canManage: boolean; canScore: boolean }) {
   const [sideA, setSideA] = useState(match.scores[0]?.sideAScore?.toString() ?? "");
   const [sideB, setSideB] = useState(match.scores[0]?.sideBScore?.toString() ?? "");
   const hasScore = match.scores.length > 0;
@@ -620,7 +620,7 @@ function MatchCard({ match, onSave, onDelete, canManage, canScore }: { match: Ma
   return (
     <article className="rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Court {match.courtNumber}</span>
+        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{number !== undefined && <span className="text-[var(--foreground)]">Match {number} · </span>}Court {match.courtNumber}</span>
         <div className="flex items-center gap-2">
           {upset && winner && <span title={`Won with a ${chance(winner)}% chance going in`} className="rounded-full bg-[var(--coral)] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-[#2e1a16]">Upset!</span>}
           {hasScore ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}

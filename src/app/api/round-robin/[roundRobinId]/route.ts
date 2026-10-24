@@ -16,8 +16,9 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       rsvps: { include: { user: { select: { id: true, name: true, isGuest: true } } } },
       rounds: { orderBy: { roundNumber: "asc" }, include: { matches: { where: { deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } } },
       // Matches created one-off via "Create match" instead of through generate/add-round --
-      // they belong to the round robin directly but aren't attached to any numbered Round.
-      matches: { where: { roundId: null, deletedAt: null }, orderBy: { courtNumber: "asc" }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } },
+      // they belong to the round robin directly but aren't attached to any numbered Round. Listed in
+      // the order they were created, which is how the page numbers them.
+      matches: { where: { roundId: null, deletedAt: null }, orderBy: [{ createdAt: "asc" }, { id: "asc" }], include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } },
     },
   });
   if (!roundRobin) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
