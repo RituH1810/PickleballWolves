@@ -7,9 +7,10 @@ import { FORECAST_DAYS, GAME_HOURS, gameWeather, type GameWeather, type HourlyFo
 const PHOTON_URL = "https://photon.komoot.io/api/";
 const OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast";
 const USER_AGENT = "PickleballWolves (https://pickleballwolves.com)";
-// Locations are short ("Lancaster YMCA"), so searches lean toward the club's home area --
-// unbiased, that one resolves to Lancaster, England.
-const HOME_AREA = { lat: 40.04, lon: -76.31 };
+// Locations are short ("Lancaster YMCA"), so searches lean toward the club's home area: Lancaster,
+// South Carolina. Unbiased (or biased elsewhere), the same names resolve to Lancaster, England or
+// Lancaster, Pennsylvania -- and the forecast is for the wrong town.
+const HOME_AREA = { lat: 34.72, lon: -80.77 };
 
 async function coordinates(location: string): Promise<{ lat: number; lon: number } | null> {
   const url = new URL(PHOTON_URL);
