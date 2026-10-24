@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { computePlayerRecap, computeRecap, type RecapMatch } from "@/lib/round-robin-recap";
+import { rankRoundRobinWinners } from "@/lib/round-robin-winners";
 
 /** How long a personal recap stays on the dashboard after its round robin ends. */
 export const PERSONAL_RECAP_HOURS = 24;
@@ -62,4 +63,21 @@ export async function loadRoundRobinWins(userId: string) {
     const recap = computeRecap(byRoundRobin.get(roundRobin.id) ?? []);
     return recap?.champions.some((entry) => entry.userId === userId) ? [roundRobin.completedAt ?? roundRobin.createdAt] : [];
   });
+}
+
+/** The group's top round robin winners across every ended round robin, with photos. */
+export async function loadGroupRoundRobinWinners(groupId: string) {
+  const roundRobins = await prisma.roundRobin.findMany({
+    where: { groupId, status: "COMPLETED", matches: { some: { deletedAt: null, scores: { some: {} } } } },
+    select: { id: true, completedAt: true, createdAt: true },
+  });
+  if (!roundRobins.length) return [];
+  const { byRoundRobin } = await loadMatches(roundRobins.map((roundRobin) => roundRobin.id));
+  const winners = rankRoundRobinWinners(roundRobins.map((roundRobin) => ({
+    endedAt: roundRobin.completedAt ?? roundRobin.createdAt,
+    champions: computeRecap(byRoundRobin.get(roundRobin.id) ?? [])?.champions ?? [],
+  })));
+  const photos = await prisma.user.findMany({ where: { id: { in: winners.map((winner) => winner.userId) } }, select: { id: true, photoUrl: true } });
+  const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
+  return winners.map((winner) => ({ ...winner, photoUrl: photoOf.get(winner.userId) ?? null }));
 }

@@ -9,6 +9,7 @@ import { RecurringSchedules } from "@/components/recurring-schedules";
 import { AvailabilityPolls } from "@/components/availability-polls";
 import { MonthlyLeaderboard } from "@/components/monthly-leaderboard";
 import { PlayerOfTheWeek } from "@/components/player-of-the-week";
+import { RoundRobinWinners } from "@/components/round-robin-winners";
 import { DirectionsLink } from "@/components/directions-link";
 
 type Player = { id: string; name: string; rank: number | null };
@@ -347,6 +348,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         )}
 
         {group.isMember && <PlayerOfTheWeek groupId={groupId} />}
+        {group.isMember && <RoundRobinWinners groupId={groupId} />}
         {group.isMember && <MonthlyLeaderboard groupId={groupId} />}
 
         <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">

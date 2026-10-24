@@ -8,7 +8,7 @@ import { PARTNER_MIN_MATCHES } from "@/lib/partners";
 
 type Partner = { userId: string; name: string; photoUrl: string | null; wins: number; losses: number; played: number; winRate: number; pointDiff: number };
 
-/** Partner chemistry: the best partner by win rate, plus the record with each most-played partner. */
+/** Partner chemistry: the best partner by win rate, plus the record with each most-played partner, best win rate first. */
 export function PartnerCard({ userId, isMe = true }: { userId: string; isMe?: boolean }) {
   const [data, setData] = useState<{ best: Partner | null; partners: Partner[] } | null>(null);
 
@@ -38,7 +38,7 @@ export function PartnerCard({ userId, isMe = true }: { userId: string; isMe?: bo
 
       <div className="mt-4 space-y-2 border-t border-[var(--line)] pt-4">
         <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Most played with</p>
-        {data.partners.slice(0, 5).map((partner) => (
+        {data.partners.slice(0, 5).sort((x, y) => y.winRate - x.winRate || y.played - x.played).map((partner) => (
           <Link key={partner.userId} href={`/players/${partner.userId}`} className="flex items-center gap-3 text-sm hover:text-[var(--lime-deep)]">
             <Avatar name={partner.name} photoUrl={partner.photoUrl} className="h-6 w-6 shrink-0 rounded-full bg-[#22331f] text-[9px] font-black text-[var(--lime)]" />
             <span className="min-w-0 flex-1 truncate font-semibold">{partner.name}</span>
