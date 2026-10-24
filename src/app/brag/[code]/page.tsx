@@ -5,6 +5,7 @@ import { Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { bragSecret, decodeBragCode } from "@/lib/brag";
 import { bragDescription, bragHeadline, loadBragView } from "@/lib/load-brag";
+import { InstagramLink } from "@/components/social-links";
 
 async function load(code: string) {
   const card = decodeBragCode(code, bragSecret());
@@ -53,6 +54,7 @@ export default async function BragPage({ params }: { params: Promise<{ code: str
         ) : (
           <Link href="/signup" className="rounded-full bg-[var(--lime)] px-4 py-2.5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]">Join PickleballWolves</Link>
         )}
+        <InstagramLink withHandle className="px-2 text-sm font-bold text-[var(--ink-soft)] hover:text-[var(--foreground)]" />
       </div>
     </main>
   );
