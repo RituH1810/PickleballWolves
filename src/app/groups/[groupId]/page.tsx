@@ -168,6 +168,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                 </Link>
               )}
               {group.isMember && (
+                <Link href={`/groups/${groupId}/hall-of-fame`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                  <Trophy size={15} />Hall of Fame
+                </Link>
+              )}
+              {group.isMember && (
                 <Link href={`/round-robin?groupId=${groupId}`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
                   <Repeat size={15} />Create round robin
                 </Link>

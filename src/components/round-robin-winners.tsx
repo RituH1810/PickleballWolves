@@ -20,7 +20,7 @@ export function RoundRobinWinners({ groupId }: { groupId: string }) {
   if (!winners?.length) return null;
   return (
     <section id="round-robin-winners" className="mt-5 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
-      <div className="flex items-center gap-2"><Crown size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Most round robin wins</h2></div>
+      <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Crown size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Most round robin wins</h2></div><Link href={`/groups/${groupId}/hall-of-fame`} className="text-xs font-bold text-[var(--lime-deep)] hover:underline">Hall of Fame</Link></div>
       <p className="mt-1 text-xs text-[var(--ink-soft)]">All-time titles in this group · co-champions each get the title</p>
       <div className="mt-4 space-y-2">
         {winners.map((winner) => (
