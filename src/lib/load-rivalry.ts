@@ -1,5 +1,6 @@
 import { MatchStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { computeClutch } from "@/lib/clutch";
 import { computePartners } from "@/lib/partners";
 import { computeRivalry, findTopRival, type RivalryMatch } from "@/lib/rivalry";
 
@@ -56,4 +57,12 @@ export async function loadPartners(userId: string) {
   const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
   const withPhoto = <T extends { userId: string }>(partner: T) => ({ ...partner, photoUrl: photoOf.get(partner.userId) ?? null });
   return { best: best && withPhoto(best), partners: partners.map(withPhoto) };
+}
+
+/** Clutch stats: close games, underdog matches and upsets (from the ratings everyone had going in), and comebacks. */
+export async function loadClutch(userId: string) {
+  const matches = await prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId } } }, select: MATCH_SELECT });
+  const rows = await prisma.ratingHistory.findMany({ where: { matchId: { in: matches.map((match) => match.id) }, ladderId: null }, select: { matchId: true, userId: true, ratingBefore: true } });
+  const ratingBefore = new Map(rows.map((row) => [`${row.matchId}:${row.userId}`, Number(row.ratingBefore)]));
+  return computeClutch((matches as LoadedMatch[]).map(toRivalryMatch), userId, ratingBefore);
 }

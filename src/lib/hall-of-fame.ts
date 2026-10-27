@@ -1,3 +1,4 @@
+import { CLOSE_GAME_MARGIN, CLUTCH_MIN_GAMES } from "./clutch";
 import { computeRecap, type RecapMatch } from "./round-robin-recap";
 import { rankRoundRobinWinners } from "./round-robin-winners";
 
@@ -10,7 +11,7 @@ export type HallOfFameRoundRobin = { id: string; name: string; endedAt: Date; ma
 
 type PlayerRef = { userId: string; name: string };
 export type HallOfFameRecord = {
-  key: "titles" | "streak" | "biggestWin" | "bestNight" | "undefeated" | "duo" | "games";
+  key: "titles" | "streak" | "biggestWin" | "bestNight" | "undefeated" | "duo" | "clutch" | "games";
   label: string;
   value: string;
   holders: PlayerRef[];
@@ -117,6 +118,21 @@ export function computeHallOfFame(roundRobins: HallOfFameRoundRobin[], guestIds 
   }
   const duo = [...duos.values()].filter((entry) => entry.played >= DUO_MIN_GAMES).sort((a, b) => b.wins / b.played - a.wins / a.played || b.played - a.played)[0];
   if (duo) records.push({ key: "duo", label: "Best duo", value: `${Math.round((duo.wins / duo.played) * 100)}%`, holders: duo.players, detail: `${duo.wins}-${duo.played - duo.wins} together (${DUO_MIN_GAMES}+ games)`, roundRobin: null, at: null });
+
+  // Best win % in close games, with enough of them; ties go to more close games.
+  const close = new Map<string, PlayerRef & { wins: number; played: number }>();
+  for (const game of games.filter((entry) => entry.winnerScore - entry.loserScore <= CLOSE_GAME_MARGIN)) {
+    for (const [players, won] of [[game.winners, true], [game.losers, false]] as const) {
+      for (const player of players.filter(isMember)) {
+        const entry = close.get(player.userId) ?? { ...player, wins: 0, played: 0 };
+        entry.played += 1;
+        if (won) entry.wins += 1;
+        close.set(player.userId, entry);
+      }
+    }
+  }
+  const clutch = [...close.values()].filter((entry) => entry.played >= CLUTCH_MIN_GAMES).sort((a, b) => b.wins / b.played - a.wins / a.played || b.played - a.played)[0];
+  if (clutch) records.push({ key: "clutch", label: "Most clutch", value: `${Math.round((clutch.wins / clutch.played) * 100)}%`, holders: [clutch], detail: `${clutch.wins}-${clutch.played - clutch.wins} in games decided by ${CLOSE_GAME_MARGIN} or fewer (${CLUTCH_MIN_GAMES}+ games)`, roundRobin: null, at: null });
 
   const played = new Map<string, PlayerRef & { value: number; at: Date }>();
   for (const game of games) {

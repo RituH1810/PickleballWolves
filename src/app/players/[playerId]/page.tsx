@@ -7,6 +7,7 @@ import { Avatar } from "@/components/avatar";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
 import { PartnerCard } from "@/components/partner-card";
+import { ClutchCard } from "@/components/clutch-card";
 import { RivalCard } from "@/components/rival-card";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 import { DirectionsLink } from "@/components/directions-link";
@@ -120,6 +121,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
 
         <RivalCard userId={player.id} isMe={player.isMe} playerName={player.name} />
         <PartnerCard userId={player.id} isMe={player.isMe} />
+        <ClutchCard userId={player.id} />
         <AwardsPanel userId={player.id} />
         <AchievementsPanel userId={player.id} />
       </div>

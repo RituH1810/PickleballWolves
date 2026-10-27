@@ -49,6 +49,13 @@ describe("computeHallOfFame", () => {
     expect(holders("games")).toHaveLength(4);
   });
 
+  it("finds the most clutch player once they have enough close games", () => {
+    const tight = night("c", 1, game(["ann", "bo"], ["cy", "dee"], 11, 9), game(["ann", "cy"], ["bo", "dee"], 11, 10), game(["ann", "dee"], ["bo", "cy"], 12, 10), game(["bo", "cy"], ["ann", "dee"], 11, 9), game(["ann", "bo"], ["cy", "dee"], 11, 10));
+    const clutch = computeHallOfFame([tight]).find((record) => record.key === "clutch");
+    expect(clutch).toMatchObject({ value: "80%", holders: [{ userId: "ann" }], detail: "4-1 in games decided by 2 or fewer (5+ games)" });
+    expect(computeHallOfFame(history).find((record) => record.key === "clutch")).toBeUndefined();
+  });
+
   it("never gives a record to a guest", () => {
     const guestRecords = computeHallOfFame([night("g", 1, game(["ann", "guest"], ["cy", "dee"], 11, 0), game(["cy", "dee"], ["ann", "guest"], 11, 9))], new Set(["guest"]));
     for (const record of guestRecords) expect(record.holders.map((player) => player.userId)).not.toContain("guest");

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
 import { PartnerCard } from "@/components/partner-card";
+import { ClutchCard } from "@/components/clutch-card";
 import { RivalCard } from "@/components/rival-card";
 import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
@@ -185,6 +186,7 @@ export default function ProfilePage() {
 
         <RivalCard userId={profile.id} />
         <PartnerCard userId={profile.id} />
+        <ClutchCard userId={profile.id} />
         <AwardsPanel />
         <AchievementsPanel />
         <ChangePassword />
