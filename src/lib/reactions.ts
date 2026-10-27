@@ -3,7 +3,7 @@ export const REACTION_EMOJIS = ["🔥", "👏", "😮", "😂", "💪"] as const
 export type ReactionEmoji = (typeof REACTION_EMOJIS)[number];
 
 /** What can be reacted to (see the Reaction model for each type's targetId). */
-export const REACTION_TARGETS = ["ROUND_ROBIN", "PLAYER_OF_THE_WEEK", "RECORD"] as const;
+export const REACTION_TARGETS = ["ROUND_ROBIN", "PLAYER_OF_THE_WEEK", "RECORD", "FEED"] as const;
 export type ReactionTarget = (typeof REACTION_TARGETS)[number];
 
 export type ReactionSummary = { emoji: ReactionEmoji; count: number; mine: boolean; names: string[] }[];

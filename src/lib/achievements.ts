@@ -87,6 +87,12 @@ function averageRating(match: AchievementMatch, side: "A" | "B", ratingBefore: M
  * retroactive and can never drift out of sync with edited or deleted matches. Matches are walked
  * oldest-first so each badge's unlockedAt is the match that actually earned it.
  */
+/** A badge's name and tier by id, or null for an unknown id. */
+export function achievementInfo(id: string) {
+  const definition = DEFINITIONS.find((entry) => entry.id === id);
+  return definition ? { name: definition.name, tier: definition.tier } : null;
+}
+
 export function computeAchievements(input: AchievementInput): Achievement[] {
   const unlockedAt = new Map<string, Date>();
   const progress = new Map<string, number>();

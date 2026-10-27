@@ -20,7 +20,24 @@ export type HallOfFameRecord = {
   at: Date | null;
 };
 
-type Game = { roundRobin: HallOfFameRoundRobin; playedAt: Date; order: number; winners: PlayerRef[]; losers: PlayerRef[]; winnerScore: number; loserScore: number };
+export type GroupGame = { roundRobin: HallOfFameRoundRobin; matchId: string; playedAt: Date; order: number; winners: PlayerRef[]; losers: PlayerRef[]; winnerScore: number; loserScore: number };
+type Game = GroupGame;
+
+/** Every decided game in these round robins, oldest first (tied games are skipped). */
+export function groupGames(roundRobins: HallOfFameRoundRobin[]): GroupGame[] {
+  const games: GroupGame[] = [];
+  for (const roundRobin of roundRobins) {
+    for (const match of roundRobin.matches) {
+      const side = (letter: "A" | "B") => match.players.filter((player) => player.side === letter).map(({ userId, name }) => ({ userId, name }));
+      for (const score of [...match.scores].sort((a, b) => a.gameNumber - b.gameNumber)) {
+        if (score.sideAScore === score.sideBScore) continue;
+        const aWon = score.sideAScore > score.sideBScore;
+        games.push({ roundRobin, matchId: match.id, playedAt: match.playedAt, order: score.gameNumber, winners: side(aWon ? "A" : "B"), losers: side(aWon ? "B" : "A"), winnerScore: Math.max(score.sideAScore, score.sideBScore), loserScore: Math.min(score.sideAScore, score.sideBScore) });
+      }
+    }
+  }
+  return games.sort((a, b) => a.playedAt.getTime() - b.playedAt.getTime() || a.order - b.order);
+}
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 const names = (players: PlayerRef[]) => players.map((player) => player.name).join(" & ");
@@ -38,18 +55,7 @@ function leaders<T extends { value: number; at: Date }>(entries: T[]) {
  */
 export function computeHallOfFame(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): HallOfFameRecord[] {
   const isMember = (player: PlayerRef) => !guestIds.has(player.userId);
-  const games: Game[] = [];
-  for (const roundRobin of roundRobins) {
-    for (const match of roundRobin.matches) {
-      const side = (letter: "A" | "B") => match.players.filter((player) => player.side === letter).map(({ userId, name }) => ({ userId, name }));
-      for (const score of [...match.scores].sort((a, b) => a.gameNumber - b.gameNumber)) {
-        if (score.sideAScore === score.sideBScore) continue;
-        const aWon = score.sideAScore > score.sideBScore;
-        games.push({ roundRobin, playedAt: match.playedAt, order: score.gameNumber, winners: side(aWon ? "A" : "B"), losers: side(aWon ? "B" : "A"), winnerScore: Math.max(score.sideAScore, score.sideBScore), loserScore: Math.min(score.sideAScore, score.sideBScore) });
-      }
-    }
-  }
-  games.sort((a, b) => a.playedAt.getTime() - b.playedAt.getTime() || a.order - b.order);
+  const games = groupGames(roundRobins);
   const records: HallOfFameRecord[] = [];
 
   const champions = rankRoundRobinWinners(roundRobins.map((roundRobin) => ({ endedAt: roundRobin.endedAt, champions: (computeRecap(roundRobin.matches)?.champions ?? []).filter(isMember) })))

@@ -3,14 +3,20 @@
 import { useEffect, useState } from "react";
 import { REACTION_EMOJIS, type ReactionSummary, type ReactionTarget } from "@/lib/reactions";
 
-/** Emoji reactions under a result: tap to add or remove yours; hover a count to see who reacted. Hidden if they can't load. */
-export function Reactions({ targetType, targetId, tone = "dark", className = "" }: { targetType: ReactionTarget; targetId: string; tone?: "dark" | "lime"; className?: string }) {
-  const [reactions, setReactions] = useState<ReactionSummary | null>(null);
+/**
+ * Emoji reactions under a result: tap to add or remove yours; hover a count to see who reacted.
+ * Pass `initial` when the reactions came with the page's data (a list loads them in one go);
+ * otherwise they're fetched. Hidden if they can't load.
+ */
+export function Reactions({ targetType, targetId, initial, tone = "dark", className = "" }: { targetType: ReactionTarget; targetId: string; initial?: ReactionSummary; tone?: "dark" | "lime"; className?: string }) {
+  const [reactions, setReactions] = useState<ReactionSummary | null>(initial ?? null);
   const [busy, setBusy] = useState(false);
+  const preloaded = initial !== undefined;
 
   useEffect(() => {
+    if (preloaded) return;
     fetch(`/api/reactions?type=${targetType}&id=${encodeURIComponent(targetId)}`).then((response) => response.ok ? response.json() : null).then((data) => setReactions(data?.reactions ?? null));
-  }, [targetType, targetId]);
+  }, [targetType, targetId, preloaded]);
 
   if (!reactions) return null;
 

@@ -667,7 +667,8 @@ model PlayerOfTheWeek {
 
 // An emoji reaction to a result. targetId depends on targetType: ROUND_ROBIN is the round robin's id
 // (its recap); PLAYER_OF_THE_WEEK is "groupId:weekStart"; RECORD is a Hall of Fame record as
-// "groupId:key:value:holderIds", so a broken record starts with no reactions.
+// "groupId:key:value:holderIds", so a broken record starts with no reactions; FEED is an activity
+// feed item as "groupId:itemId".
 model Reaction {
   id         String   @id @default(cuid())
   targetType String
