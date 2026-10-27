@@ -134,7 +134,7 @@ export function DashboardPage() {
         const theirScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideBScore : score.sideAScore), 0);
         const margin = myScore - theirScore;
         const scoreText = match.scores.map((score) => `${mine?.side === "A" ? score.sideAScore : score.sideBScore} - ${mine?.side === "A" ? score.sideBScore : score.sideAScore}`).join(", ") || "No score";
-        const points = mine?.ratingDelta == null ? "" : `${mine.ratingDelta > 0 ? "+" : ""}${mine.ratingDelta.toFixed(2)}`;
+        const points = mine?.ratingDelta == null ? "" : `${mine.ratingDelta > 0 ? "+" : ""}${mine.ratingDelta.toFixed(3)}`;
         return { opponent: `${myLabel} vs ${theirLabel}`, event: match.event, score: scoreText, result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", points, date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
       }));
     }).finally(() => setLoadingMatches(false));

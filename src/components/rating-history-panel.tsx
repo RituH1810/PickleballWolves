@@ -24,9 +24,9 @@ export function RatingHistoryPanel({ userId }: { userId?: string }) {
         <div className="flex items-center gap-2"><TrendingUp size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Rating history</h2></div>
         {ratingPoints.length > 0 && peakRating !== null && ratingChange !== null && (
           <dl className="flex gap-6 text-right">
-            <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Current</dt><dd className="mt-1 text-lg font-black">{ratingPoints[ratingPoints.length - 1].rating.toFixed(2)}</dd></div>
-            <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Peak</dt><dd className="mt-1 text-lg font-black">{peakRating.toFixed(2)}</dd></div>
-            <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Change</dt><dd className={`mt-1 text-lg font-black ${ratingChange > 0 ? "text-[var(--lime-deep)]" : ratingChange < 0 ? "text-[var(--coral)]" : ""}`}>{ratingChange > 0 ? "+" : ratingChange < 0 ? "−" : ""}{Math.abs(ratingChange).toFixed(2)}</dd></div>
+            <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Current</dt><dd className="mt-1 text-lg font-black">{ratingPoints[ratingPoints.length - 1].rating.toFixed(3)}</dd></div>
+            <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Peak</dt><dd className="mt-1 text-lg font-black">{peakRating.toFixed(3)}</dd></div>
+            <div><dt className="text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Change</dt><dd className={`mt-1 text-lg font-black ${ratingChange > 0 ? "text-[var(--lime-deep)]" : ratingChange < 0 ? "text-[var(--coral)]" : ""}`}>{ratingChange > 0 ? "+" : ratingChange < 0 ? "−" : ""}{Math.abs(ratingChange).toFixed(3)}</dd></div>
           </dl>
         )}
       </div>

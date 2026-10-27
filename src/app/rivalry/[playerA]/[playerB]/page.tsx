@@ -59,7 +59,7 @@ export default function RivalryPage({ params }: { params: Promise<{ playerA: str
               <Link key={person.id} href={`/players/${person.id}`} className={`flex flex-col items-center gap-2 text-center ${index === 1 ? "col-start-3" : ""}`}>
                 <Avatar name={person.name} photoUrl={person.photoUrl} className="h-16 w-16 rounded-2xl bg-[#d8f24e] text-xl font-black text-[#1b211e] sm:h-20 sm:w-20" />
                 <span className="text-sm font-extrabold hover:underline sm:text-base">{person.name}</span>
-                <span className="text-[11px] text-[var(--ink-soft)]">{person.skillRating.toFixed(2)} rating</span>
+                <span className="text-[11px] text-[var(--ink-soft)]">{person.skillRating.toFixed(3)} rating</span>
               </Link>
             ))}
             <div className="col-start-2 row-start-1 text-center">

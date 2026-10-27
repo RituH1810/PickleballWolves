@@ -56,7 +56,7 @@ function PlayerRatingChip({ player, isMe }: { player: MatchPlayer; isMe: boolean
       {isMe ? <span className="font-bold text-[var(--foreground)]">You</span> : <Link href={`/players/${player.id}`} className="font-semibold text-[var(--ink-soft)] hover:text-[var(--lime-deep)] hover:underline">{player.name}</Link>}
       {player.ratingDelta != null && player.ratingAfter != null && (
         <span className={`text-[11px] font-bold ${player.ratingDelta > 0 ? "text-[var(--lime-deep)]" : player.ratingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>
-          {player.ratingAfter.toFixed(2)} ({player.ratingDelta > 0 ? "+" : ""}{player.ratingDelta.toFixed(2)})
+          {player.ratingAfter.toFixed(3)} ({player.ratingDelta > 0 ? "+" : ""}{player.ratingDelta.toFixed(3)})
         </span>
       )}
     </span>

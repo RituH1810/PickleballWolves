@@ -61,7 +61,7 @@ export function MyRecaps() {
             <div className="grid gap-3 p-5 sm:grid-cols-2">
               {recap.ratingChange !== null && (
                 <Stat icon={recap.ratingChange >= 0 ? TrendingUp : TrendingDown} label="Rating change">
-                  <span className={recap.ratingChange > 0 ? "text-[var(--lime-deep)]" : recap.ratingChange < 0 ? "text-[var(--coral)]" : ""}>{recap.ratingChange > 0 ? "+" : recap.ratingChange < 0 ? "−" : "±"}{Math.abs(recap.ratingChange).toFixed(2)}</span>
+                  <span className={recap.ratingChange > 0 ? "text-[var(--lime-deep)]" : recap.ratingChange < 0 ? "text-[var(--coral)]" : ""}>{recap.ratingChange > 0 ? "+" : recap.ratingChange < 0 ? "−" : "±"}{Math.abs(recap.ratingChange).toFixed(3)}</span>
                 </Stat>
               )}
               {recap.bestPartner && <Stat icon={Handshake} label="Best partner"><Link href={`/players/${recap.bestPartner.userId}`} className="hover:text-[var(--lime-deep)] hover:underline">{recap.bestPartner.name}</Link> <span className="text-xs text-[var(--ink-soft)]">{recap.bestPartner.wins}-{recap.bestPartner.losses} together</span></Stat>}

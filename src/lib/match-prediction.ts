@@ -5,9 +5,9 @@ export const MAX_RATING = 6;
 // chess's 400-point divisor made the rating gap between any two players on this scale
 // negligible, so the expected result was always ~0.5 regardless of actual skill gap, and the 32
 // K-factor produced swings several times larger than the whole scale, clamping ratings to
-// 2.0 or 6.0 after a single match. Scale both to the actual rating span instead.
+// 2.0 or 6.0 after a single match. Scale both to the actual rating span instead (the size of each
+// change lives in rating.ts).
 export const RATING_SPAN = MAX_RATING - MIN_RATING;
-export const K_FACTOR = 0.5;
 
 // An underdog winning with at most this chance counts as an upset.
 export const UPSET_MAX_CHANCE = 40;

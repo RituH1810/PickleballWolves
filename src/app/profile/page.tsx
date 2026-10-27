@@ -12,7 +12,7 @@ import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 import { AddressInput } from "@/components/address-input";
 
-type Profile = { id: string; name: string; skillRating: string; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number | null; matchesToQualify: number };
+type Profile = { id: string; name: string; skillRating: string; ratingLocked?: boolean; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number | null; matchesToQualify: number };
 type RecentResult = { opponent: string; event: string; score: string; result: "W" | "L" | "-" };
 
 export default function ProfilePage() {
@@ -134,7 +134,8 @@ export default function ProfilePage() {
           {editing && (
             <div className="mt-6 grid gap-4 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
               <label className="text-xs font-bold text-[#c3d0c5]">Skill rating
-                <input type="number" min="2" max="6" step="0.1" value={draft.skillRating} onChange={(event) => setDraft({ ...draft, skillRating: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
+                <input type="number" min="2" max="6" step="0.1" value={draft.skillRating} disabled={profile.ratingLocked} onChange={(event) => setDraft({ ...draft, skillRating: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm disabled:opacity-60" />
+                {profile.ratingLocked && <span className="mt-1 block text-[11px] font-semibold text-[var(--ink-soft)]">Earned from your matches -- it changes after each rated match.</span>}
               </label>
               <label className="text-xs font-bold text-[#c3d0c5]">Home court
                 <AddressInput value={draft.homeCourt} onChange={(homeCourt) => setDraft({ ...draft, homeCourt })} placeholder="Northside Courts -- start typing to search" ariaLabel="Home court" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />

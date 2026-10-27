@@ -119,7 +119,8 @@ model User {
   photoUrl        String?
   phone           String?
   role            UserRole     @default(PLAYER)
-  skillRating     Decimal      @db.Decimal(3, 1)
+  // Three decimals, like DUPR, so each match's change is kept exactly (see lib/rating.ts).
+  skillRating     Decimal      @db.Decimal(4, 3)
   preferredHand   Hand         @default(RIGHT)
   homeCourt       String?
   gender          Gender?
@@ -556,9 +557,9 @@ model RatingHistory {
   userId      String
   ladderId    String?
   matchId     String?
-  ratingBefore Decimal @db.Decimal(6, 2)
-  ratingAfter  Decimal @db.Decimal(6, 2)
-  ratingDelta  Decimal @db.Decimal(6, 2)
+  ratingBefore Decimal @db.Decimal(7, 3)
+  ratingAfter  Decimal @db.Decimal(7, 3)
+  ratingDelta  Decimal @db.Decimal(7, 3)
   createdAt   DateTime @default(now())
 }
 

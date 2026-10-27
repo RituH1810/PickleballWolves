@@ -152,7 +152,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     if (!response.ok) { showNotice(data.error ?? "Unable to save score.", "error"); return; }
     const ratingChanges: { userId: string; ratingDelta: number; ratingAfter: number }[] = data.ratingChanges ?? [];
     const mine = ratingChanges.find((change) => change.userId === room?.myUserId);
-    const ratingText = mine ? ` Your rating: ${mine.ratingDelta > 0 ? "+" : ""}${mine.ratingDelta.toFixed(2)} (now ${mine.ratingAfter.toFixed(2)}).` : "";
+    const ratingText = mine ? ` Your rating: ${mine.ratingDelta > 0 ? "+" : ""}${mine.ratingDelta.toFixed(3)} (now ${mine.ratingAfter.toFixed(3)}).` : "";
     showNotice(`Score saved and standings updated.${ratingText}`, "success");
     loadRoom();
   }

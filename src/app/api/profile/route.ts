@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { buildLeaderboard, MIN_MATCHES_FOR_RANKING } from "@/lib/leaderboard";
 
+// Players pick their own starting rating; once a match has rated them, the rating is earned and only matches move it.
+const hasRatedMatches = async (userId: string) => (await prisma.ratingHistory.count({ where: { userId, ladderId: null, matchId: { not: null } } })) > 0;
+
 async function getUser() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -29,7 +32,7 @@ export async function GET() {
   const rank = entry?.rank ?? null;
   const matchesToQualify = entry ? 0 : Math.max(0, MIN_MATCHES_FOR_RANKING - matches.length);
 
-  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString(), record: `${wins} - ${Math.max(0, matches.length - wins)}`, winRate: matches.length ? `${((wins / matches.length) * 100).toFixed(1)}%` : "0.0%", rank, matchesToQualify } });
+  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString(), ratingLocked: await hasRatedMatches(user.id), record: `${wins} - ${Math.max(0, matches.length - wins)}`, winRate: matches.length ? `${((wins / matches.length) * 100).toFixed(1)}%` : "0.0%", rank, matchesToQualify } });
 }
 
 export async function PATCH(request: Request) {
@@ -40,7 +43,9 @@ export async function PATCH(request: Request) {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const homeCourt = typeof body.homeCourt === "string" ? body.homeCourt.trim() : null;
   const preferredHand = ["LEFT", "RIGHT", "AMBIDEXTROUS"].includes(body.preferredHand) ? body.preferredHand : "RIGHT";
-  const skillRating = Number(body.skillRating);
+  const existing = await prisma.user.findUnique({ where: { id: user.id }, select: { skillRating: true } });
+  const ratingLocked = await hasRatedMatches(user.id);
+  const skillRating = ratingLocked && existing ? Number(existing.skillRating) : Number(body.skillRating);
   const phone = typeof body.phone === "string" ? body.phone.trim() || null : undefined;
   const photoUrl = typeof body.photoUrl === "string" ? body.photoUrl.trim() || null : undefined;
 
@@ -57,5 +62,5 @@ export async function PATCH(request: Request) {
     create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name, homeCourt, preferredHand, skillRating, phone: phone ?? null, photoUrl: photoUrl ?? null },
   });
 
-  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString() } });
+  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString(), ratingLocked } });
 }

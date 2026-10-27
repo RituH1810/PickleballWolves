@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { announceNewAchievements } from "@/lib/announce-achievements";
 import { notify } from "@/lib/notifications";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
-import { expectedWin, K_FACTOR, MAX_RATING, MIN_RATING } from "@/lib/match-prediction";
+import { rerateMatch } from "@/lib/apply-rating";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -63,44 +63,12 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     return notify(player.userId, "general", "SCORE_ADDED", "Score added to your match", `${enteredByName} recorded a score of ${sideAScore}-${sideBScore}. You ${won ? "won" : "lost"} this game.`);
   }));
 
-  const playerIds = match.players.map((player) => player.userId);
-  const players = await prisma.user.findMany({ where: { id: { in: playerIds } }, select: { id: true, skillRating: true } });
-  const ratingById = new Map(players.map((player) => [player.id, Number(player.skillRating)]));
-  const sideAIds = match.players.filter((player) => player.side === Side.A).map((player) => player.userId).filter((id) => ratingById.has(id));
-  const sideBIds = match.players.filter((player) => player.side === Side.B).map((player) => player.userId).filter((id) => ratingById.has(id));
-  // The rating model (scale, K-factor, expected result) lives in match-prediction, shared with
-  // the win chances shown before a match.
+  // Every save re-rates the match from its current scores (see rerateMatch), so a corrected score
+  // replaces the first result's rating change instead of keeping it. Matches recorded already
+  // finished (friendly "Record a match" entries) were never rated, and editing one doesn't start.
   const nameById = new Map(match.players.map((player) => [player.userId, player.user.name]));
-  let ratingChanges: { userId: string; name: string; side: "A" | "B"; ratingBefore: number; ratingAfter: number; ratingDelta: number }[] = [];
-  let opponentAvgRating: { A: number; B: number } | null = null;
-  // Only adjust ratings the first time a match is scored -- re-saving a corrected score would
-  // otherwise re-apply a full delta on top of the one already applied.
-  if (!wasAlreadyCompleted && sideAIds.length && sideBIds.length) {
-    const avg = (ids: string[]) => ids.reduce((total, id) => total + ratingById.get(id)!, 0) / ids.length;
-    const avgA = avg(sideAIds);
-    const avgB = avg(sideBIds);
-    opponentAvgRating = { A: Math.round(avgA * 100) / 100, B: Math.round(avgB * 100) / 100 };
-    const expectedA = expectedWin(avgA, avgB);
-    const actualA = winnerSide === Side.A ? 1 : 0;
-    const delta = Math.round(K_FACTOR * (actualA - expectedA) * 100) / 100;
-    const updates = [
-      ...sideAIds.map((id) => {
-        const before = ratingById.get(id)!;
-        const after = Math.min(MAX_RATING, Math.max(MIN_RATING, before + delta));
-        return { id, before, after, side: "A" as const };
-      }),
-      ...sideBIds.map((id) => {
-        const before = ratingById.get(id)!;
-        const after = Math.min(MAX_RATING, Math.max(MIN_RATING, before - delta));
-        return { id, before, after, side: "B" as const };
-      }),
-    ];
-    await prisma.$transaction(updates.flatMap(({ id, before, after }) => [
-      prisma.user.update({ where: { id }, data: { skillRating: after } }),
-      prisma.ratingHistory.create({ data: { userId: id, matchId, ratingBefore: before, ratingAfter: after, ratingDelta: after - before } }),
-    ]));
-    ratingChanges = updates.map(({ id, before, after, side }) => ({ userId: id, name: nameById.get(id) ?? "Unknown", side, ratingBefore: before, ratingAfter: after, ratingDelta: Math.round((after - before) * 100) / 100 }));
-  }
+  const rated = !wasAlreadyCompleted || (await prisma.ratingHistory.count({ where: { matchId, ladderId: null } })) > 0;
+  const ratingChanges = (rated ? await rerateMatch(matchId) : []).map((change) => ({ userId: change.userId, name: nameById.get(change.userId) ?? "Unknown", side: change.side, ratingBefore: change.before, ratingAfter: change.after, ratingDelta: change.delta }));
 
   if (!wasAlreadyCompleted) {
     const ladderChallenge = await prisma.challenge.findFirst({ where: { matchId } });
@@ -156,5 +124,5 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
 
   // A score can complete a badge (first win, a streak, a bagel...) -- tell whoever just earned one.
   await announceNewAchievements(match.players.map((player) => player.userId));
-  return NextResponse.json({ score, winnerSide, ratingChanges, opponentAvgRating });
+  return NextResponse.json({ score, winnerSide, ratingChanges });
 }

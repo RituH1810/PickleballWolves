@@ -12,7 +12,7 @@ function formatDate(value: string | Date) {
 }
 
 function formatDelta(delta: number) {
-  return `${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${Math.abs(delta).toFixed(2)}`;
+  return `${delta > 0 ? "+" : delta < 0 ? "−" : "±"}${Math.abs(delta).toFixed(3)}`;
 }
 
 /**
@@ -72,7 +72,7 @@ export function RatingChart({ start, points }: { start: number; points: RatingPo
           width={width}
           height={HEIGHT}
           role="img"
-          aria-label={`Skill rating over ${points.length} matches, from ${start.toFixed(2)} to ${points[points.length - 1].rating.toFixed(2)}. Use left and right arrow keys to step through matches.`}
+          aria-label={`Skill rating over ${points.length} matches, from ${start.toFixed(3)} to ${points[points.length - 1].rating.toFixed(3)}. Use left and right arrow keys to step through matches.`}
           tabIndex={0}
           onPointerMove={(event) => pick(event.clientX)}
           onPointerDown={(event) => pick(event.clientX)}
@@ -105,7 +105,7 @@ export function RatingChart({ start, points }: { start: number; points: RatingPo
 
       {point && active !== null && (
         <div className="pointer-events-none absolute top-0 w-[140px] rounded-xl border border-[var(--line)] bg-[#0f1712] px-3 py-2 shadow-lg" style={{ left: tooltipLeft }}>
-          <p className="text-lg font-black leading-none">{point.rating.toFixed(2)}</p>
+          <p className="text-lg font-black leading-none">{point.rating.toFixed(3)}</p>
           <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
             {active === 0 ? "Starting rating" : <>{formatDate(point.at)} · <span className={point.delta > 0 ? "text-[var(--lime-deep)]" : point.delta < 0 ? "text-[var(--coral)]" : ""}>{formatDelta(point.delta)}</span></>}
           </p>
@@ -115,7 +115,7 @@ export function RatingChart({ start, points }: { start: number; points: RatingPo
       <table className="sr-only">
         <caption>Skill rating after each match</caption>
         <thead><tr><th>Date</th><th>Rating</th><th>Change</th></tr></thead>
-        <tbody>{points.map((entry, index) => <tr key={index}><td>{formatDate(entry.at)}</td><td>{entry.rating.toFixed(2)}</td><td>{formatDelta(entry.delta)}</td></tr>)}</tbody>
+        <tbody>{points.map((entry, index) => <tr key={index}><td>{formatDate(entry.at)}</td><td>{entry.rating.toFixed(3)}</td><td>{formatDelta(entry.delta)}</td></tr>)}</tbody>
       </table>
     </div>
   );

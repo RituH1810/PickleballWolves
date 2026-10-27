@@ -81,7 +81,7 @@ function RecapCard({ view }: { view: Extract<BragView, { kind: "recap" }> }) {
     ["Points", `${recap.differential > 0 ? "+" : ""}${recap.differential}`],
   ];
   // It's a brag -- a rating that went down stays off the card.
-  if (recap.ratingChange !== null && recap.ratingChange > 0) stats.push(["Rating", `+${recap.ratingChange.toFixed(2)}`]);
+  if (recap.ratingChange !== null && recap.ratingChange > 0) stats.push(["Rating", `+${recap.ratingChange.toFixed(3)}`]);
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", background: champion ? LIME : INK, padding: 64, color: fg, fontFamily: "Geist" }}>
       <div style={{ display: "flex", flexDirection: "column" }}>
