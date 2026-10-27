@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Copy, Crown, Dices, Flame, Swords, Target, TrendingUp, type LucideIcon } from "lucide-react";
 import { BragButton } from "@/components/brag-button";
+import { Reactions } from "@/components/reactions";
 import { recapShareText, type Recap } from "@/lib/round-robin-recap";
 
 type PlayerRef = { userId: string; name: string };
@@ -83,6 +84,7 @@ export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundR
           <button onClick={copy} className={`${shareButton} border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]`}><Copy size={14} />{copied ? "Copied!" : "Copy recap"}</button>
           {played && <div className="ml-auto"><BragButton card={{ kind: "recap", roundRobinId }} label="Share my result as a picture" text="Share my result" /></div>}
         </div>
+        <Reactions targetType="ROUND_ROBIN" targetId={roundRobinId} className="mt-4" />
       </div>
     </section>
   );

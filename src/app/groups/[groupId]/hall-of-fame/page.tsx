@@ -4,6 +4,8 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, Crown, Flame, Gauge, Handshake, Lock, ShieldCheck, Trophy, Zap } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { Reactions } from "@/components/reactions";
+import { recordTarget } from "@/lib/reactions";
 
 type Holder = { userId: string; name: string; photoUrl: string | null };
 type HallRecord = { key: string; label: string; value: string; holders: Holder[]; detail: string; roundRobin: { id: string; name: string } | null; at: string | null };
@@ -64,6 +66,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
                     {record.roundRobin && <> · <Link href={`/round-robin/${record.roundRobin.id}`} className="font-semibold hover:text-[var(--lime-deep)] hover:underline">{record.roundRobin.name}</Link></>}
                     {record.at && <> · {new Date(record.at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</>}
                   </p>
+                  <Reactions targetType="RECORD" targetId={recordTarget(groupId, record)} className="mt-4" />
                 </section>
               );
             })}

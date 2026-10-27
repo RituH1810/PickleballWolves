@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Star } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { Reactions } from "@/components/reactions";
+import { playerOfTheWeekTarget } from "@/lib/reactions";
 
 type Winner = { userId: string; name: string; photoUrl: string | null; matches: number; wins: number; losses: number; avgPointDiff: number; timesWon: number };
 type Week = { weekStart: string; label: string; winners: Winner[] };
@@ -33,6 +35,7 @@ export function PlayerOfTheWeek({ groupId }: { groupId: string }) {
             </Link>
           ))}
         </div>
+        <Reactions targetType="PLAYER_OF_THE_WEEK" targetId={playerOfTheWeekTarget(groupId, latest.weekStart)} tone="lime" className="mt-4" />
       </div>
       {earlier.length > 0 && (
         <div className="divide-y divide-[var(--line)] px-5 sm:px-6">
