@@ -22,7 +22,7 @@ export async function GET() {
   const profile = await prisma.user.upsert({
     where: { id: user.id },
     update: { email: user.email ?? "" },
-    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player", skillRating: 2.0 },
+    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name: user.user_metadata.name ?? user.email?.split("@")[0] ?? "Player", skillRating: START_RATING },
   });
   const matches = await prisma.match.findMany({ where: { status: "COMPLETED", deletedAt: null, players: { some: { userId: user.id } } }, include: { players: true, scores: true } });
   const wins = matches.filter((match) => { const player = match.players.find((matchPlayer) => matchPlayer.userId === user.id); return match.scores.reduce((total, score) => total + (player?.side === "A" ? score.sideAScore - score.sideBScore : score.sideBScore - score.sideAScore), 0) > 0; }).length;
@@ -47,7 +47,7 @@ export async function PATCH(request: Request) {
   const phone = typeof body.phone === "string" ? body.phone.trim() || null : undefined;
   const photoUrl = typeof body.photoUrl === "string" ? body.photoUrl.trim() || null : undefined;
 
-  // No rating here: everyone starts at 2.000 and earns it from match results (lib/rating.ts).
+  // No rating here: everyone starts at 2.500 and earns it from match results (lib/rating.ts).
   if (!name) return NextResponse.json({ error: "Enter a name." }, { status: 400 });
   if (phone && !/^[+()\-.\s\d]{7,20}$/.test(phone)) {
     return NextResponse.json({ error: "Enter a valid phone number." }, { status: 400 });

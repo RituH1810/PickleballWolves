@@ -7,7 +7,7 @@ import { GUEST_NAME_MAX } from "@/lib/guest-players";
 type Guest = { id: string; name: string; skillRating: number };
 
 /**
- * Organizer-only: add someone who isn't on PickleballWolves, by name (they start at 2.000, like everyone). Guests the
+ * Organizer-only: add someone who isn't on PickleballWolves, by name (they start at 2.500, like everyone). Guests the
  * organizer has brought before are offered first so a regular keeps one history and rating.
  */
 export function AddGuestPlayer({ roundRobinId, joinedIds, onAdded, onError }: { roundRobinId: string; joinedIds: Set<string>; onAdded: () => Promise<void> | void; onError: (message: string) => void }) {
@@ -27,7 +27,7 @@ export function AddGuestPlayer({ roundRobinId, joinedIds, onAdded, onError }: { 
     if (!response.ok) { onError(data?.error ?? "Unable to add this guest."); return; }
     if ("name" in body) {
       setName("");
-      setPastGuests((guests) => [...guests, { id: data.guestId, name: body.name, skillRating: 2 }].sort((a, b) => a.name.localeCompare(b.name)));
+      setPastGuests((guests) => [...guests, { id: data.guestId, name: body.name, skillRating: 2.5 }].sort((a, b) => a.name.localeCompare(b.name)));
     }
     await onAdded();
   }

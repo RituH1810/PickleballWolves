@@ -1,4 +1,4 @@
-// DUPR-style skill ratings. Everyone starts at 2.000 and earns their rating purely from match
+// DUPR-style skill ratings. Everyone starts at 2.500 and earns their rating purely from match
 // results: the score margin matters (not just win/loss), each player moves by their own amount (a
 // player's first matches move a lot so they can climb to their level, then changes are small), and
 // ratings run 2.0-8.0. Because ratings depend on the order matches were played, they're
@@ -7,13 +7,16 @@
 
 export const RATING_MIN = 2;
 export const RATING_MAX = 8;
-/** Every player -- member or guest -- starts here; no self-chosen ratings. */
-export const START_RATING = RATING_MIN;
+/**
+ * Every player -- member or guest -- starts here; no self-chosen ratings. Half a point above the
+ * 2.0 floor, so weaker players can drop below the start instead of all bunching at the floor.
+ */
+export const START_RATING = 2.5;
 // How much a rating gap shifts the expected share of points: a team 1.0 better is expected to win
 // about 64% of the points (roughly 11-6), 2.0 better about 76%.
 export const POINTS_DIVISOR = 4;
 // Per-match sensitivity: a player's first matches move a lot (calibration, so everyone can climb
-// from 2.000 to their real level), then DUPR-sized -- a few thousandths per match (0.002-0.02).
+// from 2.500 to their real level), then DUPR-sized -- a few thousandths per match (0.002-0.02).
 export const K_ESTABLISHED = 0.05;
 export const K_NEW_BONUS = 1.45;
 export const K_SETTLE_MATCHES = 15;

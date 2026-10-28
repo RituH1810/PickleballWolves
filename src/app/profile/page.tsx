@@ -133,8 +133,8 @@ export default function ProfilePage() {
           {editing && (
             <div className="mt-6 grid gap-4 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
               <div className="text-xs font-bold text-[#c3d0c5]">Skill rating
-                <p className="mt-2 flex h-11 items-center rounded-xl border border-[var(--line)] px-3 text-sm font-semibold text-[var(--ink-soft)]">{Number(profile?.skillRating ?? 2).toFixed(3)}</p>
-                <span className="mt-1 block font-normal text-[var(--ink-soft)]">Everyone starts at 2.000 -- it grows with your match results, like DUPR.</span>
+                <p className="mt-2 flex h-11 items-center rounded-xl border border-[var(--line)] px-3 text-sm font-semibold text-[var(--ink-soft)]">{Number(profile?.skillRating ?? 2.5).toFixed(3)}</p>
+                <span className="mt-1 block font-normal text-[var(--ink-soft)]">Everyone starts at 2.500 -- it moves with your match results, like DUPR.</span>
               </div>
               <label className="text-xs font-bold text-[#c3d0c5]">Home court
                 <AddressInput value={draft.homeCourt} onChange={(homeCourt) => setDraft({ ...draft, homeCourt })} placeholder="Northside Courts -- start typing to search" ariaLabel="Home court" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />

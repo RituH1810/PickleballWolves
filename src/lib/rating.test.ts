@@ -15,11 +15,13 @@ describe("rating model", () => {
     expect(kFactor(100)).toBeCloseTo(0.05, 2);
   });
 
-  it("starts everyone at 2.000 when no starting ratings are given", () => {
+  it("starts everyone at 2.500 when no starting ratings are given, with room to drop", () => {
     const { changes } = replayRatings([match("m", ["a", "b"], ["c", "d"], 11, 3)]);
-    expect(changes.every((change) => change.ratingBefore === 2)).toBe(true);
-    expect(changes.find((change) => change.userId === "a")!.ratingAfter).toBeGreaterThan(2);
-    expect(changes.find((change) => change.userId === "c")!.ratingAfter).toBe(2); // the floor
+    expect(changes.every((change) => change.ratingBefore === 2.5)).toBe(true);
+    expect(changes.find((change) => change.userId === "a")!.ratingAfter).toBeGreaterThan(2.5);
+    const loser = changes.find((change) => change.userId === "c")!.ratingAfter;
+    expect(loser).toBeLessThan(2.5);
+    expect(loser).toBeGreaterThanOrEqual(2);
   });
 
   it("uses the score margin: a blowout moves ratings more than a squeaker", () => {
