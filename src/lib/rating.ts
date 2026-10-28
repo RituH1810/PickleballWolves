@@ -1,83 +1,70 @@
-import { expectedWin, MAX_RATING, MIN_RATING } from "./match-prediction";
+// DUPR-style skill ratings. Like DUPR: the score margin matters (not just win/loss), each player
+// moves by their own amount (new players faster, established ones slower), changes per match are
+// small, and ratings run 2.0-8.0. Because ratings depend on the order matches were played, they're
+// computed by replaying every scored match oldest-first -- so editing or correcting a score, or
+// deleting a match, simply re-runs history and every rating stays consistent.
 
-/** How far one even match can move a rating at most, before the margin and new-player boosts. */
-export const RATING_K = 0.15;
-/** Players with fewer rated matches than this move twice as fast, so a wrong starting rating corrects quickly. */
-export const PROVISIONAL_MATCHES = 5;
-/** Ratings are kept to three decimals, like DUPR. */
-export const RATING_DECIMALS = 3;
+export const RATING_MIN = 2;
+export const RATING_MAX = 8;
+// How much a rating gap shifts the expected share of points: a team 1.0 better is expected to win
+// about 57% of the points (an 11-8 game), 2.0 better about 64%.
+export const POINTS_DIVISOR = 8;
+// Per-match sensitivity, DUPR-sized: an established player typically moves a few thousandths per
+// match (0.002-0.02); new players move a few times more until they settle.
+export const K_ESTABLISHED = 0.05;
+export const K_NEW_BONUS = 0.15;
+export const K_SETTLE_MATCHES = 15;
 
-export type RatedPlayer = { userId: string; rating: number; ratedMatches: number };
-export type RatingChange = { userId: string; side: "A" | "B"; before: number; after: number; delta: number };
+export type RatedMatch = {
+  id: string;
+  players: { userId: string; side: "A" | "B" }[];
+  scores: { sideAScore: number; sideBScore: number }[];
+};
 
-const round = (value: number) => Math.round(value * 10 ** RATING_DECIMALS) / 10 ** RATING_DECIMALS;
-const average = (players: RatedPlayer[]) => players.reduce((total, player) => total + player.rating, 0) / players.length;
+export type RatingChange = { matchId: string; userId: string; ratingBefore: number; ratingAfter: number; ratingDelta: number };
 
-/** The match result from all its games: the side that won more games (then more points), and each side's points. Null if level. */
-export function matchResult(scores: { sideAScore: number; sideBScore: number }[]) {
-  let gamesA = 0, gamesB = 0, pointsA = 0, pointsB = 0;
-  for (const score of scores) {
-    pointsA += score.sideAScore;
-    pointsB += score.sideBScore;
-    if (score.sideAScore > score.sideBScore) gamesA += 1; else if (score.sideBScore > score.sideAScore) gamesB += 1;
-  }
-  const winner = gamesA !== gamesB ? (gamesA > gamesB ? "A" : "B") : pointsA !== pointsB ? (pointsA > pointsB ? "A" : "B") : null;
-  return winner ? { winner: winner as "A" | "B", pointsA, pointsB } : null;
+const round3 = (value: number) => Math.round(value * 1000) / 1000;
+const clamp = (value: number) => Math.min(RATING_MAX, Math.max(RATING_MIN, value));
+
+/** The share of points side A is expected to win, from the two sides' average ratings. */
+export function expectedPointShare(averageA: number, averageB: number) {
+  return 1 / (1 + 10 ** ((averageB - averageA) / POINTS_DIVISOR));
+}
+
+/** How far one match moves a player who has played `matchesPlayed` rated matches so far. */
+export function kFactor(matchesPlayed: number) {
+  return K_ESTABLISHED + K_NEW_BONUS * Math.exp(-matchesPlayed / K_SETTLE_MATCHES);
 }
 
 /**
- * Each player's rating change for one match. Like DUPR, partners move separately:
- * - Expectation is per player, from their own rating blended with their team's average against
- *   the opponents' average, so the stronger partner is expected to do more and gains less for a win.
- * - The margin scales the change: an 11-10 win moves ratings about half as much as an 11-0.
- * - Players still on their first PROVISIONAL_MATCHES rated matches move twice as fast.
- * A win never lowers a rating and a loss never raises one. Ratings stay within 2.0-6.0.
+ * Replays matches in the order given (oldest first) from each player's starting rating. Returns
+ * every player's final rating and one change per player per rated match. Matches without points,
+ * or where a side has nobody, are skipped.
  */
-export function rateMatch(sideA: RatedPlayer[], sideB: RatedPlayer[], result: { winner: "A" | "B"; pointsA: number; pointsB: number }): RatingChange[] {
-  if (!sideA.length || !sideB.length) return [];
-  const winnerPoints = Math.max(result.pointsA, result.pointsB);
-  const marginShare = winnerPoints ? Math.abs(result.pointsA - result.pointsB) / winnerPoints : 0;
-  const marginFactor = 0.6 + 0.8 * Math.min(1, marginShare);
-  const teams = { A: { players: sideA, average: average(sideA) }, B: { players: sideB, average: average(sideB) } };
+export function replayRatings(matches: RatedMatch[], startingRatings: Map<string, number>, defaultRating = RATING_MIN, k: (matchesPlayed: number) => number = kFactor) {
+  const ratings = new Map<string, number>();
+  const played = new Map<string, number>();
+  const ratingOf = (userId: string) => ratings.get(userId) ?? startingRatings.get(userId) ?? defaultRating;
+  const changes: RatingChange[] = [];
 
-  return (["A", "B"] as const).flatMap((side) => {
-    const team = teams[side];
-    const opponents = teams[side === "A" ? "B" : "A"];
-    const actual = result.winner === side ? 1 : 0;
-    return team.players.map((player) => {
-      const expected = expectedWin((player.rating + team.average) / 2, opponents.average);
-      const k = RATING_K * (player.ratedMatches < PROVISIONAL_MATCHES ? 2 : 1);
-      const after = round(Math.min(MAX_RATING, Math.max(MIN_RATING, player.rating + k * marginFactor * (actual - expected))));
-      return { userId: player.userId, side, before: player.rating, after, delta: round(after - player.rating) };
-    });
-  });
-}
-
-export type ReplayMatch = { id: string; players: { userId: string; side: "A" | "B" }[]; scores: { sideAScore: number; sideBScore: number }[] };
-
-/**
- * Rates `matches` in order from each player's starting rating, the way the app would have if every
- * score had been right first time. `adjustments` (by match id, then user id) are manual rating
- * changes to apply just before that match. Returns final ratings and each match's changes.
- */
-export function replayRatings(starting: Map<string, number>, matches: ReplayMatch[], adjustments = new Map<string, Map<string, number>>()) {
-  const ratings = new Map(starting);
-  const rated = new Map<string, number>();
-  const changes = new Map<string, RatingChange[]>();
   for (const match of matches) {
-    for (const [userId, offset] of adjustments.get(match.id) ?? []) {
-      if (ratings.has(userId)) ratings.set(userId, round(Math.min(MAX_RATING, Math.max(MIN_RATING, ratings.get(userId)! + offset))));
+    const pointsA = match.scores.reduce((total, score) => total + score.sideAScore, 0);
+    const pointsB = match.scores.reduce((total, score) => total + score.sideBScore, 0);
+    const sideA = match.players.filter((player) => player.side === "A");
+    const sideB = match.players.filter((player) => player.side === "B");
+    if (pointsA + pointsB === 0 || !sideA.length || !sideB.length) continue;
+
+    const average = (side: typeof sideA) => side.reduce((total, player) => total + ratingOf(player.userId), 0) / side.length;
+    const surprise = pointsA / (pointsA + pointsB) - expectedPointShare(average(sideA), average(sideB));
+    const before = new Map(match.players.map((player) => [player.userId, ratingOf(player.userId)]));
+    for (const player of match.players) {
+      const ratingBefore = before.get(player.userId)!;
+      const step = k(played.get(player.userId) ?? 0) * (player.side === "A" ? surprise : -surprise);
+      const ratingAfter = round3(clamp(ratingBefore + step));
+      ratings.set(player.userId, ratingAfter);
+      played.set(player.userId, (played.get(player.userId) ?? 0) + 1);
+      changes.push({ matchId: match.id, userId: player.userId, ratingBefore: round3(ratingBefore), ratingAfter, ratingDelta: round3(ratingAfter - ratingBefore) });
     }
-    const result = matchResult(match.scores);
-    if (!result) continue;
-    const side = (letter: "A" | "B") => match.players.filter((player) => player.side === letter && ratings.has(player.userId)).map((player) => ({ userId: player.userId, rating: ratings.get(player.userId)!, ratedMatches: rated.get(player.userId) ?? 0 }));
-    const matchChanges = rateMatch(side("A"), side("B"), result);
-    if (!matchChanges.length) continue;
-    for (const change of matchChanges) {
-      ratings.set(change.userId, change.after);
-      rated.set(change.userId, (rated.get(change.userId) ?? 0) + 1);
-    }
-    changes.set(match.id, matchChanges);
   }
   return { ratings, changes };
 }

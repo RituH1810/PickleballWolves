@@ -119,7 +119,7 @@ model User {
   photoUrl        String?
   phone           String?
   role            UserRole     @default(PLAYER)
-  // Three decimals, like DUPR, so each match's change is kept exactly (see lib/rating.ts).
+  // DUPR-style: three decimals (2.000-8.000), recomputed from match history (see lib/rating.ts).
   skillRating     Decimal      @db.Decimal(4, 3)
   preferredHand   Hand         @default(RIGHT)
   homeCourt       String?

@@ -6,8 +6,6 @@ import { ArrowUpRight, Camera, MapPin, Pencil, Phone, Trophy } from "lucide-reac
 import { createClient } from "@/lib/supabase/client";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
-import { PartnerCard } from "@/components/partner-card";
-import { ClutchCard } from "@/components/clutch-card";
 import { RivalCard } from "@/components/rival-card";
 import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
@@ -134,10 +132,16 @@ export default function ProfilePage() {
 
           {editing && (
             <div className="mt-6 grid gap-4 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
-              <label className="text-xs font-bold text-[#c3d0c5]">Skill rating
-                <input type="number" min="2" max="6" step="0.1" value={draft.skillRating} disabled={profile.ratingLocked} onChange={(event) => setDraft({ ...draft, skillRating: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm disabled:opacity-60" />
-                {profile.ratingLocked && <span className="mt-1 block text-[11px] font-semibold text-[var(--ink-soft)]">Earned from your matches -- it changes after each rated match.</span>}
-              </label>
+              {profile?.ratingLocked ? (
+                <div className="text-xs font-bold text-[#c3d0c5]">Skill rating
+                  <p className="mt-2 flex h-11 items-center rounded-xl border border-[var(--line)] px-3 text-sm font-semibold text-[var(--ink-soft)]">{Number(profile.skillRating).toFixed(3)} · set by your match results</p>
+                </div>
+              ) : (
+                <label className="text-xs font-bold text-[#c3d0c5]">Starting skill rating
+                  <input type="number" min="2" max="8" step="0.1" value={draft.skillRating} onChange={(event) => setDraft({ ...draft, skillRating: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
+                  <span className="mt-1 block font-normal text-[var(--ink-soft)]">Your best guess (2.0-8.0, like DUPR). Your matches take it from there.</span>
+                </label>
+              )}
               <label className="text-xs font-bold text-[#c3d0c5]">Home court
                 <AddressInput value={draft.homeCourt} onChange={(homeCourt) => setDraft({ ...draft, homeCourt })} placeholder="Northside Courts -- start typing to search" ariaLabel="Home court" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
               </label>
@@ -185,8 +189,6 @@ export default function ProfilePage() {
         </section>
 
         <RivalCard userId={profile.id} />
-        <PartnerCard userId={profile.id} />
-        <ClutchCard userId={profile.id} />
         <AwardsPanel />
         <AchievementsPanel />
         <ChangePassword />

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { buildLeaderboard, MIN_MATCHES_FOR_RANKING } from "@/lib/leaderboard";
+import { RATING_MAX, RATING_MIN } from "@/lib/rating";
 
 // Players pick their own starting rating; once a match has rated them, the rating is earned and only matches move it.
 const hasRatedMatches = async (userId: string) => (await prisma.ratingHistory.count({ where: { userId, ladderId: null, matchId: { not: null } } })) > 0;
@@ -49,8 +50,8 @@ export async function PATCH(request: Request) {
   const phone = typeof body.phone === "string" ? body.phone.trim() || null : undefined;
   const photoUrl = typeof body.photoUrl === "string" ? body.photoUrl.trim() || null : undefined;
 
-  if (!name || !Number.isFinite(skillRating) || skillRating < 2 || skillRating > 6) {
-    return NextResponse.json({ error: "Enter a name and a rating between 2.0 and 6.0." }, { status: 400 });
+  if (!name || !Number.isFinite(skillRating) || skillRating < RATING_MIN || skillRating > RATING_MAX) {
+    return NextResponse.json({ error: `Enter a name and a rating between ${RATING_MIN.toFixed(1)} and ${RATING_MAX.toFixed(1)}.` }, { status: 400 });
   }
   if (phone && !/^[+()\-.\s\d]{7,20}$/.test(phone)) {
     return NextResponse.json({ error: "Enter a valid phone number." }, { status: 400 });

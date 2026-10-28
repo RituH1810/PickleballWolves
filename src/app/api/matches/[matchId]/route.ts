@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
-import { rerateMatch } from "@/lib/apply-rating";
+import { recomputeAllRatings } from "@/lib/recompute-ratings";
 
 export async function DELETE(_request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -35,7 +35,7 @@ export async function DELETE(_request: Request, context: { params: Promise<{ mat
   if (!canManage) return NextResponse.json({ error: "Only the organizer or a joined member can delete matches." }, { status: 403 });
 
   await prisma.match.update({ where: { id: matchId }, data: { deletedAt: new Date() } });
-  // A deleted match stops counting toward ratings.
-  await rerateMatch(matchId);
+  // A deleted match no longer counts toward anyone's rating.
+  await recomputeAllRatings();
   return NextResponse.json({ success: true });
 }

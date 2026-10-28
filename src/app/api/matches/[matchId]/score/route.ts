@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { announceNewAchievements } from "@/lib/announce-achievements";
 import { notify } from "@/lib/notifications";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
-import { rerateMatch } from "@/lib/apply-rating";
+import { recomputeAllRatings } from "@/lib/recompute-ratings";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -63,12 +63,18 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     return notify(player.userId, "general", "SCORE_ADDED", "Score added to your match", `${enteredByName} recorded a score of ${sideAScore}-${sideBScore}. You ${won ? "won" : "lost"} this game.`);
   }));
 
-  // Every save re-rates the match from its current scores (see rerateMatch), so a corrected score
-  // replaces the first result's rating change instead of keeping it. Matches recorded already
-  // finished (friendly "Record a match" entries) were never rated, and editing one doesn't start.
+  // Ratings are replayed from the full history on every save, so a corrected score corrects
+  // everyone's ratings too (instead of keeping the effect of the first, wrong score).
   const nameById = new Map(match.players.map((player) => [player.userId, player.user.name]));
-  const rated = !wasAlreadyCompleted || (await prisma.ratingHistory.count({ where: { matchId, ladderId: null } })) > 0;
-  const ratingChanges = (rated ? await rerateMatch(matchId) : []).map((change) => ({ userId: change.userId, name: nameById.get(change.userId) ?? "Unknown", side: change.side, ratingBefore: change.before, ratingAfter: change.after, ratingDelta: change.delta }));
+  const sideById = new Map(match.players.map((player) => [player.userId, player.side]));
+  const ratingChanges = (await recomputeAllRatings())
+    .filter((change) => change.matchId === matchId)
+    .map((change) => ({ ...change, name: nameById.get(change.userId) ?? "Unknown", side: sideById.get(change.userId)! }));
+  const average = (side: "A" | "B") => {
+    const rows = ratingChanges.filter((change) => change.side === side);
+    return rows.length ? Math.round((rows.reduce((total, change) => total + change.ratingBefore, 0) / rows.length) * 1000) / 1000 : null;
+  };
+  const opponentAvgRating = ratingChanges.length ? { A: average("A")!, B: average("B")! } : null;
 
   if (!wasAlreadyCompleted) {
     const ladderChallenge = await prisma.challenge.findFirst({ where: { matchId } });
@@ -124,5 +130,5 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
 
   // A score can complete a badge (first win, a streak, a bagel...) -- tell whoever just earned one.
   await announceNewAchievements(match.players.map((player) => player.userId));
-  return NextResponse.json({ score, winnerSide, ratingChanges });
+  return NextResponse.json({ score, winnerSide, ratingChanges, opponentAvgRating });
 }

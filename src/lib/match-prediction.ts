@@ -1,13 +1,6 @@
-// The skill-rating model, shared by rating updates and match predictions so the two always agree.
-export const MIN_RATING = 2;
-export const MAX_RATING = 6;
-// Rating scale only spans 4 points (2.0-6.0), not the ~thousands chess Elo assumes -- using
-// chess's 400-point divisor made the rating gap between any two players on this scale
-// negligible, so the expected result was always ~0.5 regardless of actual skill gap, and the 32
-// K-factor produced swings several times larger than the whole scale, clamping ratings to
-// 2.0 or 6.0 after a single match. Scale both to the actual rating span instead (the size of each
-// change lives in rating.ts).
-export const RATING_SPAN = MAX_RATING - MIN_RATING;
+// Win chances before a match, from players' skill ratings (see rating.ts for how ratings move).
+// A 1.0 rating edge makes a side about a 64% favorite to win.
+export const RATING_SPAN = 4;
 
 // An underdog winning with at most this chance counts as an upset.
 export const UPSET_MAX_CHANCE = 40;
