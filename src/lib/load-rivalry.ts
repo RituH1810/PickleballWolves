@@ -2,6 +2,7 @@ import { MatchStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { computeClutch } from "@/lib/clutch";
 import { computePartners } from "@/lib/partners";
+import { headToHead, recentForm } from "@/lib/form";
 import { computeRivalry, findTopRival, type RivalryMatch } from "@/lib/rivalry";
 
 const MATCH_SELECT = {
@@ -65,4 +66,28 @@ export async function loadClutch(userId: string) {
   const rows = await prisma.ratingHistory.findMany({ where: { matchId: { in: matches.map((match) => match.id) }, ladderId: null }, select: { matchId: true, userId: true, ratingBefore: true } });
   const ratingBefore = new Map(rows.map((row) => [`${row.matchId}:${row.userId}`, Number(row.ratingBefore)]));
   return computeClutch((matches as LoadedMatch[]).map(toRivalryMatch), userId, ratingBefore);
+}
+
+/**
+ * A scouting report for each of `ids`: rating, last five results and current run, clutch verdict,
+ * and -- when `viewerId` is someone else -- the viewer's record against and with them.
+ */
+export async function loadScouting(ids: string[], viewerId: string | null) {
+  const [matches, users] = await Promise.all([
+    prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId: { in: ids } } } }, select: MATCH_SELECT }),
+    prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, photoUrl: true, skillRating: true } }),
+  ]);
+  const history = (matches as LoadedMatch[]).map(toRivalryMatch);
+  return users.map((user) => {
+    const own = history.filter((match) => match.players.some((player) => player.userId === user.id));
+    return {
+      userId: user.id,
+      name: user.name,
+      photoUrl: user.photoUrl,
+      rating: Number(user.skillRating),
+      ...recentForm(own, user.id),
+      clutch: computeClutch(own, user.id, new Map()).verdict,
+      withViewer: viewerId && viewerId !== user.id ? headToHead(own, viewerId, user.id) : null,
+    };
+  });
 }

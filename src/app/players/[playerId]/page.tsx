@@ -8,6 +8,7 @@ import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
 import { PartnerCard } from "@/components/partner-card";
 import { ClutchCard } from "@/components/clutch-card";
+import { FormGuide } from "@/components/form-dots";
 import { RivalCard } from "@/components/rival-card";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 import { DirectionsLink } from "@/components/directions-link";
@@ -79,7 +80,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
           <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Skill rating</p><p className="mt-2 text-2xl font-black">{player.skillRating}</p></div>
             <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Record</p><p className="mt-2 text-2xl font-black">{player.record}</p></div>
-            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{player.winRate}</p></div>
+            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{player.winRate}</p><FormGuide userId={player.id} /></div>
             <div className="rounded-2xl bg-[#1b211e] p-4 text-white">
               <p className="text-xs font-bold uppercase tracking-[.12em] text-[#a9b6a9]">Wolves rank</p>
               {player.rank ? <p className="mt-2 text-2xl font-black">#{player.rank}</p> : <><p className="mt-2 text-2xl font-black text-[#a9b6a9]">—</p><p className="text-[10px] text-[#a9b6a9]">{player.matchesToQualify} more match{player.matchesToQualify === 1 ? "" : "es"} to qualify</p></>}

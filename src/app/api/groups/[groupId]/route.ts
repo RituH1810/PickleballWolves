@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { recentForm } from "@/lib/form";
 import { upcomingCutoff } from "@/lib/upcoming";
 import { computeRecap } from "@/lib/round-robin-recap";
 
@@ -84,7 +85,9 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       });
       const losses = Math.max(0, matches.length - wins);
       const totalDiff = scored - conceded;
-      return { id: membership.user.id, name: membership.user.name, photoUrl: membership.user.photoUrl, rating: membership.user.skillRating.toString(), matches: matches.length, wins, losses, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, scored, conceded, avgPointDiff: matches.length ? Number((totalDiff / matches.length).toFixed(1)) : 0 };
+      // Form by when the score was saved, the same clock match history uses.
+      const { results: form } = recentForm(matches.map((match) => ({ playedAt: match.updatedAt, players: match.players, scores: match.scores })), membership.userId);
+      return { id: membership.user.id, name: membership.user.name, photoUrl: membership.user.photoUrl, rating: membership.user.skillRating.toString(), form, matches: matches.length, wins, losses, winPct: matches.length ? Math.round((wins / matches.length) * 100) : 0, scored, conceded, avgPointDiff: matches.length ? Number((totalDiff / matches.length).toFixed(1)) : 0 };
     })
     .filter((entry) => entry.matches >= MIN_MATCHES_FOR_RANKING)
     .sort((a, b) => b.winPct - a.winPct || b.avgPointDiff - a.avgPointDiff)

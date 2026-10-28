@@ -11,11 +11,13 @@ import { MonthlyLeaderboard } from "@/components/monthly-leaderboard";
 import { PlayerOfTheWeek } from "@/components/player-of-the-week";
 import { RoundRobinWinners } from "@/components/round-robin-winners";
 import { GroupFeed } from "@/components/group-feed";
+import { FormDots } from "@/components/form-dots";
+import type { FormResult } from "@/lib/form";
 import { DirectionsLink } from "@/components/directions-link";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
-type LeaderboardEntry = { rank: number; id: string; name: string; photoUrl: string | null; rating: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
+type LeaderboardEntry = { rank: number; id: string; name: string; photoUrl: string | null; rating: string; form: FormResult[]; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; avgPointDiff: number };
 type RecentResult = { id: string; sideA: string; sideB: string; score: string; winnerSide: "A" | "B" | null; date: string };
 type GroupEvent = { id: string; title: string; startsAt: string; location: string | null; format: string };
 type GroupRoundRobin = { id: string; name: string; scheduledAt: string | null; playFormat: string; partnerFormat: string };
@@ -365,8 +367,8 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <p className="mt-4 text-sm text-[var(--ink-soft)]">No one has played 20 matches in this group yet.</p>
             ) : (
               <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[640px] text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">Matches</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
+                <table className="w-full min-w-[760px] text-left text-sm">
+                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3">Form</th><th className="pb-3 text-center">Matches</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
                   <tbody>
                     {group.leaderboard.map((entry) => (
                       <tr key={entry.id} className="border-b border-[var(--line)] last:border-0">
@@ -379,6 +381,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                           </span>
                         </td>
                         <td className="py-3"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" /><Link href={`/players/${entry.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{entry.name}</Link></span></td>
+                        <td className="py-3"><FormDots results={entry.form ?? []} size="sm" /></td>
                         <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{entry.matches}</td>
                         <td className="w-14 py-3 text-center font-semibold">{entry.wins}</td>
                         <td className="w-14 py-3 text-center font-semibold">{entry.losses}</td>

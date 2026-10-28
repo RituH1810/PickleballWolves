@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
 import { RivalCard } from "@/components/rival-card";
+import { FormGuide } from "@/components/form-dots";
 import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
 import { AddressInput } from "@/components/address-input";
@@ -156,7 +157,7 @@ export default function ProfilePage() {
 
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Skill rating</p><p className="mt-2 text-2xl font-black">{profile.skillRating}</p></div>
-            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{profile.winRate}</p></div>
+            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{profile.winRate}</p><FormGuide userId={profile.id} /></div>
             <div className="rounded-2xl bg-[#1b211e] p-4 text-white"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#a9b6a9]">Wolves rank</p><p className="mt-2 flex items-center gap-2 text-2xl font-black">{profile.rank ? `#${profile.rank}` : "—"} <span className="text-xs text-[#d8f24e]"><ArrowUpRight size={15} className="inline" /></span></p>{!profile.rank && <p className="text-[10px] text-[#a9b6a9]">{profile.matchesToQualify} more match{profile.matchesToQualify === 1 ? "" : "es"} to qualify</p>}</div>
           </div>
         </section>

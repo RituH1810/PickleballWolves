@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Share2, Sparkles, Trash2, Trophy, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Search, Share2, Sparkles, Trash2, Trophy, Users, X } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
+import { ScoutPanel } from "@/components/scout-panel";
 import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
 import { AddGuestPlayer } from "@/components/add-guest-player";
@@ -612,6 +613,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
 function MatchCard({ match, number, onSave, onDelete, canManage, canScore }: { match: Match; number?: number; onSave: (matchId: string, sideA: string, sideB: string) => void; onDelete: (matchId: string) => void; canManage: boolean; canScore: boolean }) {
   const [sideA, setSideA] = useState(match.scores[0]?.sideAScore?.toString() ?? "");
   const [sideB, setSideB] = useState(match.scores[0]?.sideBScore?.toString() ?? "");
+  const [scouting, setScouting] = useState(false);
   const hasScore = match.scores.length > 0;
   const prediction = match.prediction ?? null;
   const winner = hasScore ? (match.scores[0].sideAScore > match.scores[0].sideBScore ? "A" : match.scores[0].sideBScore > match.scores[0].sideAScore ? "B" : null) : null;
@@ -651,6 +653,13 @@ function MatchCard({ match, number, onSave, onDelete, canManage, canScore }: { m
           </div>
         );
       })}
+      {/* Before it's played: everyone's form, clutch label and history with you. */}
+      {!hasScore && (
+        <>
+          <button onClick={() => setScouting((current) => !current)} aria-expanded={scouting} className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-[var(--lime-deep)] hover:underline"><Search size={12} />{scouting ? "Hide scouting" : "Scout players"}</button>
+          {scouting && <ScoutPanel players={match.players.map((player) => ({ userId: player.userId, side: player.side }))} />}
+        </>
+      )}
       {canScore ? (
         <button onClick={() => onSave(match.id, sideA, sideB)} className="mt-4 w-full rounded-full bg-[#d8f24e] px-3 py-2.5 text-xs font-bold text-[#1b211e] hover:bg-[#c3e043]">{hasScore ? "Update score" : "Save score"}</button>
       ) : !hasScore && (
