@@ -23,3 +23,4 @@ ALTER TABLE public."RecurringScheduleMember" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."RoundRobinMessage" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."TournamentAsset" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."TournamentSponsor" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public."Reaction" ENABLE ROW LEVEL SECURITY; -- emoji reactions, added Oct 27 2026
