@@ -74,3 +74,49 @@ export function replayRatings(matches: RatedMatch[], startingRatings = new Map<s
   }
   return { ratings, changes };
 }
+
+export type RatingExplanation = {
+  teamRating: number; // my team's average going in
+  opponentRating: number;
+  expectedShare: number; // % of points my team was expected to win
+  actualShare: number; // % they did win
+  calibrating: boolean; // a new player's bigger step
+  atFloor: boolean; // couldn't drop below RATING_MIN
+};
+
+/**
+ * Why one player's rating moved in a match, rebuilt from what's stored: everyone's rating going in
+ * and the score. The size of the step (calibrating or established) is read off the actual change.
+ */
+export function explainRatingChange(input: {
+  userId: string;
+  players: { userId: string; side: "A" | "B"; ratingBefore: number }[];
+  pointsA: number;
+  pointsB: number;
+  ratingDelta: number;
+  ratingAfter: number;
+}): RatingExplanation | null {
+  const me = input.players.find((player) => player.userId === input.userId);
+  if (!me || input.pointsA + input.pointsB === 0) return null;
+  const average = (side: "A" | "B") => {
+    const team = input.players.filter((player) => player.side === side);
+    return team.reduce((total, player) => total + player.ratingBefore, 0) / team.length;
+  };
+  const other = me.side === "A" ? "B" : "A";
+  const teamRating = average(me.side);
+  const opponentRating = average(other);
+  const expected = expectedPointShare(teamRating, opponentRating);
+  const actual = (me.side === "A" ? input.pointsA : input.pointsB) / (input.pointsA + input.pointsB);
+  const surprise = actual - expected;
+  const atFloor = input.ratingAfter <= RATING_MIN && surprise < 0;
+  // The step size: |change| / |surprise|. Well above the established rate means still calibrating.
+  const step = Math.abs(surprise) > 0.001 && !atFloor ? Math.abs(input.ratingDelta) / Math.abs(surprise) : K_ESTABLISHED;
+  return {
+    teamRating: round3(teamRating),
+    opponentRating: round3(opponentRating),
+    expectedShare: Math.round(expected * 1000) / 10,
+    actualShare: Math.round(actual * 1000) / 10,
+    calibrating: step > K_ESTABLISHED * 1.5,
+    atFloor,
+  };
+}

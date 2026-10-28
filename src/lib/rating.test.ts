@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expectedPointShare, kFactor, replayRatings, type RatedMatch } from "./rating";
+import { expectedPointShare, explainRatingChange, kFactor, replayRatings, type RatedMatch } from "./rating";
 
 const match = (id: string, a: string[], b: string[], scoreA: number, scoreB: number): RatedMatch => ({
   id,
@@ -56,5 +56,30 @@ describe("rating model", () => {
     const fixed = replayRatings([match("m", ["a", "b"], ["c", "d"], 11, 10)], start).ratings;
     expect(wrong.get("a")).toBeLessThan(4);
     expect(fixed.get("a")).toBeGreaterThan(4);
+  });
+});
+
+describe("explainRatingChange", () => {
+  const players = [
+    { userId: "me", side: "A" as const, ratingBefore: 3 },
+    { userId: "pal", side: "A" as const, ratingBefore: 3 },
+    { userId: "x", side: "B" as const, ratingBefore: 3.5 },
+    { userId: "y", side: "B" as const, ratingBefore: 3.5 },
+  ];
+
+  it("compares the expected and actual share of points", () => {
+    const why = explainRatingChange({ userId: "me", players, pointsA: 11, pointsB: 7, ratingDelta: 0.007, ratingAfter: 3.007 })!;
+    expect(why.teamRating).toBe(3);
+    expect(why.opponentRating).toBe(3.5);
+    expect(why.expectedShare).toBeCloseTo(42.9, 1);
+    expect(why.actualShare).toBeCloseTo(61.1, 1);
+    expect(why.calibrating).toBe(false);
+    expect(why.atFloor).toBe(false);
+  });
+
+  it("spots a calibrating player's bigger step and the floor", () => {
+    expect(explainRatingChange({ userId: "me", players, pointsA: 11, pointsB: 7, ratingDelta: 0.15, ratingAfter: 3.15 })!.calibrating).toBe(true);
+    const floored = explainRatingChange({ userId: "me", players: players.map((p) => (p.userId === "me" ? { ...p, ratingBefore: 2 } : p)), pointsA: 2, pointsB: 11, ratingDelta: 0, ratingAfter: 2 })!;
+    expect(floored.atFloor).toBe(true);
   });
 });

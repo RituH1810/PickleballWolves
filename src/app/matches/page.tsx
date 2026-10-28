@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, MapPin, PawPrint } from "lucide-react";
+import { ArrowLeft, CalendarDays, HelpCircle, MapPin, PawPrint, X } from "lucide-react";
+import { explainRatingChange, RATING_MIN } from "@/lib/rating";
 
-type MatchPlayer = { id: string; name: string; side: "A" | "B"; ratingDelta: number | null; ratingAfter: number | null };
+type MatchPlayer = { id: string; name: string; side: "A" | "B"; ratingDelta: number | null; ratingAfter: number | null; ratingBefore: number | null };
 type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: MatchPlayer[] };
 type Profile = { id: string; record: string; winRate: string; rank: number | null };
 type RelationshipStat = { id: string; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
@@ -50,16 +51,47 @@ function RelationshipTable({ title, subtitle, firstColumn, rows, loading, emptyT
   );
 }
 
-function PlayerRatingChip({ player, isMe }: { player: MatchPlayer; isMe: boolean }) {
+const signed = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(3)}`;
+
+function PlayerRatingChip({ player, isMe, onExplain, explaining }: { player: MatchPlayer; isMe: boolean; onExplain?: () => void; explaining: boolean }) {
   return (
     <span className="inline-flex items-center gap-1.5">
       {isMe ? <span className="font-bold text-[var(--foreground)]">You</span> : <Link href={`/players/${player.id}`} className="font-semibold text-[var(--ink-soft)] hover:text-[var(--lime-deep)] hover:underline">{player.name}</Link>}
       {player.ratingDelta != null && player.ratingAfter != null && (
-        <span className={`text-[11px] font-bold ${player.ratingDelta > 0 ? "text-[var(--lime-deep)]" : player.ratingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>
-          {player.ratingAfter.toFixed(3)} ({player.ratingDelta > 0 ? "+" : ""}{player.ratingDelta.toFixed(3)})
-        </span>
+        <button type="button" onClick={onExplain} disabled={!onExplain} aria-expanded={explaining} title={onExplain ? "Why did this rating change?" : undefined} className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-bold ${onExplain ? "hover:bg-[#1c2a1a]" : ""} ${explaining ? "bg-[#1c2a1a]" : ""} ${player.ratingDelta > 0 ? "text-[var(--lime-deep)]" : player.ratingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>
+          {player.ratingAfter.toFixed(3)} ({signed(player.ratingDelta)}){onExplain && <HelpCircle size={11} className="opacity-70" />}
+        </button>
       )}
     </span>
+  );
+}
+
+/** "Why did this rating change?" -- the expected vs. actual share of points behind it. */
+function RatingWhy({ match, player, isMe, onClose }: { match: Match; player: MatchPlayer; isMe: boolean; onClose: () => void }) {
+  const pointsA = match.scores.reduce((total, score) => total + score.sideAScore, 0);
+  const pointsB = match.scores.reduce((total, score) => total + score.sideBScore, 0);
+  const why = explainRatingChange({ userId: player.id, players: match.players.map((entry) => ({ userId: entry.id, side: entry.side, ratingBefore: entry.ratingBefore ?? 0 })), pointsA, pointsB, ratingDelta: player.ratingDelta ?? 0, ratingAfter: player.ratingAfter ?? 0 });
+  if (!why) return null;
+  const who = isMe ? "your" : `${player.name.split(" ")[0]}'s`;
+  const team = isMe ? "Your team" : `${player.name.split(" ")[0]}'s team`;
+  const mine = player.side === "A" ? pointsA : pointsB;
+  const theirs = player.side === "A" ? pointsB : pointsA;
+  const delta = player.ratingDelta ?? 0;
+  const gap = why.actualShare - why.expectedShare;
+  return (
+    <div className="mt-3 rounded-2xl bg-[#131f19] p-4 text-xs leading-5 text-[var(--ink-soft)]">
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-extrabold text-[var(--foreground)]">Why {who} rating {delta > 0 ? "went up" : delta < 0 ? "went down" : "didn't change"} <span className={delta > 0 ? "text-[var(--lime-deep)]" : delta < 0 ? "text-[var(--coral)]" : ""}>{signed(delta)}</span></p>
+        <button type="button" onClick={onClose} aria-label="Close" className="grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-[#1c2a1a]"><X size={13} /></button>
+      </div>
+      <ol className="mt-2 space-y-1.5">
+        <li><strong className="text-[var(--foreground)]">Going in:</strong> {isMe ? "your team" : team} averaged {why.teamRating.toFixed(3)}, the opponents {why.opponentRating.toFixed(3)}.</li>
+        <li><strong className="text-[var(--foreground)]">Expected:</strong> about {Math.round(why.expectedShare)}% of the points. <strong className="text-[var(--foreground)]">Actual:</strong> {Math.round(why.actualShare)}% ({mine}&ndash;{theirs}).</li>
+        <li><strong className="text-[var(--foreground)]">So:</strong> {Math.abs(gap) < 1 ? "about as expected, so the rating barely moves." : gap > 0 ? `${Math.round(gap)} points better than expected, so the rating goes up.` : `${Math.round(-gap)} points worse than expected, so the rating goes down.`}{mine > theirs && delta < 0 ? " A win by less than expected costs a little, like DUPR." : ""}{mine < theirs && delta > 0 ? " A close loss to a stronger side still earns a little." : ""}</li>
+        <li><strong className="text-[var(--foreground)]">Step size:</strong> {why.atFloor ? `already at the ${RATING_MIN.toFixed(3)} floor, so it can't go lower.` : why.calibrating ? "still calibrating -- a player's first matches move more, so they can reach their level quickly." : "established player -- small, DUPR-size steps."}</li>
+      </ol>
+      <p className="mt-2 text-[11px]">Ratings use the share of points won, not just wins and losses, and every score is re-checked against all matches when one changes.</p>
+    </div>
   );
 }
 
@@ -70,6 +102,7 @@ export default function MatchesPage() {
   const [opponents, setOpponents] = useState<RelationshipStat[]>([]);
   const [partners, setPartners] = useState<RelationshipStat[]>([]);
   const [loadingH2H, setLoadingH2H] = useState(true);
+  const [explained, setExplained] = useState<{ matchId: string; playerId: string } | null>(null);
 
   useEffect(() => { fetch("/api/matches").then((response) => response.json()).then((data) => setMatches(data.matches ?? [])).finally(() => setLoading(false)); }, []);
   useEffect(() => { fetch("/api/profile").then((response) => response.ok ? response.json() : null).then((data) => { if (data?.profile) setProfile(data.profile); }); }, []);
@@ -106,6 +139,10 @@ export default function MatchesPage() {
         const myScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideAScore : score.sideBScore), 0);
         const theirScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideBScore : score.sideAScore), 0);
         const result: "W" | "L" | "-" = match.scores.length ? (myScore > theirScore ? "W" : myScore < theirScore ? "L" : "-") : "-";
+        // Explanations need everyone's rating going in.
+        const explainable = match.players.every((player) => player.ratingBefore != null);
+        const chip = (player: MatchPlayer) => <PlayerRatingChip player={player} isMe={player.id === myUserId} explaining={explained?.matchId === match.id && explained.playerId === player.id} onExplain={explainable ? () => setExplained(explained?.matchId === match.id && explained.playerId === player.id ? null : { matchId: match.id, playerId: player.id }) : undefined} />;
+        const whyPlayer = explained?.matchId === match.id ? match.players.find((player) => player.id === explained.playerId) : undefined;
         return (
           <article key={match.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -121,10 +158,11 @@ export default function MatchesPage() {
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-[var(--line)] pt-3 text-xs">
-              {mySide.map((player, index) => <span key={player.id} className="flex items-center gap-1.5">{index > 0 && <span className="text-[var(--ink-soft)]">&</span>}<PlayerRatingChip player={player} isMe={player.id === myUserId} /></span>)}
+              {mySide.map((player, index) => <span key={player.id} className="flex items-center gap-1.5">{index > 0 && <span className="text-[var(--ink-soft)]">&</span>}{chip(player)}</span>)}
               <span className="mx-1 text-[var(--ink-soft)]">vs</span>
-              {theirSide.map((player, index) => <span key={player.id} className="flex items-center gap-1.5">{index > 0 && <span className="text-[var(--ink-soft)]">&</span>}<PlayerRatingChip player={player} isMe={player.id === myUserId} /></span>)}
+              {theirSide.map((player, index) => <span key={player.id} className="flex items-center gap-1.5">{index > 0 && <span className="text-[var(--ink-soft)]">&</span>}{chip(player)}</span>)}
             </div>
+            {whyPlayer && <RatingWhy match={match} player={whyPlayer} isMe={whyPlayer.id === myUserId} onClose={() => setExplained(null)} />}
           </article>
         );
       })}
