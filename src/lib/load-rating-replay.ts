@@ -17,7 +17,7 @@ export async function loadRatingReplayInputs() {
         status: MatchStatus.COMPLETED, deletedAt: null, scores: { some: {} },
         OR: [{ roundRobinId: { not: null } }, { eventId: { not: null } }, { tournamentGroupId: { not: null } }, { leagueDivisionId: { not: null } }, { bracketMatch: { isNot: null } }, { leagueMatch: { isNot: null } }, { id: { in: challengeMatchIds } }],
       },
-      select: { id: true, updatedAt: true, players: { select: { userId: true, side: true } }, scores: { select: { sideAScore: true, sideBScore: true } } },
+      select: { id: true, createdAt: true, updatedAt: true, players: { select: { userId: true, side: true } }, scores: { select: { sideAScore: true, sideBScore: true } } },
     }),
     prisma.ratingHistory.findMany({ where: { ladderId: null }, orderBy: { createdAt: "asc" }, select: { matchId: true, userId: true, ratingBefore: true, createdAt: true } }),
     prisma.user.findMany({ select: { id: true, skillRating: true } }),
@@ -31,7 +31,11 @@ export async function loadRatingReplayInputs() {
     if (!seen.has(row.userId)) { seen.add(row.userId); startingRatings.set(row.userId, Number(row.ratingBefore)); }
   }
   const at = (match: (typeof matches)[number]) => (firstRatedAt.get(match.id) ?? match.updatedAt).getTime();
-  const ordered: RatedMatch[] = [...matches].sort((a, b) => at(a) - at(b)).map(({ id, players, scores }) => ({ id, players, scores }));
+  // Some matches were rated in one batch with identical times; break ties by creation time, then id,
+  // so every replay uses the same order (otherwise ratings would drift a little on each recompute).
+  const ordered: RatedMatch[] = [...matches]
+    .sort((a, b) => at(a) - at(b) || a.createdAt.getTime() - b.createdAt.getTime() || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+    .map(({ id, players, scores }) => ({ id, players, scores }));
   return { matches: ordered, startingRatings };
 }
 
