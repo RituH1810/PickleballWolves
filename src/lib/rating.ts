@@ -1,18 +1,21 @@
-// DUPR-style skill ratings. Like DUPR: the score margin matters (not just win/loss), each player
-// moves by their own amount (new players faster, established ones slower), changes per match are
-// small, and ratings run 2.0-8.0. Because ratings depend on the order matches were played, they're
+// DUPR-style skill ratings. Everyone starts at 2.000 and earns their rating purely from match
+// results: the score margin matters (not just win/loss), each player moves by their own amount (a
+// player's first matches move a lot so they can climb to their level, then changes are small), and
+// ratings run 2.0-8.0. Because ratings depend on the order matches were played, they're
 // computed by replaying every scored match oldest-first -- so editing or correcting a score, or
 // deleting a match, simply re-runs history and every rating stays consistent.
 
 export const RATING_MIN = 2;
 export const RATING_MAX = 8;
+/** Every player -- member or guest -- starts here; no self-chosen ratings. */
+export const START_RATING = RATING_MIN;
 // How much a rating gap shifts the expected share of points: a team 1.0 better is expected to win
-// about 57% of the points (an 11-8 game), 2.0 better about 64%.
-export const POINTS_DIVISOR = 8;
-// Per-match sensitivity, DUPR-sized: an established player typically moves a few thousandths per
-// match (0.002-0.02); new players move a few times more until they settle.
+// about 64% of the points (roughly 11-6), 2.0 better about 76%.
+export const POINTS_DIVISOR = 4;
+// Per-match sensitivity: a player's first matches move a lot (calibration, so everyone can climb
+// from 2.000 to their real level), then DUPR-sized -- a few thousandths per match (0.002-0.02).
 export const K_ESTABLISHED = 0.05;
-export const K_NEW_BONUS = 0.15;
+export const K_NEW_BONUS = 1.45;
 export const K_SETTLE_MATCHES = 15;
 
 export type RatedMatch = {
@@ -41,7 +44,7 @@ export function kFactor(matchesPlayed: number) {
  * every player's final rating and one change per player per rated match. Matches without points,
  * or where a side has nobody, are skipped.
  */
-export function replayRatings(matches: RatedMatch[], startingRatings: Map<string, number>, defaultRating = RATING_MIN, k: (matchesPlayed: number) => number = kFactor) {
+export function replayRatings(matches: RatedMatch[], startingRatings = new Map<string, number>(), defaultRating = START_RATING, k: (matchesPlayed: number) => number = kFactor) {
   const ratings = new Map<string, number>();
   const played = new Map<string, number>();
   const ratingOf = (userId: string) => ratings.get(userId) ?? startingRatings.get(userId) ?? defaultRating;

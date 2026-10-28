@@ -10,9 +10,16 @@ const match = (id: string, a: string[], b: string[], scoreA: number, scoreB: num
 describe("rating model", () => {
   it("expects stronger teams to win more of the points", () => {
     expect(expectedPointShare(4, 4)).toBe(0.5);
-    expect(expectedPointShare(5, 4)).toBeCloseTo(0.571, 3);
-    expect(kFactor(0)).toBeCloseTo(0.2, 5);
+    expect(expectedPointShare(5, 4)).toBeCloseTo(0.64, 2);
+    expect(kFactor(0)).toBeCloseTo(1.5, 5);
     expect(kFactor(100)).toBeCloseTo(0.05, 2);
+  });
+
+  it("starts everyone at 2.000 when no starting ratings are given", () => {
+    const { changes } = replayRatings([match("m", ["a", "b"], ["c", "d"], 11, 3)]);
+    expect(changes.every((change) => change.ratingBefore === 2)).toBe(true);
+    expect(changes.find((change) => change.userId === "a")!.ratingAfter).toBeGreaterThan(2);
+    expect(changes.find((change) => change.userId === "c")!.ratingAfter).toBe(2); // the floor
   });
 
   it("uses the score margin: a blowout moves ratings more than a squeaker", () => {

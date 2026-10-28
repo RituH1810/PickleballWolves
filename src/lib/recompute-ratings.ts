@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { loadRatingReplayInputs } from "@/lib/load-rating-replay";
-import { replayRatings, type RatingChange } from "@/lib/rating";
+import { replayRatings, START_RATING, type RatingChange } from "@/lib/rating";
 
 /**
  * Recomputes every skill rating from the full match history and saves it: rewrites the skill
@@ -9,21 +9,14 @@ import { replayRatings, type RatingChange } from "@/lib/rating";
  * of a wrong score. Each match keeps the time it was first rated, so the replay order is stable.
  */
 export async function recomputeAllRatings(): Promise<RatingChange[]> {
-  const [{ matches, startingRatings }, history] = await Promise.all([
-    loadRatingReplayInputs(),
-    prisma.ratingHistory.findMany({ where: { ladderId: null, matchId: { not: null } }, select: { matchId: true, createdAt: true } }),
-  ]);
-  const ratedAt = new Map<string, Date>();
-  for (const row of history) {
-    const current = ratedAt.get(row.matchId!);
-    if (!current || row.createdAt < current) ratedAt.set(row.matchId!, row.createdAt);
-  }
-
-  const { ratings, changes } = replayRatings(matches, startingRatings);
+  const { matches, firstRatedAt } = await loadRatingReplayInputs();
+  const { ratings, changes } = replayRatings(matches);
   const now = new Date();
   await prisma.$transaction([
     prisma.ratingHistory.deleteMany({ where: { ladderId: null } }),
-    prisma.ratingHistory.createMany({ data: changes.map((change) => ({ ...change, createdAt: ratedAt.get(change.matchId) ?? now })) }),
+    prisma.ratingHistory.createMany({ data: changes.map((change) => ({ ...change, createdAt: firstRatedAt.get(change.matchId) ?? now })) }),
+    // Everyone without a rated match is back at the start too.
+    prisma.user.updateMany({ where: { id: { notIn: [...ratings.keys()] } }, data: { skillRating: START_RATING } }),
     ...[...ratings].map(([id, rating]) => prisma.user.update({ where: { id }, data: { skillRating: rating } })),
   ]);
   return changes;

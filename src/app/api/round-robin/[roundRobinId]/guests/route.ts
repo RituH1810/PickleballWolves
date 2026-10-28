@@ -2,7 +2,8 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { GUEST_NAME_MAX, GUEST_RATING_MAX, GUEST_RATING_MIN } from "@/lib/guest-players";
+import { GUEST_NAME_MAX } from "@/lib/guest-players";
+import { START_RATING } from "@/lib/rating";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
 
 async function organizerRoundRobin(roundRobinId: string) {
@@ -44,11 +45,9 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     guestId = known.id;
   } else {
     const name = typeof body?.name === "string" ? body.name.trim().replace(/\s+/g, " ") : "";
-    const rating = Number(body?.skillRating);
     if (!name || name.length > GUEST_NAME_MAX) return NextResponse.json({ error: `Enter the guest's name (up to ${GUEST_NAME_MAX} characters).` }, { status: 400 });
-    if (!Number.isFinite(rating) || rating < GUEST_RATING_MIN || rating > GUEST_RATING_MAX) return NextResponse.json({ error: `Pick a skill rating from ${GUEST_RATING_MIN.toFixed(1)} to ${GUEST_RATING_MAX.toFixed(1)}.` }, { status: 400 });
     // Email is required and unique, but a guest never signs in or gets mail -- .invalid can't deliver.
-    const guest = await prisma.user.create({ data: { name, email: `guest-${randomUUID()}@guests.pickleballwolves.invalid`, skillRating: Math.round(rating * 10) / 10, isGuest: true } });
+    const guest = await prisma.user.create({ data: { name, email: `guest-${randomUUID()}@guests.pickleballwolves.invalid`, skillRating: START_RATING, isGuest: true } });
     guestId = guest.id;
   }
 

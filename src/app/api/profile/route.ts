@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { buildLeaderboard, MIN_MATCHES_FOR_RANKING } from "@/lib/leaderboard";
-import { RATING_MAX, RATING_MIN } from "@/lib/rating";
+import { START_RATING } from "@/lib/rating";
 
 // Players pick their own starting rating; once a match has rated them, the rating is earned and only matches move it.
 const hasRatedMatches = async (userId: string) => (await prisma.ratingHistory.count({ where: { userId, ladderId: null, matchId: { not: null } } })) > 0;
@@ -44,24 +44,20 @@ export async function PATCH(request: Request) {
   const name = typeof body.name === "string" ? body.name.trim() : "";
   const homeCourt = typeof body.homeCourt === "string" ? body.homeCourt.trim() : null;
   const preferredHand = ["LEFT", "RIGHT", "AMBIDEXTROUS"].includes(body.preferredHand) ? body.preferredHand : "RIGHT";
-  const existing = await prisma.user.findUnique({ where: { id: user.id }, select: { skillRating: true } });
-  const ratingLocked = await hasRatedMatches(user.id);
-  const skillRating = ratingLocked && existing ? Number(existing.skillRating) : Number(body.skillRating);
   const phone = typeof body.phone === "string" ? body.phone.trim() || null : undefined;
   const photoUrl = typeof body.photoUrl === "string" ? body.photoUrl.trim() || null : undefined;
 
-  if (!name || !Number.isFinite(skillRating) || skillRating < RATING_MIN || skillRating > RATING_MAX) {
-    return NextResponse.json({ error: `Enter a name and a rating between ${RATING_MIN.toFixed(1)} and ${RATING_MAX.toFixed(1)}.` }, { status: 400 });
-  }
+  // No rating here: everyone starts at 2.000 and earns it from match results (lib/rating.ts).
+  if (!name) return NextResponse.json({ error: "Enter a name." }, { status: 400 });
   if (phone && !/^[+()\-.\s\d]{7,20}$/.test(phone)) {
     return NextResponse.json({ error: "Enter a valid phone number." }, { status: 400 });
   }
 
   const profile = await prisma.user.upsert({
     where: { id: user.id },
-    update: { name, homeCourt, preferredHand, skillRating, ...(phone !== undefined ? { phone } : {}), ...(photoUrl !== undefined ? { photoUrl } : {}) },
-    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name, homeCourt, preferredHand, skillRating, phone: phone ?? null, photoUrl: photoUrl ?? null },
+    update: { name, homeCourt, preferredHand, ...(phone !== undefined ? { phone } : {}), ...(photoUrl !== undefined ? { photoUrl } : {}) },
+    create: { id: user.id, email: user.email ?? `${user.id}@placeholder.local`, name, homeCourt, preferredHand, skillRating: START_RATING, phone: phone ?? null, photoUrl: photoUrl ?? null },
   });
 
-  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString(), ratingLocked } });
+  return NextResponse.json({ profile: { ...profile, skillRating: profile.skillRating.toString(), ratingLocked: true } });
 }
