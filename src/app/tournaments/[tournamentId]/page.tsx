@@ -435,7 +435,8 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
         )}
 
         {/* Knockout bracket */}
-        {canManage && allPoolsScored && tournament.bracketMatches.length === 0 && (
+        {/* Generating group matches makes the tournament LIVE, so this goes by that, not canManage. */}
+        {isOwner && tournament.status === "LIVE" && allPoolsScored && tournament.bracketMatches.length === 0 && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <h2 className="font-extrabold">Generate knockout bracket</h2>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Group play is complete. Pick how many teams advance from each pool.</p>
