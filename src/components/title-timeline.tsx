@@ -21,19 +21,18 @@ export function TitleTimeline({ userId }: { userId?: string }) {
         <div className="flex items-center gap-2"><Crown size={17} className="text-[#f5c542]" /><h2 className="font-extrabold">Title timeline</h2></div>
         <p className="text-xs font-bold text-[var(--ink-soft)]"><span className="text-lg font-black text-[#f5c542]">{titles.length}</span> round robin title{titles.length === 1 ? "" : "s"}</p>
       </div>
-      <ol className="mt-4 flex snap-x gap-3 overflow-x-auto pb-2">
+      <ol className="mt-4">
         {titles.map((title, index) => (
-          <li key={title.roundRobinId} className="relative w-56 shrink-0 snap-start">
-            {/* The line joining each title to the one before it. */}
-            {index < titles.length - 1 && <span aria-hidden className="absolute left-[2.1rem] right-[-0.75rem] top-[1.6rem] h-0.5 bg-[#f5c542]/30" />}
-            <Link href={`/round-robin/${title.roundRobinId}`} className="relative block rounded-2xl bg-[#131f19] p-3 transition-colors hover:bg-[#1c2a1a]">
-              <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f5c542] text-[#1b211e]"><Crown size={15} /></span>
-                <p className="text-xs font-bold text-[var(--ink-soft)]">{new Date(title.endedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
+          <li key={title.roundRobinId} className="relative flex gap-3 pb-3 last:pb-0">
+            {/* The line joining each title to the next one down. */}
+            {index < titles.length - 1 && <span aria-hidden className="absolute bottom-0 left-4 top-8 w-0.5 -translate-x-1/2 bg-[#f5c542]/30" />}
+            <span className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f5c542] text-[#1b211e]"><Crown size={15} /></span>
+            <Link href={`/round-robin/${title.roundRobinId}`} className="min-w-0 flex-1 rounded-2xl bg-[#131f19] px-4 py-3 transition-colors hover:bg-[#1c2a1a]">
+              <div className="flex items-baseline justify-between gap-3">
+                <p className="truncate text-sm font-extrabold">{title.name}</p>
+                <p className="shrink-0 text-xs font-bold text-[var(--ink-soft)]">{new Date(title.endedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
               </div>
-              <p className="mt-2 truncate text-sm font-extrabold">{title.name}</p>
-              <p className="truncate text-xs text-[var(--ink-soft)]">{title.groupName ?? "Round robin"} · {title.wins}-{title.losses}</p>
-              {title.sharedWith.length > 0 && <p className="truncate text-[11px] text-[var(--ink-soft)]">Shared with {title.sharedWith.join(", ")}</p>}
+              <p className="truncate text-xs text-[var(--ink-soft)]">{title.groupName ?? "Round robin"} · {title.wins}-{title.losses}{title.sharedWith.length > 0 ? ` · shared with ${title.sharedWith.join(", ")}` : ""}</p>
             </Link>
           </li>
         ))}
