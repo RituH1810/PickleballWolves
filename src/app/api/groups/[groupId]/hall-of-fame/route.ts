@@ -17,5 +17,5 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
   if (!group) return NextResponse.json({ error: "Group not found." }, { status: 404 });
   if (membership?.status !== MembershipStatus.ACTIVE) return NextResponse.json({ error: "Join this group to see its Hall of Fame." }, { status: 403 });
 
-  return NextResponse.json({ groupName: group.name, records: await loadHallOfFame(groupId) });
+  return NextResponse.json({ groupName: group.name, ...(await loadHallOfFame(groupId)) });
 }

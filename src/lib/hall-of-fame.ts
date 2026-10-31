@@ -1,6 +1,6 @@
 import { CLOSE_GAME_MARGIN, CLUTCH_MIN_GAMES } from "./clutch";
 import { computeRecap, type RecapMatch } from "./round-robin-recap";
-import { rankRoundRobinWinners } from "./round-robin-winners";
+import { rankRoundRobinWinners, type RoundRobinWinner } from "./round-robin-winners";
 
 /** Fewest games together before a pair can be the group's best duo. */
 export const DUO_MIN_GAMES = 5;
@@ -48,6 +48,11 @@ function leaders<T extends { value: number; at: Date }>(entries: T[]) {
   return top > 0 ? entries.filter((entry) => entry.value === top).sort((a, b) => a.at.getTime() - b.at.getTime()) : [];
 }
 
+/** The group's top 3 round robin winners by titles (ties share a place); guests can't place. */
+export function topRoundRobinWinners(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): RoundRobinWinner[] {
+  return rankRoundRobinWinners(roundRobins.map((roundRobin) => ({ endedAt: roundRobin.endedAt, champions: (computeRecap(roundRobin.matches)?.champions ?? []).filter((player) => !guestIds.has(player.userId)) })));
+}
+
 /**
  * A group's all-time records from its ended round robins. Each scored game is a win or loss, like
  * round robin standings (tied games are skipped). Guests can't hold records, but their games still
@@ -58,8 +63,7 @@ export function computeHallOfFame(roundRobins: HallOfFameRoundRobin[], guestIds 
   const games = groupGames(roundRobins);
   const records: HallOfFameRecord[] = [];
 
-  const champions = rankRoundRobinWinners(roundRobins.map((roundRobin) => ({ endedAt: roundRobin.endedAt, champions: (computeRecap(roundRobin.matches)?.champions ?? []).filter(isMember) })))
-    .filter((winner) => winner.rank === 1);
+  const champions = topRoundRobinWinners(roundRobins, guestIds).filter((winner) => winner.rank === 1);
   if (champions.length) records.push({ key: "titles", label: "Most round robin titles", value: plural(champions[0].titles, "title"), holders: champions, detail: `Won ${plural(champions[0].titles, "round robin")}`, roundRobin: null, at: null });
 
   // Longest run of games won in a row, across nights.

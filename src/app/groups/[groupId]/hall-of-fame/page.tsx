@@ -8,19 +8,54 @@ import { Reactions } from "@/components/reactions";
 import { recordTarget } from "@/lib/reactions";
 
 type Holder = { userId: string; name: string; photoUrl: string | null };
+type Winner = { userId: string; name: string; photoUrl: string | null; titles: number; lastWonAt: string; rank: number };
 type HallRecord = { key: string; label: string; value: string; holders: Holder[]; detail: string; roundRobin: { id: string; name: string } | null; at: string | null };
+
+const MEDALS: Record<number, { label: string; color: string; ring: string }> = {
+  1: { label: "1st", color: "#f5c542", ring: "border-[#f5c542]" },
+  2: { label: "2nd", color: "#c9d1d9", ring: "border-[#c9d1d9]" },
+  3: { label: "3rd", color: "#d08a4f", ring: "border-[#d08a4f]" },
+};
+
+/** The top 3 round robin winners; players tied on titles share a place. */
+function WinnersPodium({ winners }: { winners: Winner[] }) {
+  return (
+    <section className="mt-8 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Crown size={15} className="text-[var(--lime-deep)]" />Top round robin winners</p>
+      <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+        {winners.map((winner) => {
+          const medal = MEDALS[winner.rank] ?? MEDALS[3];
+          return (
+            <li key={winner.userId}>
+              <Link href={`/players/${winner.userId}`} className={`flex items-center gap-3 rounded-2xl border-2 ${medal.ring} bg-[#131f19] p-3 transition-colors hover:bg-[#1c2a1a]`}>
+                <div className="relative shrink-0">
+                  <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-11 w-11 rounded-full bg-[#22331f] text-xs font-black text-[var(--lime)]" />
+                  <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-black text-[#0f1712]" style={{ backgroundColor: medal.color }}>{medal.label}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-extrabold">{winner.name}</p>
+                  <p className="text-xs text-[var(--ink-soft)]"><span className="font-bold" style={{ color: medal.color }}>{winner.titles} title{winner.titles === 1 ? "" : "s"}</span> · last {new Date(winner.lastWonAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p>
+                </div>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
 
 const ICONS: Record<string, typeof Trophy> = { titles: Crown, streak: Flame, biggestWin: Zap, bestNight: Trophy, undefeated: ShieldCheck, duo: Handshake, clutch: Timer, games: Gauge };
 
 /** A group's all-time records: titles, streaks, blowouts, best nights, best duo, most clutch and most games. */
 export default function HallOfFamePage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);
-  const [data, setData] = useState<{ groupName: string | null; records: HallRecord[]; error: string | null } | null>(null);
+  const [data, setData] = useState<{ groupName: string | null; records: HallRecord[]; winners: Winner[]; error: string | null } | null>(null);
 
   useEffect(() => {
     fetch(`/api/groups/${groupId}/hall-of-fame`).then(async (response) => {
       const body = await response.json().catch(() => null);
-      setData(response.ok ? { groupName: body.groupName, records: body.records, error: null } : { groupName: null, records: [], error: body?.error ?? "Unable to load the Hall of Fame." });
+      setData(response.ok ? { groupName: body.groupName, records: body.records, winners: body.winners ?? [], error: null } : { groupName: null, records: [], winners: [], error: body?.error ?? "Unable to load the Hall of Fame." });
     });
   }, [groupId]);
 
@@ -44,8 +79,11 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
         ) : !data.records.length ? (
           <p className="mt-8 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 text-sm text-[var(--ink-soft)]">No records yet -- they&apos;re set once the group finishes its first round robin.</p>
         ) : (
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            {data.records.map((record) => {
+          <>
+          {data.winners.length > 0 && <WinnersPodium winners={data.winners} />}
+          <div className={`${data.winners.length ? "mt-4" : "mt-8"} grid gap-4 sm:grid-cols-2`}>
+            {/* The podium above already shows the most titles. */}
+            {data.records.filter((record) => !(record.key === "titles" && data.winners.length)).map((record) => {
               const Icon = ICONS[record.key] ?? Trophy;
               return (
                 <section key={record.key} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
@@ -71,6 +109,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
               );
             })}
           </div>
+          </>
         )}
       </div>
     </main>

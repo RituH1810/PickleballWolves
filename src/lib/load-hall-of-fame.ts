@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { computeHallOfFame, type HallOfFameRoundRobin } from "@/lib/hall-of-fame";
+import { computeHallOfFame, topRoundRobinWinners, type HallOfFameRoundRobin } from "@/lib/hall-of-fame";
 
 /** A group's ended round robins with their scored matches, plus which players are guests. Shared by the Hall of Fame and the activity feed. */
 export async function loadGroupRoundRobins(groupId: string): Promise<{ roundRobins: HallOfFameRoundRobin[]; guestIds: Set<string> }> {
@@ -25,12 +25,16 @@ export async function loadGroupRoundRobins(groupId: string): Promise<{ roundRobi
   };
 }
 
-/** A group's all-time records from its ended round robins, with each holder's photo. */
+/** A group's all-time records and top 3 round robin winners from its ended round robins, with each player's photo. */
 export async function loadHallOfFame(groupId: string) {
   const { roundRobins, guestIds } = await loadGroupRoundRobins(groupId);
   const records = computeHallOfFame(roundRobins, guestIds);
+  const winners = topRoundRobinWinners(roundRobins, guestIds);
 
-  const photos = await prisma.user.findMany({ where: { id: { in: records.flatMap((record) => record.holders.map((holder) => holder.userId)) } }, select: { id: true, photoUrl: true } });
+  const photos = await prisma.user.findMany({ where: { id: { in: [...records.flatMap((record) => record.holders.map((holder) => holder.userId)), ...winners.map((winner) => winner.userId)] } }, select: { id: true, photoUrl: true } });
   const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
-  return records.map((record) => ({ ...record, holders: record.holders.map((holder) => ({ userId: holder.userId, name: holder.name, photoUrl: photoOf.get(holder.userId) ?? null })) }));
+  return {
+    records: records.map((record) => ({ ...record, holders: record.holders.map((holder) => ({ userId: holder.userId, name: holder.name, photoUrl: photoOf.get(holder.userId) ?? null })) })),
+    winners: winners.map((winner) => ({ ...winner, photoUrl: photoOf.get(winner.userId) ?? null })),
+  };
 }
