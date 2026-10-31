@@ -1,0 +1,43 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Crown } from "lucide-react";
+
+type Title = { roundRobinId: string; name: string; endedAt: string; groupName: string | null; wins: number; losses: number; sharedWith: string[] };
+
+/** Every round robin the player has won, newest first, on a timeline. Hidden until they win one. Omit userId for the signed-in player. */
+export function TitleTimeline({ userId }: { userId?: string }) {
+  const [titles, setTitles] = useState<Title[]>([]);
+
+  useEffect(() => {
+    fetch(userId ? `/api/titles?userId=${encodeURIComponent(userId)}` : "/api/titles").then((response) => response.ok ? response.json() : null).then((data) => setTitles(data?.titles ?? []));
+  }, [userId]);
+
+  if (!titles.length) return null;
+  return (
+    <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2"><Crown size={17} className="text-[#f5c542]" /><h2 className="font-extrabold">Title timeline</h2></div>
+        <p className="text-xs font-bold text-[var(--ink-soft)]"><span className="text-lg font-black text-[#f5c542]">{titles.length}</span> round robin title{titles.length === 1 ? "" : "s"}</p>
+      </div>
+      <ol className="mt-4 flex snap-x gap-3 overflow-x-auto pb-2">
+        {titles.map((title, index) => (
+          <li key={title.roundRobinId} className="relative w-56 shrink-0 snap-start">
+            {/* The line joining each title to the one before it. */}
+            {index < titles.length - 1 && <span aria-hidden className="absolute left-[2.1rem] right-[-0.75rem] top-[1.6rem] h-0.5 bg-[#f5c542]/30" />}
+            <Link href={`/round-robin/${title.roundRobinId}`} className="relative block rounded-2xl bg-[#131f19] p-3 transition-colors hover:bg-[#1c2a1a]">
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f5c542] text-[#1b211e]"><Crown size={15} /></span>
+                <p className="text-xs font-bold text-[var(--ink-soft)]">{new Date(title.endedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>
+              </div>
+              <p className="mt-2 truncate text-sm font-extrabold">{title.name}</p>
+              <p className="truncate text-xs text-[var(--ink-soft)]">{title.groupName ?? "Round robin"} · {title.wins}-{title.losses}</p>
+              {title.sharedWith.length > 0 && <p className="truncate text-[11px] text-[var(--ink-soft)]">Shared with {title.sharedWith.join(", ")}</p>}
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}

@@ -6,6 +6,7 @@ import { ArrowUpRight, Camera, MapPin, Pencil, Phone, Trophy } from "lucide-reac
 import { createClient } from "@/lib/supabase/client";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
+import { TitleTimeline } from "@/components/title-timeline";
 import { RivalCard } from "@/components/rival-card";
 import { PartnerCard } from "@/components/partner-card";
 import { ClutchCard } from "@/components/clutch-card";
@@ -188,6 +189,7 @@ export default function ProfilePage() {
         <RivalCard userId={profile.id} />
         <PartnerCard userId={profile.id} />
         <ClutchCard userId={profile.id} />
+        <TitleTimeline />
         <AwardsPanel />
         <AchievementsPanel />
         <ChangePassword />

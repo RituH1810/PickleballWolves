@@ -81,3 +81,22 @@ export async function loadGroupRoundRobinWinners(groupId: string) {
   const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
   return winners.map((winner) => ({ ...winner, photoUrl: photoOf.get(winner.userId) ?? null }));
 }
+
+/**
+ * Every ended round robin this player won (co-champions all count), newest first, with the group,
+ * their record that night and anyone they shared the title with.
+ */
+export async function loadTitleTimeline(userId: string) {
+  const roundRobins = await prisma.roundRobin.findMany({
+    where: { status: "COMPLETED", matches: { some: { deletedAt: null, players: { some: { userId } }, scores: { some: {} } } } },
+    select: { id: true, name: true, completedAt: true, createdAt: true, group: { select: { id: true, name: true, visibility: true } } },
+  });
+  if (!roundRobins.length) return [];
+  const { byRoundRobin } = await loadMatches(roundRobins.map((roundRobin) => roundRobin.id));
+  return roundRobins.flatMap((roundRobin) => {
+    const champions = computeRecap(byRoundRobin.get(roundRobin.id) ?? [])?.champions ?? [];
+    const me = champions.find((entry) => entry.userId === userId);
+    if (!me) return [];
+    return [{ roundRobinId: roundRobin.id, name: roundRobin.name, endedAt: roundRobin.completedAt ?? roundRobin.createdAt, group: roundRobin.group, wins: me.wins, losses: me.losses, sharedWith: champions.filter((entry) => entry.userId !== userId).map((entry) => entry.name) }];
+  }).sort((a, b) => b.endedAt.getTime() - a.endedAt.getTime());
+}
