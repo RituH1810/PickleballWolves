@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { assetUrl } from "@/lib/branding";
-import { bracketRoundLabel, computeTeamStandings } from "@/lib/tournament";
+import { bracketMatchLabel, bracketRoundLabel, computeTeamStandings, isThirdPlaceMatch } from "@/lib/tournament";
 
 type Team = { members: { user: { name: string } }[] } | null;
 const teamName = (team: Team) => team?.members.map((member) => member.user.name).join(" / ") || "TBD";
@@ -60,13 +60,15 @@ export const loadPublicTournament = cache(async (slug: string) => {
     label: bracketRoundLabel(round, totalRounds),
     matches: tournament.bracketMatches.filter((match) => match.round === round).map((match) => ({
       id: match.id,
+      // Only set on the third-place match, which shares the final's column.
+      label: isThirdPlaceMatch(match.round, match.position, totalRounds) ? bracketMatchLabel(match.round, match.position, totalRounds) : null,
       teamA: teamName(match.teamA),
       teamB: teamName(match.teamB),
       winnerSide: match.match?.winnerSide ?? null,
       scores: match.match?.scores.map((score) => [score.sideAScore, score.sideBScore] as const) ?? [],
     })),
   }));
-  const final = rounds.at(-1)?.matches.length === 1 ? rounds.at(-1)!.matches[0] : null;
+  const final = rounds.at(-1)?.matches.find((match) => !match.label) ?? null;
   const champion = final?.winnerSide ? (final.winnerSide === "A" ? final.teamA : final.teamB) : null;
 
   return {

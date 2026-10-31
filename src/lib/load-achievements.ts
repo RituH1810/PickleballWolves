@@ -14,9 +14,9 @@ export async function loadAchievements(userId: string) {
     prisma.ratingHistory.findMany({ where: { matchId: { in: matchIds } }, select: { matchId: true, userId: true, ratingBefore: true } }),
     prisma.ratingHistory.findMany({ where: { userId, ladderId: null }, select: { ratingBefore: true, ratingAfter: true, createdAt: true } }),
     prisma.ladderPosition.findMany({ where: { userId, position: 1 }, select: { ladderId: true, updatedAt: true } }),
-    // The final is the only bracket match with nowhere to advance to.
+    // The final has nowhere to advance to and is always position 0 (the third-place match is beside it).
     prisma.tournamentBracketMatch.findMany({
-      where: { nextMatchId: null, match: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId } } } },
+      where: { nextMatchId: null, position: 0, match: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId } } } },
       select: { match: { select: { updatedAt: true, winnerSide: true, players: { where: { userId }, select: { side: true } } } } },
     }),
     loadRoundRobinWins(userId),

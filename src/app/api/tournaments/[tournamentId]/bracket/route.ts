@@ -37,7 +37,8 @@ export async function POST(request: Request, context: { params: Promise<{ tourna
   if (qualifierInputs.length < 2) return NextResponse.json({ error: "Need at least 2 qualifying teams to build a bracket." }, { status: 400 });
 
   const seeded = seedQualifiers(qualifierInputs);
-  const plans = buildBracket(seeded);
+  // A third-place match unless the organizer turned it off.
+  const plans = buildBracket(seeded, { thirdPlace: body.thirdPlace !== false });
 
   await prisma.$transaction(async (transaction) => {
     // Clear any previous (unscored) bracket before rebuilding.

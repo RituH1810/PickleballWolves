@@ -3,7 +3,11 @@ import {
   assignGroupsRandom,
   assignGroupsSeeded,
   bracketRoundLabel,
+  bracketMatchLabel,
   buildBracket,
+  isThirdPlaceMatch,
+  THIRD_PLACE_POSITION,
+  thirdPlaceSlot,
   computeTeamStandings,
   distributeIntoGroups,
   formMixedTeamsBalanced,
@@ -222,6 +226,25 @@ describe("seedQualifiers", () => {
 });
 
 describe("buildBracket", () => {
+  it("adds a third-place match beside the final when asked", () => {
+    const plans = buildBracket([1, 2, 3, 4].map((seed) => ({ teamId: `t${seed}`, seed })), { thirdPlace: true });
+    expect(plans.filter((plan) => plan.round === 1)).toHaveLength(2);
+    expect(plans.filter((plan) => plan.round === 2)).toEqual([
+      { round: 2, position: 0, teamAId: null, teamBId: null, nextRound: null, nextPosition: null, nextSlot: null },
+      { round: 2, position: THIRD_PLACE_POSITION, teamAId: null, teamBId: null, nextRound: null, nextPosition: null, nextSlot: null },
+    ]);
+    expect(isThirdPlaceMatch(2, THIRD_PLACE_POSITION, 2)).toBe(true);
+    expect(isThirdPlaceMatch(2, 0, 2)).toBe(false);
+    expect(bracketMatchLabel(2, THIRD_PLACE_POSITION, 2)).toBe("Third place");
+    expect([thirdPlaceSlot(0), thirdPlaceSlot(1)]).toEqual(["A", "B"]);
+  });
+
+  it("skips third place without two real semi-finals, or when not asked", () => {
+    expect(buildBracket([1, 2, 3].map((seed) => ({ teamId: `t${seed}`, seed })), { thirdPlace: true }).some((plan) => plan.position === THIRD_PLACE_POSITION && plan.round === 2)).toBe(false);
+    expect(buildBracket([{ teamId: "a", seed: 1 }, { teamId: "b", seed: 2 }], { thirdPlace: true })).toHaveLength(1);
+    expect(buildBracket([1, 2, 3, 4].map((seed) => ({ teamId: `t${seed}`, seed })))).toHaveLength(3);
+  });
+
   it("returns nothing for fewer than 2 qualifiers", () => {
     expect(buildBracket([])).toEqual([]);
     expect(buildBracket([{ teamId: "a", seed: 1 }])).toEqual([]);

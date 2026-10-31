@@ -41,6 +41,7 @@ function Bracket({ rounds, accent }: { rounds: PublicTournament["rounds"]; accen
           <div className="space-y-3">
             {round.matches.map((match) => (
               <div key={match.id} className="rounded-xl border border-[var(--line)] bg-[#131f19] p-3">
+                {match.label && <p className="mb-2 text-[10px] font-black uppercase tracking-[.14em]" style={{ color: accent }}>{match.label}</p>}
                 <div className="flex items-center justify-between gap-2"><TeamLine name={match.teamA} won={match.winnerSide === "A"} />{match.winnerSide === "A" && <Trophy size={13} style={{ color: accent }} />}</div>
                 <div className="mt-1 flex items-center justify-between gap-2"><TeamLine name={match.teamB} won={match.winnerSide === "B"} />{match.winnerSide === "B" && <Trophy size={13} style={{ color: accent }} />}</div>
                 <div className="mt-2 border-t border-[var(--line)] pt-2"><Score scores={match.scores} winnerSide={match.winnerSide} /></div>

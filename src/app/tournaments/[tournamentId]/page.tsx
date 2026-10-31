@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, Award, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Plus, Share2, Trash2, Trophy, Users, X } from "lucide-react";
-import { bracketRoundLabel } from "@/lib/tournament";
+import { bracketRoundLabel, isThirdPlaceMatch } from "@/lib/tournament";
 import { TournamentBranding } from "@/components/tournament-branding";
 import { DirectionsLink } from "@/components/directions-link";
 
@@ -81,7 +81,8 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
   const [manualPairs, setManualPairs] = useState<[string, string][]>([]);
   const [manualPoolByTeam, setManualPoolByTeam] = useState<Record<string, number>>({});
-  const [advancePerPool, setAdvancePerPool] = useState(1);
+  const [advancePerPool, setAdvancePerPool] = useState(2);
+  const [thirdPlace, setThirdPlace] = useState(true);
   const [groupCountInput, setGroupCountInput] = useState(2);
   const [matchesPerPairing, setMatchesPerPairing] = useState(1);
 
@@ -206,7 +207,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
 
   async function generateBracket() {
     setBusy(true);
-    const response = await fetch(`/api/tournaments/${tournamentId}/bracket`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ advancePerPool }) });
+    const response = await fetch(`/api/tournaments/${tournamentId}/bracket`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ advancePerPool, thirdPlace }) });
     const data = await response.json();
     if (!response.ok) { showNotice(data.error ?? "Unable to generate the bracket.", "error"); setBusy(false); return; }
     showNotice(`Bracket generated: ${data.bracketMatches} matches across ${data.totalRounds} rounds.`, "success");
@@ -440,11 +441,17 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <h2 className="font-extrabold">Generate knockout bracket</h2>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Group play is complete. Pick how many teams advance from each pool.</p>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <label className="text-xs font-bold text-[#c3d0c5]">Advance per group
-                <input type="number" min="1" value={advancePerPool} onChange={(event) => setAdvancePerPool(Math.max(1, Number(event.target.value)))} className="mt-2 h-11 w-24 rounded-xl border border-[var(--line)] px-3 text-sm" />
-              </label>
-              <button onClick={generateBracket} disabled={busy} className="mt-6 rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate bracket"}</button>
+            <div className="mt-3 flex flex-wrap items-end gap-4">
+              <div className="text-xs font-bold text-[#c3d0c5]">Advance per group
+                {/* Buttons, not a number box: clearing a number box to type a new value snapped it back to 1. */}
+                <div className="mt-2 flex gap-1 rounded-full bg-[#1a2a1c] p-1">
+                  {Array.from({ length: Math.max(1, Math.min(4, ...tournament.pools.map((pool) => pool.teams.length))) }, (_, index) => index + 1).map((count) => (
+                    <button key={count} type="button" onClick={() => setAdvancePerPool(count)} aria-pressed={advancePerPool === count} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${advancePerPool === count ? "bg-[var(--panel)] text-[var(--foreground)] shadow-sm" : "text-[var(--ink-soft)]"}`}>Top {count}</button>
+                  ))}
+                </div>
+              </div>
+              <label className="flex h-10 items-center gap-2 text-xs font-bold text-[#c3d0c5]"><input type="checkbox" checked={thirdPlace} onChange={(event) => setThirdPlace(event.target.checked)} className="h-4 w-4 accent-[var(--lime)]" />Third-place match</label>
+              <button onClick={generateBracket} disabled={busy} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate bracket"}</button>
             </div>
           </section>
         )}
@@ -458,6 +465,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
                   <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{bracketRoundLabel(round, totalBracketRounds)}</p>
                   {tournament.bracketMatches.filter((bracketMatch) => bracketMatch.round === round).map((bracketMatch) => (
                     <div key={bracketMatch.id} className="rounded-xl border border-[var(--line)] p-3">
+                      {isThirdPlaceMatch(bracketMatch.round, bracketMatch.position, totalBracketRounds) && <p className="mb-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Third place</p>}
                       {bracketMatch.match ? (
                         <MatchCard key={`${bracketMatch.match.id}:${bracketMatch.match.scores[0]?.sideAScore ?? ""}:${bracketMatch.match.scores[0]?.sideBScore ?? ""}`} match={bracketMatch.match} onSave={saveScore} onDelete={deleteMatchFn} canScore={isOwner || (Boolean(myUserId) && bracketMatch.match.players.some((player) => player.userId === myUserId))} canDelete={isOwner} />
                       ) : (

@@ -6,6 +6,7 @@ import { announceNewAchievements } from "@/lib/announce-achievements";
 import { notify } from "@/lib/notifications";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
 import { recomputeAllRatings } from "@/lib/recompute-ratings";
+import { THIRD_PLACE_POSITION, thirdPlaceSlot } from "@/lib/tournament";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -17,7 +18,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   const sideBScore = Number(body.sideBScore);
   if (!Number.isInteger(sideAScore) || !Number.isInteger(sideBScore) || sideAScore < 0 || sideBScore < 0 || sideAScore === sideBScore) return NextResponse.json({ error: "Enter two different non-negative scores." }, { status: 400 });
   const winnerSide = sideAScore > sideBScore ? Side.A : Side.B;
-  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: { include: { user: { select: { name: true } } } }, roundRobin: { select: { createdById: true, coHostIds: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, nextMatchId: true, nextSlot: true } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
+  const match = await prisma.match.findUnique({ where: { id: matchId }, include: { players: { include: { user: { select: { name: true } } } }, roundRobin: { select: { createdById: true, coHostIds: true, groupId: true } }, tournamentGroup: { select: { tournament: { select: { createdById: true } } } }, bracketMatch: { select: { id: true, tournamentId: true, round: true, position: true, nextMatchId: true, nextSlot: true } }, leagueMatch: { select: { division: { select: { season: { select: { league: { select: { createdById: true } } } } } } } } } });
   if (!match) return NextResponse.json({ error: "Match not found." }, { status: 404 });
   if (match.roundRobin) {
     // The organizer can always score. So can anyone actually playing in this match (added by
@@ -104,31 +105,42 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
 
   if (match.bracketMatch && match.tournamentTeamAId && match.tournamentTeamBId) {
     const winningTeamId = winnerSide === Side.A ? match.tournamentTeamAId : match.tournamentTeamBId;
-    const { nextMatchId, nextSlot, tournamentId } = match.bracketMatch;
-    if (nextMatchId && nextSlot) {
-      const nextBracketMatch = await prisma.tournamentBracketMatch.update({ where: { id: nextMatchId }, data: nextSlot === "A" ? { teamAId: winningTeamId } : { teamBId: winningTeamId } });
-      if (nextBracketMatch.teamAId && nextBracketMatch.teamBId && !nextBracketMatch.matchId) {
-        const [teamA, teamB] = await Promise.all([
-          prisma.tournamentTeam.findUnique({ where: { id: nextBracketMatch.teamAId }, include: { members: true } }),
-          prisma.tournamentTeam.findUnique({ where: { id: nextBracketMatch.teamBId }, include: { members: true } }),
-        ]);
-        const nextMatch = await prisma.match.create({
-          data: {
-            courtNumber: 1,
-            tournamentTeamAId: nextBracketMatch.teamAId,
-            tournamentTeamBId: nextBracketMatch.teamBId,
-            players: { create: [...teamA!.members.map((member) => ({ userId: member.userId, side: "A" as const })), ...teamB!.members.map((member) => ({ userId: member.userId, side: "B" as const }))] },
-          },
-        });
-        await prisma.tournamentBracketMatch.update({ where: { id: nextBracketMatch.id }, data: { matchId: nextMatch.id } });
-      }
-    } else {
-      // No next match -- this was the final.
-      await prisma.tournament.update({ where: { id: tournamentId }, data: { status: "COMPLETED" } });
+    const losingTeamId = winnerSide === Side.A ? match.tournamentTeamBId : match.tournamentTeamAId;
+    const { nextMatchId, nextSlot, tournamentId, round, position } = match.bracketMatch;
+    const finalRound = (await prisma.tournamentBracketMatch.aggregate({ where: { tournamentId }, _max: { round: true } }))._max.round ?? round;
+    if (nextMatchId && nextSlot) await placeInBracket(nextMatchId, nextSlot, winningTeamId);
+    // A semi-final's loser goes to the third-place match, when the bracket has one.
+    if (round === finalRound - 1) {
+      const thirdPlace = await prisma.tournamentBracketMatch.findUnique({ where: { tournamentId_round_position: { tournamentId, round: finalRound, position: THIRD_PLACE_POSITION } }, select: { id: true } });
+      if (thirdPlace) await placeInBracket(thirdPlace.id, thirdPlaceSlot(position), losingTeamId);
+    }
+    // The tournament is over once every final-round match (the final, and third place if any) is scored.
+    if (round === finalRound) {
+      const lastMatches = await prisma.tournamentBracketMatch.findMany({ where: { tournamentId, round: finalRound }, select: { match: { select: { scores: { select: { id: true }, take: 1 } } } } });
+      if (lastMatches.every((row) => row.match?.scores.length)) await prisma.tournament.update({ where: { id: tournamentId }, data: { status: "COMPLETED" } });
     }
   }
 
   // A score can complete a badge (first win, a streak, a bagel...) -- tell whoever just earned one.
   await announceNewAchievements(match.players.map((player) => player.userId));
   return NextResponse.json({ score, winnerSide, ratingChanges, opponentAvgRating });
+}
+
+/** Puts a team into one slot of a bracket match, creating the match once both teams are known. */
+async function placeInBracket(bracketMatchId: string, slot: string, teamId: string) {
+  const bracketMatch = await prisma.tournamentBracketMatch.update({ where: { id: bracketMatchId }, data: slot === "A" ? { teamAId: teamId } : { teamBId: teamId } });
+  if (!bracketMatch.teamAId || !bracketMatch.teamBId || bracketMatch.matchId) return;
+  const [teamA, teamB] = await Promise.all([
+    prisma.tournamentTeam.findUnique({ where: { id: bracketMatch.teamAId }, include: { members: true } }),
+    prisma.tournamentTeam.findUnique({ where: { id: bracketMatch.teamBId }, include: { members: true } }),
+  ]);
+  const created = await prisma.match.create({
+    data: {
+      courtNumber: 1,
+      tournamentTeamAId: bracketMatch.teamAId,
+      tournamentTeamBId: bracketMatch.teamBId,
+      players: { create: [...teamA!.members.map((member) => ({ userId: member.userId, side: "A" as const })), ...teamB!.members.map((member) => ({ userId: member.userId, side: "B" as const }))] },
+    },
+  });
+  await prisma.tournamentBracketMatch.update({ where: { id: bracketMatch.id }, data: { matchId: created.id } });
 }

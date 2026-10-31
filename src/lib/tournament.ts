@@ -186,7 +186,7 @@ export function seedQualifiers(qualifiers: { teamId: string; poolRank: number; w
  * directly opposite another bye recipient in round 2, which is a real, immediately playable
  * match rather than a further bye.
  */
-export function buildBracket(qualifiers: BracketQualifier[]): BracketMatchPlan[] {
+export function buildBracket(qualifiers: BracketQualifier[], { thirdPlace = false }: { thirdPlace?: boolean } = {}): BracketMatchPlan[] {
   if (qualifiers.length < 2) return [];
   const bracketSize = nextPowerOfTwo(qualifiers.length);
   const seedOrder = standardSeedOrder(bracketSize);
@@ -210,7 +210,25 @@ export function buildBracket(qualifiers: BracketQualifier[]): BracketMatchPlan[]
     }
     slotTeams = nextSlotTeams;
   }
+  // The semi-final losers play for third, beside the final. Only when both semis are real matches
+  // (a semi-final skipped by a bye has no loser).
+  if (thirdPlace && totalRounds >= 2 && plans.filter((plan) => plan.round === totalRounds - 1).length === 2) {
+    plans.push({ round: totalRounds, position: THIRD_PLACE_POSITION, teamAId: null, teamBId: null, nextRound: null, nextPosition: null, nextSlot: null });
+  }
   return plans;
+}
+
+/** The third-place match sits in the final round, after the final (position 0). */
+export const THIRD_PLACE_POSITION = 1;
+
+export const isThirdPlaceMatch = (round: number, position: number, totalRounds: number) => totalRounds >= 2 && round === totalRounds && position === THIRD_PLACE_POSITION;
+
+/** Where a semi-final's loser goes in the third-place match: the first semi's into slot A, the second's into B. */
+export const thirdPlaceSlot = (semiPosition: number): "A" | "B" => (semiPosition === 0 ? "A" : "B");
+
+/** A bracket match's heading: its round, or "Third place". */
+export function bracketMatchLabel(round: number, position: number, totalRounds: number): string {
+  return isThirdPlaceMatch(round, position, totalRounds) ? "Third place" : bracketRoundLabel(round, totalRounds);
 }
 
 export function bracketRoundLabel(round: number, totalRounds: number): string {
