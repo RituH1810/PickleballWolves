@@ -70,7 +70,7 @@ const DEFINITIONS: Definition[] = [
 ];
 
 /** Same rule as the rest of the app: trust winnerSide when it's set, otherwise total points decide. */
-function winningSide(match: AchievementMatch): "A" | "B" | null {
+export function winningSide(match: Pick<AchievementMatch, "winnerSide" | "scores">): "A" | "B" | null {
   if (match.winnerSide) return match.winnerSide;
   const margin = match.scores.reduce((total, score) => total + score.sideAScore - score.sideBScore, 0);
   return margin > 0 ? "A" : margin < 0 ? "B" : null;

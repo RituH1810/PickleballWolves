@@ -9,6 +9,7 @@ import { AwardsPanel } from "@/components/awards-panel";
 import { TitleTimeline } from "@/components/title-timeline";
 import { PartnerCard } from "@/components/partner-card";
 import { ClutchCard } from "@/components/clutch-card";
+import { WinStreakCard } from "@/components/win-streak-card";
 import { FormGuide } from "@/components/form-dots";
 import { RivalCard } from "@/components/rival-card";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
@@ -123,6 +124,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
 
         <RivalCard userId={player.id} isMe={player.isMe} playerName={player.name} />
         <PartnerCard userId={player.id} isMe={player.isMe} />
+        <WinStreakCard userId={player.id} />
         <ClutchCard userId={player.id} />
         <TitleTimeline userId={player.id} />
         <AwardsPanel userId={player.id} />
