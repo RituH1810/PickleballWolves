@@ -121,3 +121,37 @@ export function findTopRival(matches: RivalryMatch[], userId: string) {
     .sort((x, y) => y.played - x.played || Math.abs(x.wins - x.losses) - Math.abs(y.wins - y.losses));
   return best ?? null;
 }
+
+/** Fewest meetings before an opponent can be your toughest. */
+export const TOUGHEST_MIN_MEETINGS = 3;
+
+export type OpponentRecord = { userId: string; name: string; wins: number; losses: number; played: number; winRate: number; pointDiff: number };
+
+/**
+ * The player's record against everyone they've faced on scored matches (tied totals are skipped),
+ * best win rate first, plus their toughest opponent: the lowest win rate over at least
+ * TOUGHEST_MIN_MEETINGS meetings, ties going to more meetings and then the worse point difference.
+ */
+export function computeOpponents(matches: RivalryMatch[], userId: string) {
+  const faced = new Map<string, { name: string; wins: number; losses: number; pointDiff: number }>();
+  for (const match of matches) {
+    const side = match.players.find((player) => player.userId === userId)?.side;
+    if (!side || !match.scores.length) continue;
+    const mine = sideTotals(match, side);
+    const theirs = sideTotals(match, side === "A" ? "B" : "A");
+    if (mine === theirs) continue;
+    for (const opponent of match.players.filter((player) => player.side !== side)) {
+      const entry = faced.get(opponent.userId) ?? { name: opponent.name, wins: 0, losses: 0, pointDiff: 0 };
+      if (mine > theirs) entry.wins += 1; else entry.losses += 1;
+      entry.pointDiff += mine - theirs;
+      faced.set(opponent.userId, entry);
+    }
+  }
+  const opponents: OpponentRecord[] = [...faced]
+    .map(([id, entry]) => ({ userId: id, ...entry, played: entry.wins + entry.losses, winRate: entry.wins / (entry.wins + entry.losses) }))
+    .sort((x, y) => y.winRate - x.winRate || y.played - x.played || y.pointDiff - x.pointDiff);
+  const toughest = opponents
+    .filter((opponent) => opponent.played >= TOUGHEST_MIN_MEETINGS)
+    .sort((x, y) => x.winRate - y.winRate || y.played - x.played || x.pointDiff - y.pointDiff)[0] ?? null;
+  return { toughest, opponents };
+}

@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ChevronDown, Flame } from "lucide-react";
+import { MatchDetailRow, type MatchDetailItem } from "@/components/match-detail-row";
 
-type StreakMatch = { id: string; playedAt: string; partners: string[]; opponents: string[]; scores: [number, number][]; where: { label: string; href: string | null } };
-type Streak = { best: number; current: number; matches: StreakMatch[] };
+type Streak = { best: number; current: number; matches: MatchDetailItem[] };
 
 const day = (iso: string, withYear = false) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}) });
 
@@ -38,18 +37,7 @@ export function WinStreakCard({ userId }: { userId: string }) {
       {open && (
         <ol className="mt-4 divide-y divide-[var(--line)] rounded-2xl bg-[#131f19] px-4">
           {streak.matches.map((match, index) => (
-            <li key={match.id} className="flex gap-3 py-3">
-              <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#2e1f12] text-[10px] font-black text-[#ff9a3c]">{index + 1}</span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-3">
-                  <p className="truncate text-sm font-bold">{match.partners.length ? `With ${match.partners.join(" & ")} ` : ""}<span className="font-normal text-[var(--ink-soft)]">vs</span> {match.opponents.join(" & ")}</p>
-                  <p className="shrink-0 text-sm font-black text-[var(--lime)]">{match.scores.map(([mine, theirs]) => `${mine}-${theirs}`).join(", ")}</p>
-                </div>
-                <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">
-                  {new Date(match.playedAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })} · {match.where.href ? <Link href={match.where.href} className="hover:text-[var(--lime-deep)] hover:underline">{match.where.label}</Link> : match.where.label}
-                </p>
-              </div>
-            </li>
+            <MatchDetailRow key={match.id} match={match} marker={<span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#2e1f12] text-[10px] font-black text-[#ff9a3c]">{index + 1}</span>} />
           ))}
         </ol>
       )}

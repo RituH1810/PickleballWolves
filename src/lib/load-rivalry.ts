@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { computeClutch } from "@/lib/clutch";
 import { computePartners } from "@/lib/partners";
 import { headToHead, recentForm } from "@/lib/form";
-import { computeRivalry, findTopRival, type RivalryMatch } from "@/lib/rivalry";
+import { computeOpponents, computeRivalry, findTopRival, type RivalryMatch } from "@/lib/rivalry";
 
 const MATCH_SELECT = {
   id: true,
@@ -58,6 +58,16 @@ export async function loadPartners(userId: string) {
   const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
   const withPhoto = <T extends { userId: string }>(partner: T) => ({ ...partner, photoUrl: photoOf.get(partner.userId) ?? null });
   return { best: best && withPhoto(best), partners: partners.map(withPhoto) };
+}
+
+/** The player's record against every opponent and their toughest opponent, with photos. */
+export async function loadOpponents(userId: string) {
+  const matches = await prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId } } }, select: MATCH_SELECT });
+  const { toughest, opponents } = computeOpponents((matches as LoadedMatch[]).map(toRivalryMatch), userId);
+  const photos = await prisma.user.findMany({ where: { id: { in: opponents.map((opponent) => opponent.userId) } }, select: { id: true, photoUrl: true } });
+  const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
+  const withPhoto = <T extends { userId: string }>(opponent: T) => ({ ...opponent, photoUrl: photoOf.get(opponent.userId) ?? null });
+  return { toughest: toughest && withPhoto(toughest), opponents: opponents.map(withPhoto) };
 }
 
 /** Clutch stats: close games, underdog matches and upsets (from the ratings everyone had going in), and comebacks. */

@@ -9,8 +9,10 @@ import { AwardsPanel } from "@/components/awards-panel";
 import { TitleTimeline } from "@/components/title-timeline";
 import { RivalCard } from "@/components/rival-card";
 import { PartnerCard } from "@/components/partner-card";
+import { OpponentsCard } from "@/components/opponents-card";
 import { ClutchCard } from "@/components/clutch-card";
 import { WinStreakCard } from "@/components/win-streak-card";
+import { PersonalRecordsCard } from "@/components/personal-records-card";
 import { FormGuide } from "@/components/form-dots";
 import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
@@ -189,7 +191,9 @@ export default function ProfilePage() {
 
         <RivalCard userId={profile.id} />
         <PartnerCard userId={profile.id} />
+        <OpponentsCard userId={profile.id} />
         <WinStreakCard userId={profile.id} />
+        <PersonalRecordsCard userId={profile.id} />
         <ClutchCard userId={profile.id} />
         <TitleTimeline />
         <AwardsPanel />

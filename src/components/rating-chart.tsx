@@ -62,6 +62,7 @@ export function RatingChart({ start, points }: { start: number; points: RatingPo
     setActive((current) => Math.min(series.length - 1, Math.max(0, (current ?? series.length - 1) + step)));
   }
 
+  const peak = series.reduce((best, entry, index) => (entry.rating > series[best].rating ? index : best), 0);
   const point = active === null ? null : series[active];
   const tooltipLeft = active === null ? 0 : Math.min(Math.max(x(active) - 70, 0), Math.max(width - 140, 0));
 
@@ -91,6 +92,13 @@ export function RatingChart({ start, points }: { start: number; points: RatingPo
           {formatDate(series[series.length - 1].at) !== formatDate(series[0].at) && <text x={x(series.length - 1)} y={HEIGHT - 6} textAnchor="end" fontSize={10} fill="var(--ink-soft)">{formatDate(series[series.length - 1].at)}</text>}
 
           <path d={path} fill="none" stroke="var(--lime)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          {/* The peak: the first time the highest rating was reached (above the start). */}
+          {peak > 0 && peak < series.length - 1 && (
+            <g pointerEvents="none">
+              <circle cx={x(peak)} cy={y(series[peak].rating)} r={5} fill="#f5c542" stroke="var(--panel)" strokeWidth={2} />
+              <text x={Math.min(Math.max(x(peak), PAD.left + 14), width - PAD.right - 14)} y={y(series[peak].rating) - 9} textAnchor="middle" fontSize={9} fontWeight={800} fill="#f5c542">PEAK</text>
+            </g>
+          )}
           {/* Mark the latest rating; the tooltip covers every other point. */}
           <circle cx={x(series.length - 1)} cy={y(series[series.length - 1].rating)} r={4} fill="var(--lime)" stroke="var(--panel)" strokeWidth={2} />
 
@@ -107,7 +115,7 @@ export function RatingChart({ start, points }: { start: number; points: RatingPo
         <div className="pointer-events-none absolute top-0 w-[140px] rounded-xl border border-[var(--line)] bg-[#0f1712] px-3 py-2 shadow-lg" style={{ left: tooltipLeft }}>
           <p className="text-lg font-black leading-none">{point.rating.toFixed(3)}</p>
           <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
-            {active === 0 ? "Starting rating" : <>{formatDate(point.at)} · <span className={point.delta > 0 ? "text-[var(--lime-deep)]" : point.delta < 0 ? "text-[var(--coral)]" : ""}>{formatDelta(point.delta)}</span></>}
+            {active === 0 ? "Starting rating" : <>{active === peak && <span className="font-bold text-[#f5c542]">Peak · </span>}{formatDate(point.at)} · <span className={point.delta > 0 ? "text-[var(--lime-deep)]" : point.delta < 0 ? "text-[var(--coral)]" : ""}>{formatDelta(point.delta)}</span></>}
           </p>
         </div>
       )}
