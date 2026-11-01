@@ -2,7 +2,7 @@ import { computeMonthlyLeaderboard, LEADERBOARD_TIME_ZONE, type LeaderboardMatch
 import { zonedParts, zonedTimeToUtc } from "./recurring";
 
 /** Matches needed in a week to be eligible. */
-export const WEEKLY_MIN_MATCHES = 5;
+export const WEEKLY_MIN_MATCHES = 10;
 
 export type Week = { start: Date; end: Date; label: string };
 
