@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { use, useEffect, useState } from "react";
-import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, Lock, UserMinus, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users, BarChart3 } from "lucide-react";
+import { ArrowLeft, CalendarDays, Check, ChevronRight, Copy, Crown, FlaskConical, Lock, UserMinus, Mail, MapPin, Medal, MessageCircle, PawPrint, Repeat, Trophy, UserPlus, Users, BarChart3 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { GroupAnnouncements } from "@/components/group-announcements";
 import { RecurringSchedules } from "@/components/recurring-schedules";
@@ -184,6 +184,11 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               {group.isMember && (
                 <Link href={`/groups/${groupId}/hall-of-fame`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
                   <Trophy size={15} />Hall of Fame
+                </Link>
+              )}
+              {group.isMember && (
+                <Link href={`/groups/${groupId}/chemistry`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                  <FlaskConical size={15} />Chemistry
                 </Link>
               )}
               {group.isMember && (
