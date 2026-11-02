@@ -13,7 +13,7 @@ type HallRecord = { key: string; label: string; value: string; holders: Holder[]
 type Ref = { userId: string; name: string };
 type Reign = { value: string; holders: Ref[]; at: string; roundRobin: { id: string; name: string } };
 type Chase = { userId: string; key: string; text: string };
-type Placing = { key: string; label: string; rank: number; of: number; value: string };
+type Placing = { key: string; label: string; rank: number; of: number; tied: number; value: string };
 type Club = { key: string; label: string; members: (Ref & { joinedAt: string })[] };
 type Grit = { key: string; label: string; value: string; holders: Ref[]; detail: string };
 type WallMonth = { key: string; label: string; champions: { roundRobin: { id: string; name: string }; players: Ref[] }[]; playersOfTheWeek: { weekStart: string; players: Ref[] }[]; awards: { title: string; players: Ref[]; detail: string }[] };
@@ -188,8 +188,11 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {data.place.map((placing) => (
                     <li key={placing.key} className="flex items-center justify-between gap-3 rounded-xl bg-[#131f19] px-3 py-2.5 text-sm">
-                      <span className="min-w-0"><span className="font-bold">{placing.label}</span> <span className="text-xs text-[var(--ink-soft)]">· {placing.value}</span></span>
-                      <span className={`shrink-0 font-black ${placing.rank === 1 ? "text-[#f5c542]" : placing.rank <= 3 ? "text-[var(--lime)]" : "text-[var(--ink-soft)]"}`}>#{placing.rank}<span className="text-[10px] font-bold text-[var(--ink-soft)]"> of {placing.of}</span></span>
+                      <span className="min-w-0">
+                        <span className="font-bold">{placing.label}</span> <span className="text-xs text-[var(--ink-soft)]">· {placing.value}</span>
+                        {placing.tied > 0 && <span className="block text-[11px] text-[var(--ink-soft)]">Shared with {placing.tied} {placing.tied === 1 ? "other" : "others"}</span>}
+                      </span>
+                      <span className={`shrink-0 font-black ${placing.rank === 1 ? "text-[#f5c542]" : placing.rank <= 3 ? "text-[var(--lime)]" : "text-[var(--ink-soft)]"}`}>{placing.tied > 0 ? "T-" : ""}#{placing.rank}<span className="text-[10px] font-bold text-[var(--ink-soft)]"> of {placing.of}</span></span>
                     </li>
                   ))}
                 </ul>

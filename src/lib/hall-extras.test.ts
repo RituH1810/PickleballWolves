@@ -49,7 +49,7 @@ describe("recordChases", () => {
 describe("yourPlace", () => {
   it("ranks the member on each record they have a value for", () => {
     const place = yourPlace(playerHallStats(nights), "b");
-    expect(place.find((placing) => placing.key === "bestStreak")).toMatchObject({ rank: 1, of: 3, value: "4 games" });
+    expect(place.find((placing) => placing.key === "bestStreak")).toMatchObject({ rank: 1, of: 3, tied: 0, value: "4 games" });
     expect(place.find((placing) => placing.key === "titles")).toMatchObject({ rank: 2, of: 2 });
     expect(yourPlace(playerHallStats(nights), "nobody")).toEqual([]);
   });

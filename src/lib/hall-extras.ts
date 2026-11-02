@@ -121,7 +121,8 @@ export function recordChases(stats: Map<string, PlayerHallStats>, records: HallO
   return chases.sort((a, b) => a.gap - b.gap).slice(0, 3);
 }
 
-export type Placing = { key: string; label: string; rank: number; of: number; value: string };
+/** `tied` is how many others share this rank (0 when it's yours alone). */
+export type Placing = { key: string; label: string; rank: number; of: number; tied: number; value: string };
 
 /** Where one member ranks on each record (players level share a rank), among members with a value. */
 export function yourPlace(stats: Map<string, PlayerHallStats>, userId: string): Placing[] {
@@ -139,7 +140,7 @@ export function yourPlace(stats: Map<string, PlayerHallStats>, userId: string): 
     const value = me[field] as number;
     if (!value) return [];
     const others = [...stats.values()].map((entry) => entry[field] as number).filter((entry) => entry > 0);
-    return [{ key: field, label, rank: 1 + others.filter((entry) => entry > value).length, of: others.length, value: format(value) }];
+    return [{ key: field, label, rank: 1 + others.filter((entry) => entry > value).length, of: others.length, tied: others.filter((entry) => entry === value).length - 1, value: format(value) }];
   });
 }
 
