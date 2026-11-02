@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
+import { sendRevengeAlerts } from "@/lib/send-revenge-alerts";
 
 function shuffle<T>(items: T[]): T[] {
   const array = [...items];
@@ -125,5 +126,6 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     for (const round of rounds) await transaction.round.create({ data: { roundRobinId, roundNumber: round.roundNumber, matches: { create: round.matches } } });
     await transaction.roundRobin.update({ where: { id: roundRobinId }, data: { status: "LIVE" } });
   });
+  after(() => sendRevengeAlerts(roundRobinId));
   return NextResponse.json({ rounds: rounds.length, matches: rounds.reduce((total, round) => total + round.matches.length, 0) });
 }

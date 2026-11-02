@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
+import { sendRevengeAlerts } from "@/lib/send-revenge-alerts";
 
 export async function POST(request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const supabase = await createClient();
@@ -55,5 +56,6 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   });
   if (roundRobin.status === "SETUP") await prisma.roundRobin.update({ where: { id: roundRobinId }, data: { status: "LIVE" } });
 
+  after(() => sendRevengeAlerts(roundRobinId));
   return NextResponse.json({ match }, { status: 201 });
 }
