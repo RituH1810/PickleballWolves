@@ -821,3 +821,13 @@ model TournamentBracketMatch {
   feeders      TournamentBracketMatch[] @relation("BracketAdvancement")
   @@unique([tournamentId, round, position])
 }
+
+// How a player likes to play, picked on their profile (all optional): side LEFT/RIGHT/EITHER,
+// shots DINKER/BANGER/ALL_COURT, pace STEADY/AGGRESSIVE. Partner win rates are grouped by these.
+model PlayStyle {
+  userId    String   @id
+  side      String?
+  shots     String?
+  pace      String?
+  updatedAt DateTime @updatedAt
+}

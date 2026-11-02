@@ -120,3 +120,19 @@ export function explainRatingChange(input: {
     atFloor,
   };
 }
+
+/** The typical scores the rating preview assumes: a clear win or loss in one game to 11. */
+export const PREVIEW_SCORE: [number, number] = [11, 7];
+
+/**
+ * What one match would do to a player's rating before it's played: the change for winning and for
+ * losing by PREVIEW_SCORE, from everyone's current rating and how many rated matches the player has.
+ */
+export function ratingStakes(input: { myRating: number; myTeam: number[]; opponents: number[]; matchesPlayed: number }) {
+  const average = (ratings: number[]) => ratings.reduce((total, rating) => total + rating, 0) / ratings.length;
+  const expected = expectedPointShare(average(input.myTeam), average(input.opponents));
+  const step = kFactor(input.matchesPlayed);
+  const [high, low] = PREVIEW_SCORE;
+  const change = (share: number) => round3(clamp(input.myRating + step * (share - expected)) - input.myRating);
+  return { win: change(high / (high + low)), lose: change(low / (high + low)) };
+}

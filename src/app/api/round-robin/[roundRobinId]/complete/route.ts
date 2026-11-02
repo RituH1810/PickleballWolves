@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { notify } from "@/lib/notifications";
@@ -6,6 +6,7 @@ import { loadPlayerRecaps } from "@/lib/load-recap";
 import { playerRecapHeadline } from "@/lib/round-robin-recap";
 import { announceNewAchievements } from "@/lib/announce-achievements";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
+import { sendRecordAlerts } from "@/lib/send-record-alerts";
 
 export async function POST(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const supabase = await createClient();
@@ -23,6 +24,7 @@ export async function POST(_request: Request, context: { params: Promise<{ round
     await Promise.all([...recaps].map(([userId, recap]) => notify(userId, "general", "ROUND_ROBIN_RECAP", `Your recap: ${roundRobin.name}`, `${playerRecapHeadline(recap)}. See the full breakdown on your dashboard.`)));
     // Ending it is what crowns the champion, so this is when round robin badges unlock.
     await announceNewAchievements([...recaps.keys()]);
+    after(() => sendRecordAlerts(roundRobinId));
   }
   return NextResponse.json({ roundRobin: updated });
 }

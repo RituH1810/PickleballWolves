@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, Camera, MapPin, Pencil, Phone, Trophy } from "lucide-react";
+import { ArrowUpRight, Camera, MapPin, Pencil, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { AwardsPanel } from "@/components/awards-panel";
@@ -16,6 +16,8 @@ import { PersonalRecordsCard } from "@/components/personal-records-card";
 import { FormGuide } from "@/components/form-dots";
 import { ChangePassword } from "@/components/change-password";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
+import { NicknamesCard } from "@/components/nicknames-card";
+import { PlayStyleCard } from "@/components/play-style-card";
 import { AddressInput } from "@/components/address-input";
 
 type Profile = { id: string; name: string; skillRating: string; ratingLocked?: boolean; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number | null; matchesToQualify: number };
@@ -168,13 +170,11 @@ export default function ProfilePage() {
           </div>
         </section>
 
+        <NicknamesCard userId={profile.id} />
         <RatingHistoryPanel />
 
         <section className="mt-5 grid gap-5 md:grid-cols-[.8fr_1.2fr]">
-          <div className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
-            <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Playing style</h2></div>
-            <p className="mt-5 text-sm leading-6 text-[var(--ink-soft)]">Your record and rating update automatically as you log matches. Keep playing to build out your profile.</p>
-          </div>
+          <PlayStyleCard userId={profile.id} className="" />
           <div className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
             <h2 className="font-extrabold">Latest form</h2>
             <div className="mt-4 space-y-3">

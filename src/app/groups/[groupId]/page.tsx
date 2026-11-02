@@ -9,6 +9,7 @@ import { RecurringSchedules } from "@/components/recurring-schedules";
 import { AvailabilityPolls } from "@/components/availability-polls";
 import { MonthlyLeaderboard } from "@/components/monthly-leaderboard";
 import { PlayerOfTheWeek } from "@/components/player-of-the-week";
+import { RivalryOfTheMonth } from "@/components/rivalry-of-the-month";
 import { RoundRobinWinners } from "@/components/round-robin-winners";
 import { GroupFeed } from "@/components/group-feed";
 import { FormDots } from "@/components/form-dots";
@@ -376,6 +377,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
         {group.isMember && <GroupFeed groupId={groupId} />}
         {group.isMember && <PlayerOfTheWeek groupId={groupId} />}
+        {group.isMember && <RivalryOfTheMonth groupId={groupId} />}
         {group.isMember && <RoundRobinWinners groupId={groupId} />}
         {group.isMember && <MonthlyLeaderboard groupId={groupId} />}
 

@@ -14,10 +14,11 @@ import { AddGuestPlayer } from "@/components/add-guest-player";
 import { GameWeatherChip } from "@/components/weather-chip";
 import { CoHostsPanel } from "@/components/co-hosts-panel";
 import { isUpset, type Prediction } from "@/lib/match-prediction";
+import { PREVIEW_SCORE } from "@/lib/rating";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
 
-type Match = { prediction?: Prediction | null; id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
+type Match = { prediction?: Prediction | null; myStakes?: { win: number; lose: number } | null; id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; matches: Match[] };
 type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string; isGuest?: boolean; fromOutside?: boolean };
@@ -653,6 +654,12 @@ function MatchCard({ match, number, onSave, onDelete, canManage, canScore }: { m
           </div>
         );
       })}
+      {/* Before it's played: what it means for the viewer's own rating. */}
+      {!hasScore && match.myStakes && (
+        <p title={`Assuming an ${PREVIEW_SCORE[0]}-${PREVIEW_SCORE[1]} result`} className="mt-3 rounded-lg bg-[#131f19] px-3 py-2 text-[11px] font-semibold text-[var(--ink-soft)]">
+          Your rating: win <span className="font-black text-[var(--lime)]">{match.myStakes.win >= 0 ? "+" : ""}{match.myStakes.win.toFixed(3)}</span> · lose <span className="font-black text-[var(--coral)]">{match.myStakes.lose > 0 ? "+" : ""}{match.myStakes.lose.toFixed(3)}</span>
+        </p>
+      )}
       {/* Before it's played: everyone's form, clutch label and history with you. */}
       {!hasScore && (
         <>

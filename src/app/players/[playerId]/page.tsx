@@ -15,6 +15,8 @@ import { PersonalRecordsCard } from "@/components/personal-records-card";
 import { FormGuide } from "@/components/form-dots";
 import { RivalCard } from "@/components/rival-card";
 import { RatingHistoryPanel } from "@/components/rating-history-panel";
+import { NicknamesCard } from "@/components/nicknames-card";
+import { PlayStyleCard } from "@/components/play-style-card";
 import { DirectionsLink } from "@/components/directions-link";
 import { useViewer } from "@/components/guest-shell";
 
@@ -106,6 +108,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
           </section>
         )}
 
+        <NicknamesCard userId={player.id} isMe={player.isMe} />
         <RatingHistoryPanel userId={player.id} isMe={player.isMe} />
 
         <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
@@ -126,6 +129,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
 
         <RivalCard userId={player.id} isMe={player.isMe} playerName={player.name} />
         <PartnerCard userId={player.id} isMe={player.isMe} />
+        <PlayStyleCard userId={player.id} isMe={player.isMe} />
         <OpponentsCard userId={player.id} isMe={player.isMe} />
         <WinStreakCard userId={player.id} />
         <PersonalRecordsCard userId={player.id} isMe={player.isMe} />

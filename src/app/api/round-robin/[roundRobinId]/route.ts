@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin, isRoundRobinParticipant } from "@/lib/round-robin-access";
 import { predictMatch } from "@/lib/match-prediction";
+import { ratingStakes } from "@/lib/rating";
 
 export async function GET(_request: Request, context: { params: Promise<{ roundRobinId: string }> }) {
   const { roundRobinId } = await context.params;
@@ -63,6 +64,14 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
     // Only when every player has a rating -- a partial side would skew the average.
     return sideA.length + sideB.length === match.players.length ? predictMatch(sideA, sideB) : null;
   };
+  // What a match still to play would do to the viewer's own rating, win or lose.
+  const myRatedMatches = user ? await prisma.ratingHistory.count({ where: { userId: user.id, ladderId: null, matchId: { not: null } } }) : 0;
+  const stakesFor = (match: LoadedMatch) => {
+    const me = user && !match.scores.length ? match.players.find((player) => player.userId === user.id) : undefined;
+    if (!me || match.players.some((player) => typeof playerRatings[player.userId] !== "number")) return null;
+    const ratings = (inTeam: boolean) => match.players.filter((player) => (player.side === me.side) === inTeam).map((player) => playerRatings[player.userId]);
+    return ratingStakes({ myRating: playerRatings[me.userId], myTeam: ratings(true), opponents: ratings(false), matchesPlayed: myRatedMatches });
+  };
 
   return NextResponse.json({
     roundRobin: {
@@ -82,8 +91,8 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
       myUserId: user?.id ?? null,
       myRsvpStatus,
       isGroupMember,
-      rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, prediction: predictionFor(match), players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })),
-      manualMatches: roundRobin.matches.map((match) => ({ ...match, prediction: predictionFor(match), players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })),
+      rounds: roundRobin.rounds.map((round) => ({ ...round, matches: round.matches.map((match) => ({ ...match, prediction: predictionFor(match), myStakes: stakesFor(match), players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })) })),
+      manualMatches: roundRobin.matches.map((match) => ({ ...match, prediction: predictionFor(match), myStakes: stakesFor(match), players: match.players.map((player) => ({ ...player, name: player.user.name })), scores: match.scores.map((score) => ({ ...score })) })),
     },
   });
 }
