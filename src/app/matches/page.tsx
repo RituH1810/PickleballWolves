@@ -15,30 +15,30 @@ function RelationshipTable({ title, subtitle, firstColumn, rows, loading, emptyT
     <section className="mt-8">
       <h2 className="text-xl font-extrabold tracking-tight">{title}</h2>
       <p className="mt-1 text-sm text-[var(--ink-soft)]">{subtitle}</p>
-      <div className="mt-4 overflow-x-auto rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+      <div className="mt-4 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-4 sm:p-6">
         {loading ? (
           <div className="space-y-3">{Array.from({ length: 3 }).map((_, index) => <div key={index} className="skeleton h-10 rounded-xl" />)}</div>
         ) : rows.length === 0 ? (
           <p className="text-sm text-[var(--ink-soft)]">{emptyText}</p>
         ) : (
-          <table className="w-full min-w-[520px] text-left text-sm">
+          <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">
                 <th className="pb-3">{firstColumn}</th>
-                <th className="pb-3 text-center">Matches</th>
-                <th className="w-14 pb-3 text-center">W</th>
-                <th className="w-14 pb-3 text-center">L</th>
-                <th className="pb-3 text-center">Win%</th>
-                <th className="pb-3 text-right">Diff</th>
+                <th className="hidden pb-3 text-center sm:table-cell">Matches</th>
+                <th className="w-8 pb-3 text-center sm:w-14">W</th>
+                <th className="w-8 pb-3 text-center sm:w-14">L</th>
+                <th className="w-12 pb-3 text-center sm:w-auto">Win%</th>
+                <th className="w-11 pb-3 text-right sm:w-auto">Diff</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.id} className="border-b border-[var(--line)] last:border-0">
-                  <td className="py-3 font-bold text-[var(--foreground)]"><Link href={`/players/${row.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{row.name}</Link></td>
-                  <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{row.matches}</td>
-                  <td className="w-14 py-3 text-center font-semibold">{row.wins}</td>
-                  <td className="w-14 py-3 text-center font-semibold">{row.losses}</td>
+                  <td className="break-words py-3 pr-2 font-bold text-[var(--foreground)]"><Link href={`/players/${row.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{row.name}</Link></td>
+                  <td className="hidden py-3 text-center font-semibold text-[var(--ink-soft)] sm:table-cell">{row.matches}</td>
+                  <td className="py-3 text-center font-semibold">{row.wins}</td>
+                  <td className="py-3 text-center font-semibold">{row.losses}</td>
                   <td className="py-3 text-center font-semibold">{row.winPct}%</td>
                   <td className={`py-3 text-right font-black ${row.differential > 0 ? "text-[var(--lime-deep)]" : row.differential < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{row.differential > 0 ? "+" : ""}{row.differential}</td>
                 </tr>
