@@ -2,8 +2,8 @@ import { zonedParts, zonedTimeToUtc } from "./recurring";
 
 // Same calendar as monthly awards: months follow the groups' local time, not UTC.
 export const LEADERBOARD_TIME_ZONE = "America/New_York";
-/** Matches needed in a month to be ranked (the all-time board needs 20; a month is shorter). */
-export const MONTHLY_MIN_MATCHES = 8;
+/** Matches needed in a month to be ranked -- and so to be its winner (player of the month). */
+export const MONTHLY_MIN_MATCHES = 20;
 /** How many months players can look back on: this month plus the previous two. */
 export const MONTHS_SHOWN = 3;
 
