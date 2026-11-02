@@ -379,15 +379,15 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         {group.isMember && <RoundRobinWinners groupId={groupId} />}
         {group.isMember && <MonthlyLeaderboard groupId={groupId} />}
 
-        <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
+        <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-4 sm:p-8">
           <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
           {group.isMember ? (
             group.leaderboard.length === 0 ? (
               <p className="mt-4 text-sm text-[var(--ink-soft)]">No one has played 20 matches in this group yet.</p>
             ) : (
-              <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-[760px] text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3">Form</th><th className="pb-3 text-center">Matches</th><th className="w-14 pb-3 text-center">W</th><th className="w-14 pb-3 text-center">L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-center">Points earned</th><th className="pb-3 text-center">Points against</th><th className="pb-3 text-right">Avg pt diff</th></tr></thead>
+              <div className="mt-4">
+                <table className="w-full text-left text-sm">
+                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="w-9 pb-3">#</th><th className="pb-3">Player</th><th className="hidden pb-3 sm:table-cell">Form</th><th className="hidden pb-3 text-center sm:table-cell">Matches</th><th className="w-8 pb-3 text-center sm:w-14">W</th><th className="w-8 pb-3 text-center sm:w-14">L</th><th className="w-12 pb-3 text-center sm:w-auto">Win%</th><th className="hidden pb-3 text-center sm:table-cell">Points earned</th><th className="hidden pb-3 text-center sm:table-cell">Points against</th><th className="w-12 pb-3 text-right sm:w-auto"><span className="sm:hidden">Diff</span><span className="hidden sm:inline">Avg pt diff</span></th></tr></thead>
                   <tbody>
                     {group.leaderboard.map((entry) => (
                       <tr key={entry.id} className="border-b border-[var(--line)] last:border-0">
@@ -399,14 +399,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                             {entry.rank}
                           </span>
                         </td>
-                        <td className="py-3"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" /><Link href={`/players/${entry.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{entry.name}</Link></span></td>
-                        <td className="py-3"><FormDots results={entry.form ?? []} size="sm" /></td>
-                        <td className="py-3 text-center font-semibold text-[var(--ink-soft)]">{entry.matches}</td>
-                        <td className="w-14 py-3 text-center font-semibold">{entry.wins}</td>
-                        <td className="w-14 py-3 text-center font-semibold">{entry.losses}</td>
+                        <td className="py-3 pr-2"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" /><span className="min-w-0"><Link href={`/players/${entry.id}`} className="break-words hover:text-[var(--lime-deep)] hover:underline">{entry.name}</Link><span className="mt-1 block sm:hidden"><FormDots results={entry.form ?? []} size="sm" /></span></span></span></td>
+                        <td className="hidden py-3 sm:table-cell"><FormDots results={entry.form ?? []} size="sm" /></td>
+                        <td className="hidden py-3 text-center font-semibold text-[var(--ink-soft)] sm:table-cell">{entry.matches}</td>
+                        <td className="py-3 text-center font-semibold">{entry.wins}</td>
+                        <td className="py-3 text-center font-semibold">{entry.losses}</td>
                         <td className="py-3 text-center font-semibold">{entry.winPct}%</td>
-                        <td className="py-3 text-center font-semibold">{entry.scored}</td>
-                        <td className="py-3 text-center font-semibold">{entry.conceded}</td>
+                        <td className="hidden py-3 text-center font-semibold sm:table-cell">{entry.scored}</td>
+                        <td className="hidden py-3 text-center font-semibold sm:table-cell">{entry.conceded}</td>
                         <td className={`py-3 text-right font-semibold ${entry.avgPointDiff > 0 ? "text-[var(--lime-deep)]" : entry.avgPointDiff < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{entry.avgPointDiff > 0 ? "+" : ""}{entry.avgPointDiff}</td>
                       </tr>
                     ))}

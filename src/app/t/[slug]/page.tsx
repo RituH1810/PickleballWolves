@@ -114,10 +114,10 @@ export default async function PublicTournamentPage({ params }: { params: Promise
           <section key={pool.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <h2 className="font-extrabold">{pool.name}</h2>
             {pool.standings.length > 0 && (
-              <div className="mt-3 overflow-x-auto">
-                <table className="w-full min-w-[420px] text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-2">#</th><th className="pb-2">Team</th><th className="pb-2 text-center">W</th><th className="pb-2 text-center">L</th><th className="pb-2 text-right">Diff</th></tr></thead>
-                  <tbody>{pool.standings.map((entry) => <tr key={entry.teamId} className="border-b border-[var(--line)] last:border-0"><td className="py-2.5 font-black" style={{ color: entry.rank === 1 ? accent : undefined }}>{entry.rank}</td><td className="py-2.5 font-bold">{entry.teamName}</td><td className="py-2.5 text-center">{entry.wins}</td><td className="py-2.5 text-center">{entry.losses}</td><td className="py-2.5 text-right font-bold">{entry.differential > 0 ? "+" : ""}{entry.differential}</td></tr>)}</tbody>
+              <div className="mt-3">
+                <table className="w-full text-left text-sm">
+                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="w-7 pb-2">#</th><th className="pb-2">Team</th><th className="w-9 pb-2 text-center">W</th><th className="w-9 pb-2 text-center">L</th><th className="w-12 pb-2 text-right">Diff</th></tr></thead>
+                  <tbody>{pool.standings.map((entry) => <tr key={entry.teamId} className="border-b border-[var(--line)] last:border-0"><td className="py-2.5 font-black" style={{ color: entry.rank === 1 ? accent : undefined }}>{entry.rank}</td><td className="break-words py-2.5 pr-2 font-bold">{entry.teamName}</td><td className="py-2.5 text-center">{entry.wins}</td><td className="py-2.5 text-center">{entry.losses}</td><td className="py-2.5 text-right font-bold">{entry.differential > 0 ? "+" : ""}{entry.differential}</td></tr>)}</tbody>
                 </table>
               </div>
             )}

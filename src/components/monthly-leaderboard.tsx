@@ -69,15 +69,15 @@ export function MonthlyLeaderboard({ groupId }: { groupId: string }) {
       {month.ranked.length === 0 ? (
         <p className="mt-4 text-sm text-[var(--ink-soft)]">{month.matchCount === 0 ? `No matches ${month.isCurrent ? "yet this month" : `in ${month.label}`}.` : `No one has played ${data.minMatches} matches${month.isCurrent ? " yet this month" : ` in ${month.label}`}.`}</p>
       ) : (
-        <div className="mt-4 overflow-x-auto">
-          <table className="w-full min-w-[480px] text-left text-sm">
-            <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">#</th><th className="pb-3">Player</th><th className="pb-3 text-center">Matches</th><th className="pb-3 text-center">W-L</th><th className="pb-3 text-center">Win%</th><th className="pb-3 text-right">Avg diff</th></tr></thead>
+        <div className="mt-4">
+          <table className="w-full text-left text-sm">
+            <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="w-9 pb-3">#</th><th className="pb-3">Player</th><th className="hidden pb-3 text-center sm:table-cell">Matches</th><th className="w-12 pb-3 text-center sm:w-auto">W-L</th><th className="w-12 pb-3 text-center sm:w-auto">Win%</th><th className="w-12 pb-3 text-right sm:w-auto"><span className="sm:hidden">Diff</span><span className="hidden sm:inline">Avg diff</span></th></tr></thead>
             <tbody>
               {month.ranked.map((entry) => (
                 <tr key={entry.userId} className="border-b border-[var(--line)] last:border-0">
                   <td className={`py-3 font-black ${MEDALS[entry.rank - 1] ?? "text-[var(--ink-soft)]"}`}><span className="flex items-center gap-1">{entry.rank <= 3 && <Medal size={13} />}{entry.rank}</span></td>
-                  <td className="py-3"><Link href={`/players/${entry.userId}`} className="flex items-center gap-2 font-bold hover:text-[var(--lime-deep)]"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />{entry.name}</Link></td>
-                  <td className="py-3 text-center text-[var(--ink-soft)]">{entry.matches}</td>
+                  <td className="py-3 pr-2"><Link href={`/players/${entry.userId}`} className="flex items-center gap-2 font-bold hover:text-[var(--lime-deep)]"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" /><span className="min-w-0 break-words">{entry.name}</span></Link></td>
+                  <td className="hidden py-3 text-center text-[var(--ink-soft)] sm:table-cell">{entry.matches}</td>
                   <td className="py-3 text-center">{entry.wins}-{entry.losses}</td>
                   <td className="py-3 text-center font-bold">{Math.round(entry.winPct * 100)}%</td>
                   <td className={`py-3 text-right font-black ${entry.avgPointDiff > 0 ? "text-[var(--lime-deep)]" : entry.avgPointDiff < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{entry.avgPointDiff > 0 ? "+" : ""}{entry.avgPointDiff}</td>

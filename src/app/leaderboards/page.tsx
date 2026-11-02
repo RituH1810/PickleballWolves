@@ -41,33 +41,33 @@ export default function LeaderboardsPage() {
             {podium.map((leader, index) => <PodiumCard key={leader.id} leader={leader} place={(index + 1) as 1 | 2 | 3} />)}
           </section>
         )}
-        <section className="mt-8 overflow-x-auto rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+        <section className="mt-8 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-4 sm:p-6">
           {leaders.length === 0 ? <div className="py-10 text-center"><PawPrint size={22} className="mx-auto text-[var(--lime-deep)]" /><p className="mt-3 text-sm text-[var(--ink-soft)]">Play 20 matches to appear on the leaderboard.</p></div> : (
-            <table className="w-full min-w-[560px] text-left text-sm">
+            <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">
-                  <th className="pb-3">#</th>
+                  <th className="w-7 pb-3">#</th>
                   <th className="pb-3">Player</th>
-                  <th className="pb-3 text-center">Matches</th>
-                  <th className="w-14 pb-3 text-center">W</th>
-                  <th className="w-14 pb-3 text-center">L</th>
-                  <th className="pb-3 text-center">Win%</th>
-                  <th className="pb-3 text-center">Points earned</th>
-                  <th className="pb-3 text-center">Points against</th>
-                  <th className="pb-3 text-right">Difference</th>
+                  <th className="hidden pb-3 text-center sm:table-cell">Matches</th>
+                  <th className="w-8 pb-3 text-center sm:w-14">W</th>
+                  <th className="w-8 pb-3 text-center sm:w-14">L</th>
+                  <th className="w-12 pb-3 text-center sm:w-auto">Win%</th>
+                  <th className="hidden pb-3 text-center sm:table-cell">Points earned</th>
+                  <th className="hidden pb-3 text-center sm:table-cell">Points against</th>
+                  <th className="w-12 pb-3 text-right sm:w-auto"><span className="sm:hidden">Diff</span><span className="hidden sm:inline">Difference</span></th>
                 </tr>
               </thead>
               <tbody>
                 {leaders.map((leader) => (
                   <tr key={leader.id} className="border-b border-[var(--line)] last:border-0">
                     <td className={`py-4 font-black ${leader.rank <= 3 ? "text-[var(--lime-deep)]" : "text-[var(--ink-soft)]"}`}>{leader.rank}</td>
-                    <td className="py-4 font-bold text-[var(--foreground)]"><Link href={`/players/${leader.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{leader.name}</Link></td>
-                    <td className="py-4 text-center font-semibold text-[var(--ink-soft)]">{leader.matches}</td>
-                    <td className="w-14 py-4 text-center font-semibold">{leader.wins}</td>
-                    <td className="w-14 py-4 text-center font-semibold">{leader.losses}</td>
+                    <td className="break-words py-4 pr-2 font-bold text-[var(--foreground)]"><Link href={`/players/${leader.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{leader.name}</Link></td>
+                    <td className="hidden py-4 text-center font-semibold text-[var(--ink-soft)] sm:table-cell">{leader.matches}</td>
+                    <td className="py-4 text-center font-semibold">{leader.wins}</td>
+                    <td className="py-4 text-center font-semibold">{leader.losses}</td>
                     <td className="py-4 text-center font-semibold">{leader.winPct}%</td>
-                    <td className="py-4 text-center font-semibold">{leader.scored}</td>
-                    <td className="py-4 text-center font-semibold">{leader.conceded}</td>
+                    <td className="hidden py-4 text-center font-semibold sm:table-cell">{leader.scored}</td>
+                    <td className="hidden py-4 text-center font-semibold sm:table-cell">{leader.conceded}</td>
                     <td className={`py-4 text-right font-black ${leader.differential > 0 ? "text-[var(--lime-deep)]" : leader.differential < 0 ? "text-[#e8836a]" : "text-[var(--ink-soft)]"}`}>{leader.differential > 0 ? "+" : ""}{leader.differential}</td>
                   </tr>
                 ))}

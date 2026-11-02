@@ -147,19 +147,19 @@ export default function GroupInsightsPage({ params }: { params: Promise<{ groupI
             )}
 
             {insights.totals.games > 0 && (
-              <section className="mt-5 overflow-x-auto rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+              <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-4 sm:p-6">
                 <h2 className="flex items-center gap-2 font-extrabold"><Users size={17} className="text-[var(--lime-deep)]" />Members</h2>
                 <p className="mt-1 text-xs text-[var(--ink-soft)]">Attendance counts games held since each member joined. &quot;Joined, didn&apos;t play&quot; means they RSVP&apos;d in but weren&apos;t in a scored match.</p>
-                <table className="mt-4 w-full min-w-[560px] text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">Member</th><th className="pb-3">Played</th><th className="pb-3">Attendance</th><th className="pb-3">Last played</th><th className="pb-3 text-right">Joined, didn&apos;t play</th></tr></thead>
+                <table className="mt-4 w-full text-left text-sm">
+                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">Member</th><th className="hidden pb-3 sm:table-cell">Played</th><th className="pb-3">Attendance</th><th className="pb-3 text-right sm:text-left">Last played</th><th className="hidden pb-3 text-right sm:table-cell">Joined, didn&apos;t play</th></tr></thead>
                   <tbody>
                     {insights.members.map((member) => (
                       <tr key={member.id} className="border-b border-[var(--line)] last:border-0">
-                        <td className="py-3 font-bold"><Link href={`/players/${member.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{member.name}</Link></td>
-                        <td className="py-3 text-[var(--ink-soft)]">{member.played} / {member.possible}</td>
-                        <td className="py-3"><div className="flex items-center gap-2"><div className="h-2 w-20 overflow-hidden rounded-full bg-[#1c2a1a]"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${member.rate}%` }} /></div><span className="text-xs font-bold">{member.rate}%</span></div></td>
-                        <td className="py-3 text-xs text-[var(--ink-soft)]">{ago(member.lastPlayedAt)}</td>
-                        <td className={`py-3 text-right text-xs font-bold ${member.joinedButSatOut ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{member.joinedButSatOut || "—"}</td>
+                        <td className="break-words py-3 pr-2 font-bold"><Link href={`/players/${member.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{member.name}</Link></td>
+                        <td className="hidden py-3 text-[var(--ink-soft)] sm:table-cell">{member.played} / {member.possible}</td>
+                        <td className="py-3 pr-2"><div className="flex items-center gap-2"><div className="h-2 w-12 overflow-hidden rounded-full bg-[#1c2a1a] sm:w-20"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${member.rate}%` }} /></div><span className="text-xs font-bold">{member.rate}%</span></div><span className="mt-0.5 block text-[11px] text-[var(--ink-soft)] sm:hidden">{member.played} / {member.possible} played</span></td>
+                        <td className="py-3 text-right text-xs text-[var(--ink-soft)] sm:text-left">{ago(member.lastPlayedAt)}</td>
+                        <td className={`hidden py-3 text-right sm:table-cell text-xs font-bold ${member.joinedButSatOut ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{member.joinedButSatOut || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
