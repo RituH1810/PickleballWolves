@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { computeGroupFeed, FEED_DAYS } from "@/lib/group-feed";
 import { loadGroupRoundRobins } from "@/lib/load-hall-of-fame";
 import { summarizeReactions, type ReactionSummary } from "@/lib/reactions";
+import { goodWolfClosesAt, goodWolfResult } from "@/lib/good-wolf";
 
 export const feedTarget = (groupId: string, itemId: string) => `${groupId}:${itemId}`;
 
@@ -24,7 +25,13 @@ export async function loadGroupFeed(groupId: string, viewerId: string, now = new
     prisma.playerOfTheWeek.findMany({ where: { groupId, createdAt: { gte: since } }, select: { userId: true, weekStart: true, createdAt: true } }),
   ]);
 
+  // Good Wolf winners for round robins whose voting closed in the feed's window.
+  const recentlyClosed = roundRobins.filter((roundRobin) => goodWolfClosesAt(roundRobin.endedAt) >= since && goodWolfClosesAt(roundRobin.endedAt) <= now);
+  const votes = recentlyClosed.length ? await prisma.goodWolfVote.findMany({ where: { roundRobinId: { in: recentlyClosed.map((roundRobin) => roundRobin.id) } }, select: { roundRobinId: true, nomineeId: true } }).catch(() => []) : [];
+  const goodWolves = recentlyClosed.map((roundRobin) => ({ roundRobinId: roundRobin.id, name: roundRobin.name, at: goodWolfClosesAt(roundRobin.endedAt), winnerIds: goodWolfResult(votes.filter((vote) => vote.roundRobinId === roundRobin.id).map((vote) => vote.nomineeId), roundRobin.endedAt, now).winners.map((winner) => winner.userId) }));
+
   const items = computeGroupFeed({
+    goodWolves,
     roundRobins,
     ratingRows: ratingRows.map((row) => ({ userId: row.userId, ratingBefore: Number(row.ratingBefore), ratingAfter: Number(row.ratingAfter), createdAt: row.createdAt })),
     unlocks,

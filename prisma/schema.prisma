@@ -682,6 +682,19 @@ model Reaction {
   @@index([targetType, targetId])
 }
 
+// An anonymous Good Wolf (sportsmanship) vote after a round robin (lib/good-wolf.ts). voterId is kept
+// only so each player votes once; the app never shows who voted or for whom, just the winner.
+model GoodWolfVote {
+  id           String   @id @default(cuid())
+  roundRobinId String
+  voterId      String
+  nomineeId    String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@unique([roundRobinId, voterId])
+  @@index([nomineeId])
+}
+
 // A group's awards for one calendar month (e.g. "2026-10"), computed on the 1st of the next month.
 model MonthlyAward {
   id        String   @id @default(cuid())

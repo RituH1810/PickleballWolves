@@ -16,7 +16,7 @@ export const STREAK_STEP = 5;
 const RECORD_MIN_GAMES = 10;
 
 type PlayerRef = { userId: string; name: string };
-export type FeedKind = "champion" | "rating" | "streak" | "games" | "record" | "badge" | "potw" | "joined";
+export type FeedKind = "champion" | "rating" | "streak" | "games" | "record" | "badge" | "potw" | "joined" | "goodWolf";
 export type FeedItem = { id: string; kind: FeedKind; at: Date; players: PlayerRef[]; text: string; href: string | null };
 
 export type FeedInput = {
@@ -26,6 +26,8 @@ export type FeedInput = {
   unlocks: { userId: string; achievementId: string; unlockedAt: Date }[];
   playersOfTheWeek: { userId: string; weekStart: Date; createdAt: Date }[];
   joins: { userId: string; joinedAt: Date }[];
+  /** Good Wolf winners of round robins whose (anonymous) voting has closed, at the close. */
+  goodWolves?: { roundRobinId: string; name: string; winnerIds: string[]; at: Date }[];
   /** Active members by id; only they appear in the feed. */
   members: Map<string, string>;
   now: Date;
@@ -112,6 +114,10 @@ export function computeGroupFeed(input: FeedInput): FeedItem[] {
   for (const pick of input.playersOfTheWeek) {
     const who = member(pick.userId);
     if (who) items.push({ id: `potw:${pick.userId}:${pick.weekStart.toISOString()}`, kind: "potw", at: pick.createdAt, players: [who], text: `${who.name} is Player of the Week`, href: null });
+  }
+  for (const award of input.goodWolves ?? []) {
+    const winners = award.winnerIds.map(member).filter((entry): entry is PlayerRef => entry !== null);
+    if (winners.length) items.push({ id: `goodWolf:${award.roundRobinId}`, kind: "goodWolf", at: award.at, players: winners, text: `${names(winners)} ${winners.length > 1 ? "were" : "was"} voted Good Wolf at ${award.name} for best sportsmanship`, href: `/round-robin/${award.roundRobinId}` });
   }
   for (const join of input.joins) {
     const who = member(join.userId);

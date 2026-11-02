@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Activity, Crown, Flame, Gauge, Medal, Star, TrendingUp, Trophy, UserPlus, type LucideIcon } from "lucide-react";
+import { Activity, Crown, Flame, Gauge, Medal, PawPrint, Star, TrendingUp, Trophy, UserPlus, type LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { Reactions } from "@/components/reactions";
 import type { FeedKind } from "@/lib/group-feed";
@@ -10,7 +10,7 @@ import type { ReactionSummary } from "@/lib/reactions";
 
 type Item = { id: string; kind: FeedKind; at: string; players: { userId: string; name: string; photoUrl: string | null }[]; text: string; href: string | null };
 
-const ICONS: Record<FeedKind, LucideIcon> = { champion: Crown, rating: TrendingUp, streak: Flame, games: Gauge, record: Trophy, badge: Medal, potw: Star, joined: UserPlus };
+const ICONS: Record<FeedKind, LucideIcon> = { champion: Crown, rating: TrendingUp, streak: Flame, games: Gauge, record: Trophy, badge: Medal, potw: Star, joined: UserPlus, goodWolf: PawPrint };
 const FIRST_SHOWN = 6;
 
 // Calendar days in the viewer's time zone, like the insights page.

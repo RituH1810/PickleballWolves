@@ -8,6 +8,7 @@ import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
 import { ScoutPanel } from "@/components/scout-panel";
+import { GoodWolfVote } from "@/components/good-wolf-vote";
 import { playoffSpots, type PlayoffSize } from "@/lib/playoffs";
 import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
@@ -572,6 +573,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         )}
 
         {room.status === "COMPLETED" && <RoundRobinRecap roundRobinId={roundRobinId} name={room.name} played={[...rounds.flatMap((round) => round.matches), ...manualMatches].some((match) => match.scores.length > 0 && match.players.some((player) => player.userId === room.myUserId))} />}
+        {room.status === "COMPLETED" && <GoodWolfVote roundRobinId={roundRobinId} />}
         {(room.canRun || room.isGroupMember || room.myRsvpStatus === "JOINED") && <GameChat roundRobinId={roundRobinId} />}
 
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">

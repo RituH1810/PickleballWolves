@@ -25,3 +25,4 @@ ALTER TABLE public."TournamentAsset" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."TournamentSponsor" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public."Reaction" ENABLE ROW LEVEL SECURITY; -- emoji reactions, added Oct 27 2026
 ALTER TABLE public."PlayStyle" ENABLE ROW LEVEL SECURITY; -- playing style tags, added Nov 1 2026
+ALTER TABLE public."GoodWolfVote" ENABLE ROW LEVEL SECURITY; -- anonymous sportsmanship votes, added Nov 2 2026

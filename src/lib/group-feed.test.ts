@@ -48,6 +48,11 @@ describe("computeGroupFeed", () => {
     expect(texts(feed)).toEqual(["ANN earned the Dynasty badge", "BO is Player of the Week", "DEE joined the group -- say hi!"]);
   });
 
+  it("announces Good Wolf winners, members only", () => {
+    const feed = computeGroupFeed(input({ goodWolves: [{ roundRobinId: "rr9", name: "Friday Night", winnerIds: ["bo", "zed"], at: day(-1) }] }));
+    expect(feed).toEqual([expect.objectContaining({ id: "goodWolf:rr9", kind: "goodWolf", text: "BO was voted Good Wolf at Friday Night for best sportsmanship", href: "/round-robin/rr9" })]);
+  });
+
   it("keeps only the last 30 days, newest first", () => {
     const feed = computeGroupFeed(input({ joins: [{ userId: "ann", joinedAt: day(-40) }, { userId: "bo", joinedAt: day(-2) }, { userId: "cy", joinedAt: day(-1) }] }));
     expect(feed.map((item) => item.id)).toEqual(["joined:cy", "joined:bo"]);
