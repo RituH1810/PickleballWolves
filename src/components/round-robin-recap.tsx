@@ -47,11 +47,11 @@ export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundR
   return (
     <section className="mt-6 overflow-hidden rounded-[24px] border border-[var(--line)] bg-[var(--panel)]">
       <div className="bg-[var(--lime)] p-6 text-[#0f1712] sm:p-8">
-        <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[.18em]"><Crown size={16} />{recap.champions.length > 1 ? "Co-champions" : "Champion"}</p>
+        <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[.18em]"><Crown size={16} />{recap.wonPlayoffs ? (recap.champions.length > 1 ? "Playoff champions" : "Playoff champion") : recap.champions.length > 1 ? "Co-champions" : "Champion"}</p>
         <h2 className="mt-2 text-3xl font-black tracking-[-.04em] sm:text-4xl">
           {recap.champions.map((entry, index) => <span key={entry.userId}>{index > 0 && ", "}<Link href={`/players/${entry.userId}`} className="hover:underline">{entry.name}</Link></span>)}
         </h2>
-        <p className="mt-2 text-sm font-bold text-[#3c4a1e]">{first.wins}-{first.losses} · {first.differential > 0 ? "+" : ""}{first.differential} point differential{recap.undefeated && " · undefeated"}</p>
+        <p className="mt-2 text-sm font-bold text-[#3c4a1e]">{recap.wonPlayoffs && "Won the final · "}{first.wins}-{first.losses} · {first.differential > 0 ? "+" : ""}{first.differential} point differential{recap.undefeated && " · undefeated"}</p>
       </div>
 
       <div className="p-6 sm:p-8">

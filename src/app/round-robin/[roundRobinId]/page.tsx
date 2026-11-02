@@ -8,6 +8,7 @@ import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
 import { ScoutPanel } from "@/components/scout-panel";
+import { playoffSpots, type PlayoffSize } from "@/lib/playoffs";
 import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
 import { AddGuestPlayer } from "@/components/add-guest-player";
@@ -19,7 +20,7 @@ import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
 
 type Match = { prediction?: Prediction | null; myStakes?: { win: number; lose: number } | null; id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
-type Round = { id: string; roundNumber: number; matches: Match[] };
+type Round = { id: string; roundNumber: number; stage: "SEMIFINAL" | "FINAL" | null; matches: Match[] };
 type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string; isGuest?: boolean; fromOutside?: boolean };
 type RoomInfo = { createdById: string; canRun: boolean; coHosts: { id: string; name: string }[]; name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null; playerRatings: Record<string, number> };
@@ -42,6 +43,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [pendingPartner, setPendingPartner] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [addingRound, setAddingRound] = useState(false);
+  const [playoffBusy, setPlayoffBusy] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [shareMessage, setShareMessage] = useState("");
@@ -234,6 +236,29 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     await loadRoom();
     showNotice(`Round ${data.roundNumber} added!`, "success");
     setAddingRound(false);
+  }
+
+  async function startPlayoffs(size: PlayoffSize) {
+    const label = size === "FINAL" ? "a final" : "semifinals and a final";
+    if (!window.confirm(`Start ${label} from the current standings? No more regular rounds can be added after this.`)) return;
+    setPlayoffBusy(true);
+    const response = await fetch(`/api/round-robin/${roundRobinId}/playoffs`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ size }) });
+    const data = await response.json().catch(() => null);
+    setPlayoffBusy(false);
+    if (!response.ok) { showNotice(data?.error ?? "Unable to start playoffs.", "error"); return; }
+    await loadRoom();
+    showNotice(size === "FINAL" ? "Final is set -- good luck!" : "Semifinals are set. The final fills in once both are scored.", "success");
+  }
+
+  async function cancelPlayoffs() {
+    if (!window.confirm("Call off the playoffs? The playoff matches will be removed.")) return;
+    setPlayoffBusy(true);
+    const response = await fetch(`/api/round-robin/${roundRobinId}/playoffs`, { method: "DELETE" });
+    const data = await response.json().catch(() => null);
+    setPlayoffBusy(false);
+    if (!response.ok) { showNotice(data?.error ?? "Unable to call off playoffs.", "error"); return; }
+    await loadRoom();
+    showNotice("Playoffs called off.", "success");
   }
 
   function toggleMatchAssignment(playerId: string) {
@@ -554,7 +579,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
               <div className="flex items-center gap-4">
-                {rounds.length > 0 && room.partnerFormat !== "MANUAL" && (room.canRun || room.isGroupMember) && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
+                {rounds.length > 0 && !rounds.some((round) => round.stage) && room.partnerFormat !== "MANUAL" && (room.canRun || room.isGroupMember) && <button onClick={addRound} disabled={addingRound} className="text-xs font-bold text-[var(--lime-deep)] disabled:cursor-not-allowed disabled:opacity-60">{addingRound ? "Adding round..." : "+ Add round"}</button>}
                 <button onClick={() => loadRoom()} className="text-xs font-bold text-[var(--lime-deep)]">Refresh standings</button>
               </div>
             </div>
@@ -570,11 +595,12 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                 </div>
               </section>
             )}
-            {rounds.map((round) => (
-              <section key={round.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
+            {/* Playoff rounds first (final on top) -- they're what's being played now. */}
+            {[...rounds].sort((a, b) => Number(Boolean(b.stage)) - Number(Boolean(a.stage)) || (a.stage ? b.roundNumber - a.roundNumber : a.roundNumber - b.roundNumber)).map((round) => (
+              <section key={round.id} className={`rounded-[20px] border bg-[var(--panel)] p-5 ${round.stage ? "border-[var(--lime-deep)]" : "border-[var(--line)]"}`}>
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="font-extrabold">Round {round.roundNumber}</h3>
-                  <span className="text-xs text-[var(--ink-soft)]">{round.matches.length} courts active</span>
+                  <h3 className="flex items-center gap-2 font-extrabold">{round.stage && <Trophy size={16} className="text-[var(--lime)]" />}{round.stage === "FINAL" ? "Final" : round.stage === "SEMIFINAL" ? "Semifinals" : `Round ${round.roundNumber}`}</h3>
+                  <span className="text-xs text-[var(--ink-soft)]">{round.stage === "FINAL" ? "Winner takes the night" : round.stage === "SEMIFINAL" ? "Winners meet in the final" : `${round.matches.length} courts active`}</span>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   {round.matches.map((match) => <MatchCard key={`${match.id}:${match.scores[0]?.sideAScore ?? ""}:${match.scores[0]?.sideBScore ?? ""}`} match={match} onSave={saveScore} onDelete={deleteMatch} canManage={room.canRun || room.myRsvpStatus === "JOINED"} canScore={room.canRun || room.myRsvpStatus === "JOINED" || match.players.some((player) => player.userId === room.myUserId)} />)}
@@ -604,6 +630,26 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                 </div>
               ))}
             </div>
+            {/* Optional night-end playoffs: the top of the standings play for the night. */}
+            {room.canRun && room.status !== "COMPLETED" && standings.length > 0 && (() => {
+              const playoffRounds = rounds.filter((round) => round.stage);
+              const unit = room.playFormat === "SINGLES" ? "player" : room.partnerFormat === "FIXED" ? "team" : "rotating";
+              const top = (size: PlayoffSize) => `top ${playoffSpots(size, unit)}${unit === "team" ? " teams" : ""}`;
+              if (playoffRounds.length) {
+                const anyScored = playoffRounds.some((round) => round.matches.some((match) => match.scores.length));
+                return anyScored ? null : <button onClick={cancelPlayoffs} disabled={playoffBusy} className="mt-4 text-xs font-bold text-[var(--coral)] hover:underline disabled:opacity-60">Call off playoffs</button>;
+              }
+              return (
+                <div className="mt-5 border-t border-[var(--line)] pt-4">
+                  <p className="text-xs font-extrabold">Playoffs <span className="font-semibold text-[var(--ink-soft)]">(optional)</span></p>
+                  <p className="mt-1 text-[11px] text-[var(--ink-soft)]">End the night with the top of the standings playing for the title. Playoff games count for ratings, not standings.</p>
+                  <div className="mt-3 grid gap-2">
+                    <button onClick={() => startPlayoffs("FINAL")} disabled={playoffBusy} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold hover:bg-[#1c2a1a] disabled:opacity-60">Final · {top("FINAL")}</button>
+                    <button onClick={() => startPlayoffs("SEMIS")} disabled={playoffBusy} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold hover:bg-[#1c2a1a] disabled:opacity-60">Semis + final · {top("SEMIS")}</button>
+                  </div>
+                </div>
+              );
+            })()}
           </aside>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { isUpset, predictMatch } from "./match-prediction";
+import { playoffWinners } from "./playoffs";
 
 // Rating history rows for a round robin's matches: the change, and (for upsets) the rating going in.
 export type RatingRow = { userId: string; matchId: string | null; ratingDelta: number; ratingBefore?: number };
@@ -7,7 +8,27 @@ export type RecapMatch = {
   id: string;
   players: { userId: string; name: string; side: "A" | "B" }[];
   scores: { gameNumber: number; sideAScore: number; sideBScore: number }[];
+  /** Set on night-end playoff matches (see lib/playoffs.ts); they're left out of the standings. */
+  stage?: string | null;
 };
+
+/**
+ * The night's standings (regular matches only) and its champions: the winners of a scored playoff
+ * final if there is one, otherwise everyone level on wins and differential at the top.
+ */
+function standingsAndChampions(scored: RecapMatch[]) {
+  const regular = scored.filter((match) => !match.stage);
+  const standings = computeRoundRobinStandings(regular.length ? regular : scored);
+  const final = scored.find((match) => match.stage === "FINAL");
+  const finalWinners = final ? playoffWinners(final) : null;
+  if (finalWinners) {
+    const champions = finalWinners.map((userId) => standings.find((entry) => entry.userId === userId)).filter((entry): entry is Standing => Boolean(entry));
+    if (champions.length) return { standings, champions, wonPlayoffs: true };
+  }
+  const leader = standings[0];
+  // Ties on both wins and differential share the title rather than being split by name order.
+  return { standings, champions: standings.filter((entry) => entry.wins === leader.wins && entry.differential === leader.differential), wonPlayoffs: false };
+}
 
 export type Standing = { rank: number; userId: string; name: string; wins: number; losses: number; scored: number; conceded: number; matches: number; winPct: number; differential: number };
 
@@ -42,6 +63,8 @@ type PlayerHighlight = PlayerRef & { value: number };
 
 export type Recap = {
   champions: Standing[];
+  /** True when the champions won a playoff final rather than topping the standings. */
+  wonPlayoffs: boolean;
   podium: Standing[];
   undefeated: boolean;
   totals: { players: number; games: number; points: number };
@@ -62,10 +85,8 @@ function names(players: PlayerRef[]) {
 export function computeRecap(matches: RecapMatch[], ratingDeltas: RatingRow[] = []): Recap | null {
   const scored = matches.filter((match) => match.scores.length > 0);
   if (!scored.length) return null;
-  const standings = computeRoundRobinStandings(scored);
-  const leader = standings[0];
-  // Ties on both wins and differential share the title rather than being split by name order.
-  const champions = standings.filter((entry) => entry.wins === leader.wins && entry.differential === leader.differential);
+  const { standings, champions, wonPlayoffs } = standingsAndChampions(scored);
+  const leader = champions[0];
 
   const games: GameHighlight[] = [];
   for (const match of scored) {
@@ -111,8 +132,9 @@ export function computeRecap(matches: RecapMatch[], ratingDeltas: RatingRow[] = 
 
   return {
     champions,
+    wonPlayoffs,
     podium: standings.slice(0, 3),
-    undefeated: champions.length === 1 && leader.losses === 0 && leader.wins > 0,
+    undefeated: !wonPlayoffs && champions.length === 1 && leader.losses === 0 && leader.wins > 0,
     totals: { players: standings.length, games: games.length, points: games.reduce((total, game) => total + game.winnerScore + game.loserScore, 0) },
     biggestWin,
     // With a single game the closest game is the biggest win too -- don't repeat it.
@@ -127,7 +149,7 @@ export function computeRecap(matches: RecapMatch[], ratingDeltas: RatingRow[] = 
 /** Plain-text recap for WhatsApp / group chats. */
 export function recapShareText(name: string, recap: Recap, url: string) {
   const lines = [`🏆 ${name} recap`];
-  lines.push(`Champion${recap.champions.length > 1 ? "s" : ""}: ${recap.champions.map((entry) => `${entry.name} (${entry.wins}-${entry.losses})`).join(", ")}${recap.undefeated ? " -- undefeated!" : ""}`);
+  lines.push(`${recap.wonPlayoffs ? "Playoff champion" : "Champion"}${recap.champions.length > 1 ? "s" : ""}: ${recap.champions.map((entry) => `${entry.name} (${entry.wins}-${entry.losses})`).join(", ")}${recap.undefeated ? " -- undefeated!" : ""}`);
   recap.podium.forEach((entry) => lines.push(`${entry.rank}. ${entry.name} ${entry.wins}-${entry.losses} (${entry.differential > 0 ? "+" : ""}${entry.differential})`));
   if (recap.biggestWin) lines.push(`Biggest win: ${names(recap.biggestWin.winners)} ${recap.biggestWin.winnerScore}-${recap.biggestWin.loserScore}`);
   if (recap.closestGame) lines.push(`Closest game: ${names(recap.closestGame.winners)} ${recap.closestGame.winnerScore}-${recap.closestGame.loserScore}`);
@@ -167,8 +189,9 @@ export function ordinal(n: number) {
 export function computePlayerRecap(matches: RecapMatch[], userId: string, ratingDeltas: { userId: string; matchId: string | null; ratingDelta: number }[] = []): PlayerRecap | null {
   const scored = matches.filter((match) => match.scores.length > 0 && match.players.some((player) => player.userId === userId));
   if (!scored.length) return null;
-  const standings = computeRoundRobinStandings(matches.filter((match) => match.scores.length > 0));
-  const mine = standings.find((entry) => entry.userId === userId)!;
+  const { standings, champions } = standingsAndChampions(matches.filter((match) => match.scores.length > 0));
+  // A player who only played in the playoffs has no standing; count them from their playoff games.
+  const mine = standings.find((entry) => entry.userId === userId) ?? computeRoundRobinStandings(scored).find((entry) => entry.userId === userId)!;
   // Players level on wins and differential share a place, same as the recap's co-champions.
   const rank = standings.findIndex((entry) => entry.wins === mine.wins && entry.differential === mine.differential) + 1;
   const tiedWith = standings.filter((entry) => entry.userId !== userId && entry.wins === mine.wins && entry.differential === mine.differential).length;
@@ -213,7 +236,7 @@ export function computePlayerRecap(matches: RecapMatch[], userId: string, rating
     rank,
     tiedWith,
     players: standings.length,
-    champion: rank === 1,
+    champion: champions.some((entry) => entry.userId === userId),
     wins: mine.wins,
     losses: mine.losses,
     scored: mine.scored,

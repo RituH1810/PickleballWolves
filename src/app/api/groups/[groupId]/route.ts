@@ -42,7 +42,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
     where: { groupId, status: "COMPLETED", matches: { some: { deletedAt: null, scores: { some: {} } } } },
     orderBy: { scheduledAt: { sort: "desc", nulls: "last" } },
     take: 5,
-    include: { matches: { where: { deletedAt: null }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } } },
+    include: { matches: { where: { deletedAt: null }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true, round: { select: { stage: true } } } } },
   }) : [];
 
   let pendingRequests: { id: string; name: string; photoUrl: string | null }[] = [];
@@ -112,7 +112,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       // Round robins are private to the group -- don't list them for non-members browsing the group page.
       roundRobins: isActiveMember ? group.roundRobins.map((roundRobin) => ({ id: roundRobin.id, name: roundRobin.name, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat })) : [],
       recentRoundRobins: recentRoundRobins.map((roundRobin) => {
-        const recap = computeRecap(roundRobin.matches.map((match) => ({ id: match.id, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores })));
+        const recap = computeRecap(roundRobin.matches.map((match) => ({ id: match.id, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores, stage: match.round?.stage ?? null })));
         return { id: roundRobin.id, name: roundRobin.name, status: roundRobin.status, scheduledAt: roundRobin.scheduledAt, playFormat: roundRobin.playFormat, partnerFormat: roundRobin.partnerFormat, gameCount: recap?.totals.games ?? 0, champions: recap?.champions.map((entry) => ({ id: entry.userId, name: entry.name, wins: entry.wins, losses: entry.losses })) ?? [] };
       }),
       isMember: Boolean(myMembership),

@@ -15,7 +15,7 @@ export async function loadGroupRoundRobins(groupId: string): Promise<{ roundRobi
       completedAt: true,
       createdAt: true,
       // Every scored match counts, like the recap; updatedAt (when the score was saved) orders them.
-      matches: { where: { deletedAt: null, scores: { some: {} } }, select: { id: true, updatedAt: true, players: { select: { userId: true, side: true, user: { select: { name: true, isGuest: true } } } }, scores: { select: { gameNumber: true, sideAScore: true, sideBScore: true } } } },
+      matches: { where: { deletedAt: null, scores: { some: {} } }, select: { id: true, updatedAt: true, round: { select: { stage: true } }, players: { select: { userId: true, side: true, user: { select: { name: true, isGuest: true } } } }, scores: { select: { gameNumber: true, sideAScore: true, sideBScore: true } } } },
     },
   });
   return {
@@ -24,7 +24,7 @@ export async function loadGroupRoundRobins(groupId: string): Promise<{ roundRobi
       id: roundRobin.id,
       name: roundRobin.name,
       endedAt: roundRobin.completedAt ?? roundRobin.createdAt,
-      matches: roundRobin.matches.map((match) => ({ id: match.id, playedAt: match.updatedAt, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores })),
+      matches: roundRobin.matches.map((match) => ({ id: match.id, playedAt: match.updatedAt, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores, stage: match.round?.stage ?? null })),
     })),
   };
 }

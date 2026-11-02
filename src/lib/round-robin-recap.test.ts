@@ -75,6 +75,31 @@ describe("computeRecap", () => {
   });
 });
 
+describe("playoffs", () => {
+  // Standings: Ann 3-0, Di, Bo, Cy. In the final Bo & Cy beat Ann & Di.
+  const final = { ...doubles("f", ["Ann", "Di"], ["Bo", "Cy"], [8, 11]), stage: "FINAL" };
+
+  it("crowns the final's winners and keeps playoff games out of the standings", () => {
+    const recap = computeRecap([...matches, final])!;
+    expect(recap.wonPlayoffs).toBe(true);
+    expect(recap.champions.map((entry) => entry.name).sort()).toEqual(["Bo", "Cy"]);
+    expect(recap.podium[0]).toMatchObject({ name: "Ann", wins: 3, losses: 0 });
+    expect(recap.undefeated).toBe(false);
+    expect(recapShareText("Tuesday", recap, "https://x")).toContain("Playoff champions: ");
+  });
+
+  it("tops the standings until the final is scored", () => {
+    const recap = computeRecap([...matches, { ...final, scores: [] }])!;
+    expect(recap.wonPlayoffs).toBe(false);
+    expect(recap.champions.map((entry) => entry.name)).toEqual(["Ann"]);
+  });
+
+  it("marks the final's winners as the night's champions in their own recap", () => {
+    expect(computePlayerRecap([...matches, final], "Bo")).toMatchObject({ champion: true, wins: 1 });
+    expect(computePlayerRecap([...matches, final], "Ann")).toMatchObject({ champion: false, rank: 1, wins: 3 });
+  });
+});
+
 describe("recapShareText", () => {
   it("reads like a group-chat post", () => {
     const text = recapShareText("Lancaster Group - Oct 15, 2026", computeRecap(matches)!, "https://example.com/round-robin/x");

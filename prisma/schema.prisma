@@ -337,6 +337,8 @@ model Round {
   roundRobinId String
   roundNumber  Int
   status       String     @default("PENDING")
+  // Night-end playoffs (lib/playoffs.ts): "SEMIFINAL" or "FINAL"; null for a regular round.
+  stage        String?
   roundRobin   RoundRobin @relation(fields: [roundRobinId], references: [id], onDelete: Cascade)
   matches      Match[]
   @@unique([roundRobinId, roundNumber])

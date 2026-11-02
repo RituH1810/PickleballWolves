@@ -18,7 +18,8 @@ export async function GET(_request: Request, context: { params: Promise<{ roundR
     if (!isGroupMember && roundRobin.createdById !== user?.id && !(user && roundRobin.coHostIds.includes(user.id)) && !(user && await isRoundRobinParticipant(roundRobinId, user.id))) return NextResponse.json({ error: "Round robin not found." }, { status: 404 });
   }
 
-  const matches = await prisma.match.findMany({ where: { roundRobinId, deletedAt: null }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } });
+  // Night-end playoff matches don't change the standings.
+  const matches = await prisma.match.findMany({ where: { roundRobinId, deletedAt: null, OR: [{ roundId: null }, { round: { stage: null } }] }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: true } });
   const standings = computeRoundRobinStandings(matches.map((match) => ({ id: match.id, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores })));
   return NextResponse.json({ standings });
 }

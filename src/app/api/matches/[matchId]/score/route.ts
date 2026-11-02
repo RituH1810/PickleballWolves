@@ -7,6 +7,7 @@ import { notify } from "@/lib/notifications";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
 import { recomputeAllRatings } from "@/lib/recompute-ratings";
 import { THIRD_PLACE_POSITION, thirdPlaceSlot } from "@/lib/tournament";
+import { advancePlayoffs } from "@/lib/load-playoffs";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -122,6 +123,8 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   }
 
   // A score can complete a badge (first win, a streak, a bagel...) -- tell whoever just earned one.
+  // A semifinal result can complete the playoff final's lineup (a no-op outside playoffs).
+  if (match.roundRobinId && match.roundId) await advancePlayoffs(match.roundRobinId);
   await announceNewAchievements(match.players.map((player) => player.userId));
   return NextResponse.json({ score, winnerSide, ratingChanges, opponentAvgRating });
 }

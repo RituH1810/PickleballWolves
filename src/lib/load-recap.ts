@@ -6,12 +6,12 @@ import { rankRoundRobinWinners } from "@/lib/round-robin-winners";
 export const PERSONAL_RECAP_HOURS = 24;
 
 async function loadMatches(roundRobinIds: string[]) {
-  const matches = await prisma.match.findMany({ where: { roundRobinId: { in: roundRobinIds }, deletedAt: null }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: { orderBy: { gameNumber: "asc" } } } });
+  const matches = await prisma.match.findMany({ where: { roundRobinId: { in: roundRobinIds }, deletedAt: null }, include: { players: { include: { user: { select: { id: true, name: true } } } }, scores: { orderBy: { gameNumber: "asc" } }, round: { select: { stage: true } } } });
   const ratingDeltas = await prisma.ratingHistory.findMany({ where: { matchId: { in: matches.map((match) => match.id) }, ladderId: null }, select: { userId: true, matchId: true, ratingDelta: true, ratingBefore: true } });
   const byRoundRobin = new Map<string, RecapMatch[]>();
   for (const match of matches) {
     const list = byRoundRobin.get(match.roundRobinId!) ?? [];
-    list.push({ id: match.id, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores });
+    list.push({ id: match.id, players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores, stage: match.round?.stage ?? null });
     byRoundRobin.set(match.roundRobinId!, list);
   }
   return { byRoundRobin, ratingDeltas: ratingDeltas.map((row) => ({ userId: row.userId, matchId: row.matchId, ratingDelta: Number(row.ratingDelta), ratingBefore: Number(row.ratingBefore) })) };

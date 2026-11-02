@@ -39,6 +39,7 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     include: { matches: { where: { deletedAt: null }, include: { players: true } } },
   });
   if (existingRounds.length === 0) return NextResponse.json({ error: "Generate the initial schedule before adding more rounds." }, { status: 400 });
+  if (existingRounds.some((round) => round.stage)) return NextResponse.json({ error: "Playoffs have started, so no more regular rounds can be added." }, { status: 400 });
 
   const isDoubles = roundRobin.playFormat !== "SINGLES";
   const fixedPartners = roundRobin.partnerFormat === "FIXED";
