@@ -6,6 +6,7 @@ import Link from "next/link";
 import { MyRecaps } from "@/components/my-recaps";
 import { DailyTip } from "@/components/daily-tip";
 import { OnThisDay } from "@/components/on-this-day";
+import { AlmostThere } from "@/components/almost-there";
 import { InstallBanner } from "@/components/install-banner";
 import { Activity, ArrowRight, Award, Bell, CalendarDays, ChevronRight, CircleHelp, Grid2X2, LayoutDashboard, MapPin, Menu, PawPrint, Plus, Repeat, Search, Settings, Trophy, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -207,6 +208,7 @@ export function DashboardPage() {
           ))}
         </section>
         {signedIn && <section className="mt-8 grid gap-3 sm:grid-cols-3"><div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">My record</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profileSummary.record}</p><p className="mt-1 text-xs font-semibold text-[var(--lime-deep)]">{profileSummary.winRate} win rate</p></div><div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 flex items-center gap-2 text-3xl font-black tracking-[-.04em]">{typeof profileSummary.rank === "number" ? `#${profileSummary.rank}` : profileSummary.rank} <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--lime-deep)]"><LivePulse />live</span></p><p className="mt-1 text-xs font-semibold text-[var(--ink-soft)]">Across PickleballWolves</p></div><div className="rounded-2xl bg-[#1b211e] p-5 text-white"><p className="text-xs font-bold uppercase tracking-[.14em] text-[#a9b6a9]">Playing this week</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{gamesThisWeek} <span className="text-base font-semibold text-[#a9b6a9]">games</span></p><p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--lime)]"><LivePulse />Live from your events</p></div></section>}
+        {signedIn && <AlmostThere />}
         <DailyTip />
         {signedIn && <OnThisDay />}
         <InstallBanner />
