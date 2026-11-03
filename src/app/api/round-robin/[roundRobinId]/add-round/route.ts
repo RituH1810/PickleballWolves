@@ -3,6 +3,7 @@ import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
+import { pickByeUnit } from "@/lib/game-balance";
 import { sendRevengeAlerts } from "@/lib/send-revenge-alerts";
 
 function shuffle<T>(items: T[]): T[] {
@@ -46,6 +47,11 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
   const newRoundNumber = Math.max(...existingRounds.map((round) => round.roundNumber)) + 1;
   const scheduledAt = roundRobin.scheduledAt ?? new Date();
   const matches: MatchInput[] = [];
+  // Who's in tonight: everyone who has joined (late arrivals included, even before their first
+  // match) plus anyone already scheduled -- except players who've since left.
+  const rsvps = await prisma.roundRobinRSVP.findMany({ where: { roundRobinId }, select: { userId: true, status: true } });
+  const joinedIds = rsvps.filter((rsvp) => rsvp.status === "JOINED").map((rsvp) => rsvp.userId);
+  const leftIds = new Set(rsvps.filter((rsvp) => rsvp.status === "DECLINED").map((rsvp) => rsvp.userId));
 
   if (!isDoubles || fixedPartners) {
     // Stable units (individual players for singles, fixed pairs for teams) never change once
@@ -60,12 +66,16 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
         }
       }
     }
-    const shuffled = shuffle([...units.values()]);
-    if (shuffled.length % 2) shuffled.push(["BYE"]);
+    // A singles player who joined late has no match yet, so add them as their own unit.
+    if (!isDoubles) for (const userId of joinedIds) if (!units.has(userId)) units.set(userId, [userId]);
+    for (const [key, unit] of units) if (unit.some((userId) => leftIds.has(userId))) units.delete(key);
+    // With an odd count, whoever has played the most sits out, so game counts stay even.
+    const gamesOf = (unit: string[]) => existingRounds.reduce((total, round) => total + round.matches.filter((match) => unit.every((userId) => match.players.some((player) => player.userId === userId))).length, 0);
+    const bye = pickByeUnit([...units.values()], gamesOf);
+    const shuffled = shuffle([...units.values()].filter((unit) => unit !== bye));
     for (let index = 0; index < shuffled.length / 2; index++) {
       const teamA = shuffled[index];
       const teamB = shuffled[shuffled.length - 1 - index];
-      if (teamA.includes("BYE") || teamB.includes("BYE")) continue;
       matches.push({ roundRobinId, courtNumber: (index % roundRobin.courtCount) + 1, scheduledAt, players: { create: [...teamA.map((userId) => ({ userId, side: "A" as const })), ...teamB.map((userId) => ({ userId, side: "B" as const }))] } });
     }
   } else {
@@ -77,7 +87,9 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
         for (const player of match.players) matchesPlayed.set(player.userId, (matchesPlayed.get(player.userId) ?? 0) + 1);
       }
     }
-    const playerIds = [...matchesPlayed.keys()];
+    // Late arrivals start at 0, so they're first in line for a court.
+    for (const userId of joinedIds) if (!matchesPlayed.has(userId)) matchesPlayed.set(userId, 0);
+    const playerIds = [...matchesPlayed.keys()].filter((userId) => !leftIds.has(userId));
     const matchesPerRound = Math.min(Math.floor(playerIds.length / 4), roundRobin.courtCount);
     const playersPerRound = matchesPerRound * 4;
     if (matchesPerRound > 0) {

@@ -10,6 +10,7 @@ import { RoundRobinRecap } from "@/components/round-robin-recap";
 import { ScoutPanel } from "@/components/scout-panel";
 import { GoodWolfVote } from "@/components/good-wolf-vote";
 import { playoffSpots, type PlayoffSize } from "@/lib/playoffs";
+import { gameBalance } from "@/lib/game-balance";
 import { GameChat } from "@/components/game-chat";
 import { OutsidePlayerSearch } from "@/components/outside-player-search";
 import { AddGuestPlayer } from "@/components/add-guest-player";
@@ -22,7 +23,7 @@ import { DirectionsLink } from "@/components/directions-link";
 
 type Match = { prediction?: Prediction | null; myStakes?: { win: number; lose: number } | null; id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; stage: "SEMIFINAL" | "FINAL" | null; matches: Match[] };
-type Standing = { rank: number; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
+type Standing = { rank: number; userId: string; name: string; matches: number; wins: number; losses: number; winPct: number; scored: number; conceded: number; differential: number };
 type JoinedPlayer = { id: string; name: string; isGuest?: boolean; fromOutside?: boolean };
 type RoomInfo = { createdById: string; canRun: boolean; coHosts: { id: string; name: string }[]; name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null; playerRatings: Record<string, number> };
 
@@ -612,6 +613,21 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
           </section>
           <aside className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
             <div className="flex items-center gap-2"><Trophy size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Standings</h2></div>
+            {/* Equal games guard: who's fallen behind on games while the night is still on. */}
+            {room.status !== "COMPLETED" && (() => {
+              const balance = gameBalance([
+                ...standings.map((player) => ({ userId: player.userId, name: player.name, games: player.matches })),
+                ...room.joinedPlayers.filter((player) => !standings.some((entry) => entry.userId === player.id)).map((player) => ({ userId: player.id, name: player.name, games: 0 })),
+              ]);
+              if (!balance.uneven) return null;
+              return (
+                <div role="status" className="mt-3 rounded-xl border border-[#8a6a2a] bg-[#2a2414] p-3 text-[11px] leading-5 text-[#f0d28a]">
+                  <p className="font-black">Uneven games · most played: {balance.most}</p>
+                  <p>{balance.behind.map((player) => `${player.name} ${player.games}`).join(" · ")}</p>
+                  <p className="mt-1 text-[#c9b27a]">{room.partnerFormat === "MANUAL" ? "Suggest a match picks them first." : "+ Add round gives them courts first."} Even games keep the standings fair.</p>
+                </div>
+              );
+            })()}
             <div className="mt-4 space-y-2">
               {standings.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No results yet.</p>}
               {standings.map((player) => (
