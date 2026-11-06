@@ -28,7 +28,7 @@ type MyRoundRobin = { id: string; name: string; groupName: string | null; playFo
 type PendingChallenge = { id: string; challengerName: string; ladderName: string; deadlineAt: string };
 
 const pendingPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
-const pendingPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners" };
+const pendingPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners" };
 
 function Logo() {
   return <div className="flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#1b211e] text-sm font-black tracking-tight text-[var(--lime)]">PW</div><div><p className="text-[15px] font-extrabold tracking-tight">Pickleball<span className="text-[var(--lime-deep)]">Wolves</span></p><p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[var(--ink-soft)]">Find your pack</p></div></div>;

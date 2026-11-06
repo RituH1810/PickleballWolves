@@ -9,7 +9,7 @@ type PollOption = { id: string; startsAt: string; votes: number; voters: string[
 type Poll = { id: string; question: string; status: "OPEN" | "SCHEDULED" | "CLOSED"; createdByName: string; scheduledRoundRobinId: string | null; voterCount: number; options: PollOption[] };
 
 const playFormatLabels: Record<string, string> = { DOUBLES: "Doubles", SINGLES: "Singles", MIXED: "Mixed doubles" };
-const partnerFormatLabels: Record<string, string> = { MANUAL: "Dink Draft", ROTATE: "Rotating partners", FIXED: "Fixed partners" };
+const partnerFormatLabels: Record<string, string> = { MANUAL: "Dink Draft", ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners" };
 
 function when(iso: string) {
   return new Date(iso).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });

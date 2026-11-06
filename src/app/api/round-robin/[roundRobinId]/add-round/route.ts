@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
 import { pickByeUnit } from "@/lib/game-balance";
 import { sendRevengeAlerts } from "@/lib/send-revenge-alerts";
+import { mixerHistoryFromMatches, planMixerRound } from "@/lib/mixer";
 
 function shuffle<T>(items: T[]): T[] {
   const array = [...items];
@@ -94,7 +95,13 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     const playersPerRound = matchesPerRound * 4;
     if (matchesPerRound > 0) {
       const playing = shuffle(playerIds).sort((a, b) => matchesPlayed.get(a)! - matchesPlayed.get(b)!).slice(0, playersPerRound);
-      const teams = Array.from({ length: matchesPerRound * 2 }, (_, i) => [playing[i * 2], playing[i * 2 + 1]]);
+      let teams = Array.from({ length: matchesPerRound * 2 }, (_, i) => [playing[i * 2], playing[i * 2 + 1]]);
+      if (roundRobin.partnerFormat === "MIXER") {
+        // Mixer mode: avoid anyone partnering again tonight, pair strong with newer players.
+        const ratings = new Map((await prisma.user.findMany({ where: { id: { in: playing } }, select: { id: true, skillRating: true } })).map((player) => [player.id, Number(player.skillRating)]));
+        const history = mixerHistoryFromMatches(existingRounds.flatMap((round) => round.matches));
+        teams = planMixerRound(playing.map((id) => ({ id, rating: ratings.get(id) ?? 0 })), history).flatMap(([teamA, teamB]) => [teamA, teamB]);
+      }
       for (let index = 0; index < matchesPerRound; index++) {
         const teamA = teams[index * 2];
         const teamB = teams[index * 2 + 1];

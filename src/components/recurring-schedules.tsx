@@ -8,7 +8,7 @@ import { DAY_LABELS, GENERATE_AHEAD_DAYS } from "@/lib/recurring";
 type Schedule = { id: string; description: string; daysOfWeek: number[]; timeOfDay: string; timeZone: string; playFormat: string; partnerFormat: string; courtCount: number; pointsToWin: number; winBy: number; alwaysInCount: number; amAlwaysIn: boolean; createdByName: string; nextGame: { id: string; name: string; scheduledAt: string } | null };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
-const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
+const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
 const EMPTY_DRAFT = { daysOfWeek: [] as number[], timeOfDay: "18:30", courtCount: "1", playFormat: "DOUBLES", partnerFormat: "ROTATE", pointsToWin: "11" };
 
 /** A group's standing weekly games. Organizers set them up; everyone sees what's coming. */

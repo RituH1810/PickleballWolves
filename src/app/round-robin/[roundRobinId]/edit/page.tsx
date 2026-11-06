@@ -42,6 +42,7 @@ const playFormats = [
 
 const partnerFormats = [
   { id: "ROTATE", label: "Rotate", detail: "Get a new partner every round." },
+  { id: "MIXER", label: "Mixer", detail: "No repeat partners; strong players pair with newer ones." },
   { id: "FIXED", label: "Fixed", detail: "Keep the same partner all event." },
   { id: "MANUAL", label: "Dink Draft", detail: "Skip auto-scheduling -- build every matchup yourself." },
 ];
@@ -254,7 +255,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
           {form.playFormat !== "SINGLES" && (
             <>
               <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Partner format</p>
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 grid grid-cols-2 gap-2 sm:flex">
                 {partnerFormats.map((option) => (
                   <button key={option.id} onClick={() => { setForm({ ...form, partnerFormat: option.id }); setTeams([]); setPendingPartner(null); }} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.partnerFormat === option.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
                     <span className="block text-sm font-bold">{option.label}</span>

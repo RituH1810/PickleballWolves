@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   if (scheduledAt && Number.isNaN(scheduledAt.getTime())) return NextResponse.json({ error: "Enter a valid date and time." }, { status: 400 });
   if (groupId && !scheduledAt) return NextResponse.json({ error: "Pick a date and time so the group knows when to show up." }, { status: 400 });
 
-  const partnerFormat = ["ROTATE", "FIXED", "MANUAL"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
+  const partnerFormat = ["ROTATE", "MIXER", "FIXED", "MANUAL"].includes(body.partnerFormat) ? body.partnerFormat : "ROTATE";
   // Outside a group there are no RSVPs, so a Dink Draft needs its roster up front: the players
   // picked in the builder are recorded as JOINED, which is exactly who the match picker offers.
   let rosterIds: string[] = [];

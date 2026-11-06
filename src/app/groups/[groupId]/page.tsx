@@ -27,7 +27,7 @@ type PendingRequest = { id: string; name: string; photoUrl: string | null };
 type Group = { id: string; name: string; location: string; description: string; memberCount: number; members: Member[]; leaderboard: LeaderboardEntry[]; recentResults: RecentResult[]; events: GroupEvent[]; roundRobins: GroupRoundRobin[]; recentRoundRobins: RecentRoundRobin[]; isMember: boolean; myRole: string | null; myId: string | null; createdById: string; myStatus: "ACTIVE" | "PENDING" | "DECLINED" | null; pendingRequests: PendingRequest[] };
 
 const groupPlayFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
-const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
+const groupPartnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
 
 export default function GroupDetailPage({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = use(params);

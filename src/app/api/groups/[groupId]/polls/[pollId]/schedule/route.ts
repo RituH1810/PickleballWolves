@@ -34,7 +34,7 @@ export async function POST(request: Request, context: { params: Promise<{ groupI
     scheduledAt: option.startsAt,
     timeZone: poll.timeZone,
     playFormat: ["SINGLES", "DOUBLES", "MIXED"].includes(body?.playFormat) ? body.playFormat : "DOUBLES",
-    partnerFormat: ["ROTATE", "FIXED", "MANUAL"].includes(body?.partnerFormat) ? body.partnerFormat : "MANUAL",
+    partnerFormat: ["ROTATE", "MIXER", "FIXED", "MANUAL"].includes(body?.partnerFormat) ? body.partnerFormat : "MANUAL",
     courtCount: Number.isInteger(courtCount) && courtCount >= 1 && courtCount <= 20 ? courtCount : 1,
     pointsToWin: [11, 15, 21].includes(Number(body?.pointsToWin)) ? Number(body.pointsToWin) : 11,
     joinIds: option.votes.map((vote) => vote.userId),

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { canRunRoundRobin } from "@/lib/round-robin-access";
 import { sendRevengeAlerts } from "@/lib/send-revenge-alerts";
+import { emptyMixerHistory, planMixerRound, recordMixerMatches, type MixerMatch } from "@/lib/mixer";
 
 function shuffle<T>(items: T[]): T[] {
   const array = [...items];
@@ -99,11 +100,20 @@ export async function POST(request: Request, context: { params: Promise<{ roundR
     const matchesPerRound = Math.min(Math.floor(playerIds.length / 4), roundRobin.courtCount);
     const playersPerRound = matchesPerRound * 4;
     const matchesPlayed = new Map(playerIds.map((id) => [id, 0]));
+    // Mixer mode: no repeat partners, strong players paired with newer ones (lib/mixer.ts).
+    const mixer = roundRobin.partnerFormat === "MIXER";
+    const ratings = mixer ? new Map((await prisma.user.findMany({ where: { id: { in: playerIds } }, select: { id: true, skillRating: true } })).map((player) => [player.id, Number(player.skillRating)])) : new Map<string, number>();
+    const mixerHistory = emptyMixerHistory();
     for (let roundNumber = 1; roundNumber <= roundRobin.roundCount; roundNumber++) {
       const matches: MatchInput[] = [];
       if (matchesPerRound > 0) {
         const playing = shuffle(playerIds).sort((a, b) => matchesPlayed.get(a)! - matchesPlayed.get(b)!).slice(0, playersPerRound);
-        const teams: string[][] = Array.from({ length: matchesPerRound * 2 }, (_, i) => [playing[i * 2], playing[i * 2 + 1]]);
+        let teams: string[][] = Array.from({ length: matchesPerRound * 2 }, (_, i) => [playing[i * 2], playing[i * 2 + 1]]);
+        if (mixer) {
+          const planned: MixerMatch[] = planMixerRound(playing.map((id) => ({ id, rating: ratings.get(id) ?? 0 })), mixerHistory);
+          recordMixerMatches(mixerHistory, planned);
+          teams = planned.flatMap(([teamA, teamB]) => [teamA, teamB]);
+        }
         for (let index = 0; index < matchesPerRound; index++) {
           const teamA = teams[index * 2];
           const teamB = teams[index * 2 + 1];

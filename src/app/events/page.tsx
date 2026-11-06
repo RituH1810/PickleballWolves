@@ -12,7 +12,7 @@ type MyRoundRobin = { id: string; name: string; groupName: string | null; playFo
 type RecentResult = { id: string; opponent: string; score: string; result: "W" | "L" | "-"; date: string };
 type RawMatch = { id: string; players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[]; scheduledAt: string | null };
 
-const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
+const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
 
 export default function EventsPage() {
   const [events, setEvents] = useState<LiveEvent[]>([]);

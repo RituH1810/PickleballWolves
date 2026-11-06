@@ -83,7 +83,7 @@ export function parseScheduleBody(body: unknown, timeZone: string | null): { fie
       timeZone,
       courtCount,
       playFormat: ["SINGLES", "DOUBLES", "MIXED"].includes(input.playFormat as string) ? (input.playFormat as string) : "DOUBLES",
-      partnerFormat: ["ROTATE", "FIXED", "MANUAL"].includes(input.partnerFormat as string) ? (input.partnerFormat as string) : "ROTATE",
+      partnerFormat: ["ROTATE", "MIXER", "FIXED", "MANUAL"].includes(input.partnerFormat as string) ? (input.partnerFormat as string) : "ROTATE",
       pointsToWin: [11, 15, 21].includes(Number(input.pointsToWin)) ? Number(input.pointsToWin) : 11,
       winBy: Number(input.winBy) === 2 ? 2 : 1,
     },

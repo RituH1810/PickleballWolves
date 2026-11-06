@@ -28,7 +28,7 @@ type JoinedPlayer = { id: string; name: string; isGuest?: boolean; fromOutside?:
 type RoomInfo = { createdById: string; canRun: boolean; coHosts: { id: string; name: string }[]; name: string; format: string; partnerFormat: string; playFormat: string; status: string; isOwner: boolean; organizerName: string; hasScores: boolean; groupId: string | null; groupName: string | null; joinedPlayers: JoinedPlayer[]; joinedCount: number; myUserId: string | null; myRsvpStatus: "JOINED" | "DECLINED" | null; isGroupMember: boolean; scheduledAt: string | null; location: string | null; playerRatings: Record<string, number> };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
-const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
+const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
 
 export default function RoundRobinRoomPage({ params }: { params: Promise<{ roundRobinId: string }> }) {
   const { roundRobinId } = use(params);
