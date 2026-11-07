@@ -17,7 +17,8 @@ type Placing = { key: string; label: string; rank: number; of: number; tied: num
 type Club = { key: string; label: string; members: (Ref & { joinedAt: string })[] };
 type Grit = { key: string; label: string; value: string; holders: Ref[]; detail: string };
 type WallMonth = { key: string; label: string; champions: { roundRobin: { id: string; name: string }; players: Ref[] }[]; playersOfTheWeek: { weekStart: string; players: Ref[] }[]; awards: { title: string; players: Ref[]; detail: string }[] };
-type HallData = { groupName: string | null; monthLabel: string; records: HallRecord[]; winners: Winner[]; history?: Record<string, Reign[]>; chases?: Chase[]; place?: Placing[]; clubs?: Club[]; grit?: Grit[]; wall?: WallMonth[]; error: string | null };
+type StreakPlace = { players: Holder[]; streak: number; at: string; roundRobin: { id: string; name: string }; ongoing: boolean; rank: number };
+type HallData = { groupName: string | null; monthLabel: string; records: HallRecord[]; winners: Winner[]; duoStreaks?: StreakPlace[]; winStreaks?: StreakPlace[]; history?: Record<string, Reign[]>; chases?: Chase[]; place?: Placing[]; clubs?: Club[]; grit?: Grit[]; wall?: WallMonth[]; error: string | null };
 
 const MEDALS: Record<number, { label: string; color: string; ring: string }> = {
   1: { label: "1st", color: "#f5c542", ring: "border-[#f5c542]" },
@@ -48,6 +49,36 @@ function WinnersPodium({ winners }: { winners: Winner[] }) {
                   <p className="text-xs text-[var(--ink-soft)]"><span className="font-bold" style={{ color: medal.color }}>{winner.titles} title{winner.titles === 1 ? "" : "s"}</span> · last {new Date(winner.lastWonAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p>
                 </div>
               </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/** A top-3 podium of win streaks -- players or duos; ties share a place. */
+function StreakPodium({ title, hint, icon: Icon, entries }: { title: string; hint: string; icon: typeof Flame; entries: StreakPlace[] }) {
+  return (
+    <section className="mt-4 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Icon size={15} className="text-[var(--lime-deep)]" />{title}</p>
+      <p className="mt-1 text-xs text-[var(--ink-soft)]">{hint}</p>
+      <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+        {entries.map((duo) => {
+          const medal = MEDALS[duo.rank] ?? MEDALS[3];
+          return (
+            <li key={duo.players.map((player) => player.userId).join(":")} className={`rounded-2xl border-2 ${medal.ring} bg-[#131f19] p-3`}>
+              <div className="flex items-center gap-3">
+                <div className="relative flex shrink-0 -space-x-3">
+                  {duo.players.map((player) => <Avatar key={player.userId} name={player.name} photoUrl={player.photoUrl} className="h-10 w-10 rounded-full border-2 border-[#131f19] bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />)}
+                  <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-black text-[#0f1712]" style={{ backgroundColor: medal.color }}>{medal.label}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-extrabold"><PlayerLinks players={duo.players} /></p>
+                  <p className="text-xs text-[var(--ink-soft)]"><span className="font-bold" style={{ color: medal.color }}>{duo.streak} wins in a row</span></p>
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-[var(--ink-soft)]">{duo.ongoing ? <span className="font-bold text-[var(--lime-deep)]">🔥 Still going</span> : <>Set {shortDate(duo.at)}</>} · <Link href={`/round-robin/${duo.roundRobin.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{duo.roundRobin.name}</Link></p>
             </li>
           );
         })}
@@ -149,6 +180,8 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
               </section>
             )}
             {data.winners.length > 0 && <WinnersPodium winners={data.winners} />}
+            {(data.winStreaks?.length ?? 0) > 0 && <StreakPodium title="Top win streaks" hint="Most wins in a row by one player, with any partner." icon={Flame} entries={data.winStreaks!} />}
+            {(data.duoStreaks?.length ?? 0) > 0 && <StreakPodium title="Top duo win streaks" hint="Most wins in a row by the same two partners, counting only games they play together." icon={Handshake} entries={data.duoStreaks!} />}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {/* The podium above already shows the most titles. */}
               {data.records.filter((record) => !(record.key === "titles" && data.winners.length)).map((record) => {

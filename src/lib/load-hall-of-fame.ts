@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { computeHallOfFame, topRoundRobinWinners, type HallOfFameRoundRobin } from "@/lib/hall-of-fame";
+import { computeHallOfFame, topDuoStreaks, topRoundRobinWinners, topWinStreaks, type HallOfFameRoundRobin } from "@/lib/hall-of-fame";
 import { hallOfGrit, milestoneClubs, playerHallStats, recordChases, recordHistory, yourPlace } from "@/lib/hall-extras";
 import { LEADERBOARD_TIME_ZONE, recentMonths } from "@/lib/monthly-leaderboard";
 import { AWARD_LABELS, type AwardKind } from "@/lib/monthly-awards";
@@ -80,14 +80,18 @@ export async function loadHallOfFame(groupId: string, { period = "all", viewerId
   const roundRobins = period === "month" ? loaded.roundRobins.filter((roundRobin) => roundRobin.endedAt >= thisMonth.start && roundRobin.endedAt < thisMonth.end) : loaded.roundRobins;
   const records = computeHallOfFame(roundRobins, guestIds);
   const winners = topRoundRobinWinners(roundRobins, guestIds);
+  const duoStreaks = topDuoStreaks(roundRobins, guestIds);
+  const winStreaks = topWinStreaks(roundRobins, guestIds);
 
-  const photos = await prisma.user.findMany({ where: { id: { in: [...records.flatMap((record) => record.holders.map((holder) => holder.userId)), ...winners.map((winner) => winner.userId)] } }, select: { id: true, photoUrl: true } });
+  const photos = await prisma.user.findMany({ where: { id: { in: [...records.flatMap((record) => record.holders.map((holder) => holder.userId)), ...winners.map((winner) => winner.userId), ...[...duoStreaks, ...winStreaks].flatMap((entry) => entry.players.map((player) => player.userId))] } }, select: { id: true, photoUrl: true } });
   const photoOf = new Map(photos.map((user) => [user.id, user.photoUrl]));
   const base = {
     period,
     monthLabel: thisMonth.label,
     records: records.map((record) => ({ ...record, holders: record.holders.map((holder) => ({ userId: holder.userId, name: holder.name, photoUrl: photoOf.get(holder.userId) ?? null })) })),
     winners: winners.map((winner) => ({ ...winner, photoUrl: photoOf.get(winner.userId) ?? null })),
+    duoStreaks: duoStreaks.map((duo) => ({ ...duo, players: duo.players.map((player) => ({ ...player, photoUrl: photoOf.get(player.userId) ?? null })) })),
+    winStreaks: winStreaks.map((entry) => ({ ...entry, players: entry.players.map((player) => ({ ...player, photoUrl: photoOf.get(player.userId) ?? null })) })),
   };
   if (period === "month") return base;
 

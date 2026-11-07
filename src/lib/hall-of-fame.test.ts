@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeHallOfFame, type HallOfFameRoundRobin } from "./hall-of-fame";
+import { computeHallOfFame, topDuoStreaks, topWinStreaks, type HallOfFameRoundRobin } from "./hall-of-fame";
 
 let minute = 0;
 function game(a: string[], b: string[], sideAScore: number, sideBScore: number) {
@@ -65,5 +65,44 @@ describe("computeHallOfFame", () => {
 
   it("is empty before anything is scored", () => {
     expect(computeHallOfFame([night("e", 1)])).toEqual([]);
+  });
+});
+
+describe("topDuoStreaks", () => {
+  it("ranks pairs by their longest run of wins together, top three places", () => {
+    const streaks = topDuoStreaks([
+      night("a", 1,
+        game(["ann", "bo"], ["cy", "dee"], 11, 5), game(["ann", "bo"], ["cy", "dee"], 11, 7), // ann+bo 2
+        game(["ann", "cy"], ["bo", "dee"], 11, 9), // a game apart doesn't break ann+bo
+        game(["bo", "ann"], ["cy", "dee"], 11, 3), // ann+bo 3
+        game(["cy", "dee"], ["ann", "bo"], 11, 8), // cy+dee win, ann+bo's run ends at 3
+        game(["cy", "dee"], ["ann", "bo"], 11, 6), // cy+dee 2, still going
+        game(["ann", "cy"], ["bo", "dee"], 11, 2), // ann+cy 2, still going
+      ),
+    ]);
+    expect(streaks.map(({ players, streak, rank, ongoing }) => [players.map((player) => player.userId).join("+"), streak, rank, ongoing])).toEqual([
+      ["ann+bo", 3, 1, false],
+      ["cy+dee", 2, 2, true], // reached 2 first
+      ["ann+cy", 2, 2, true],
+    ]);
+  });
+
+  it("leaves out single wins and guests", () => {
+    const streaks = topDuoStreaks([night("g", 1, game(["ann", "guest"], ["cy", "dee"], 11, 4), game(["ann", "guest"], ["cy", "dee"], 11, 4), game(["ann", "bo"], ["cy", "dee"], 11, 4))], new Set(["guest"]));
+    expect(streaks).toEqual([]);
+  });
+});
+
+describe("topWinStreaks", () => {
+  it("ranks players by their longest run of wins with any partner, ties sharing a place", () => {
+    const streaks = topWinStreaks([
+      night("w", 1,
+        game(["ann", "bo"], ["cy", "dee"], 11, 5),
+        game(["ann", "cy"], ["bo", "dee"], 11, 7), // ann 2, cy's run starts
+        game(["ann", "dee"], ["bo", "cy"], 11, 9), // ann 3; cy's run ends at 1, nobody else reaches 2
+        game(["bo", "cy"], ["ann", "dee"], 11, 4), // ann's run ends at 3
+      ),
+    ]);
+    expect(streaks.map(({ players, streak, rank, ongoing }) => [players[0].userId, streak, rank, ongoing])).toEqual([["ann", 3, 1, false]]);
   });
 });

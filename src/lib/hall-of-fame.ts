@@ -53,6 +53,49 @@ export function topRoundRobinWinners(roundRobins: HallOfFameRoundRobin[], guestI
   return rankRoundRobinWinners(roundRobins.map((roundRobin) => ({ endedAt: roundRobin.endedAt, champions: (computeRecap(roundRobin.matches)?.champions ?? []).filter((player) => !guestIds.has(player.userId)) })));
 }
 
+/** Places the streak podiums show (more when there are ties for the last place). */
+export const STREAK_PLACES = 3;
+/** Wins in a row needed before a run counts as a streak. */
+export const STREAK_MIN = 2;
+
+export type StreakPlace = { players: PlayerRef[]; streak: number; at: Date; roundRobin: { id: string; name: string }; ongoing: boolean; rank: number };
+
+/**
+ * Best winning runs per "unit" (a player, or a pair of partners), counted only in the games the
+ * unit plays; a loss ends the run. Each unit's best run, top STREAK_PLACES places with ties
+ * sharing a place, the earliest to set it first. Units with a guest can't place.
+ */
+function topStreaks(roundRobins: HallOfFameRoundRobin[], guestIds: Set<string>, unitsOf: (side: PlayerRef[]) => PlayerRef[][]): StreakPlace[] {
+  const running = new Map<string, number>();
+  const best = new Map<string, Omit<StreakPlace, "ongoing" | "rank">>();
+  for (const game of groupGames(roundRobins)) {
+    for (const [side, won] of [[game.winners, true], [game.losers, false]] as const) {
+      for (const unit of unitsOf(side)) {
+        if (unit.some((player) => guestIds.has(player.userId))) continue;
+        const players = [...unit].sort((a, b) => a.userId.localeCompare(b.userId));
+        const key = players.map((player) => player.userId).join(":");
+        const run = won ? (running.get(key) ?? 0) + 1 : 0;
+        running.set(key, run);
+        if (run > (best.get(key)?.streak ?? 0)) best.set(key, { players, streak: run, at: game.playedAt, roundRobin: { id: game.roundRobin.id, name: game.roundRobin.name } });
+      }
+    }
+  }
+  const sorted = [...best].filter(([, entry]) => entry.streak >= STREAK_MIN).sort(([, a], [, b]) => b.streak - a.streak || a.at.getTime() - b.at.getTime());
+  return sorted
+    .map(([key, entry]) => ({ ...entry, ongoing: running.get(key) === entry.streak, rank: 1 + sorted.filter(([, other]) => other.streak > entry.streak).length }))
+    .filter((entry) => entry.rank <= STREAK_PLACES);
+}
+
+/** The longest runs of wins by the same two partners, counting only games they play together (a game apart doesn't break it). */
+export function topDuoStreaks(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): StreakPlace[] {
+  return topStreaks(roundRobins, guestIds, (side) => (side.length === 2 ? [side] : []));
+}
+
+/** The longest runs of wins by individual players, with any partner -- the top 3 behind the "Longest win streak" record. */
+export function topWinStreaks(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): StreakPlace[] {
+  return topStreaks(roundRobins, guestIds, (side) => side.map((player) => [player]));
+}
+
 /**
  * A group's all-time records from its ended round robins. Each scored game is a win or loss, like
  * round robin standings (tied games are skipped). Guests can't hold records, but their games still
