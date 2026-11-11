@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
 import { calendarTokenFor, feedUrls, newCalendarToken } from "@/lib/calendar-feed";
+import { siteUrl } from "@/lib/site-url";
 
 async function signedInUserId() {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ async function signedInUserId() {
 export async function GET(request: Request) {
   const userId = await signedInUserId();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  return NextResponse.json(feedUrls(new URL(request.url).origin, await calendarTokenFor(userId)));
+  return NextResponse.json(feedUrls(siteUrl(request), await calendarTokenFor(userId)));
 }
 
 // Reset: issues a new token, so any previously shared link stops working.
@@ -22,5 +23,5 @@ export async function POST(request: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const token = newCalendarToken();
   await prisma.user.update({ where: { id: userId }, data: { calendarToken: token } });
-  return NextResponse.json(feedUrls(new URL(request.url).origin, token));
+  return NextResponse.json(feedUrls(siteUrl(request), token));
 }

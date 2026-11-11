@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getResend, REMINDER_FROM_EMAIL } from "@/lib/resend";
 import { notify } from "@/lib/notifications";
 import { formatGameTime } from "@/lib/app-time";
+import { siteUrl } from "@/lib/site-url";
 
 const REMINDER_WINDOW_MS = 60 * 60 * 1000;
 
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
   if (request.headers.get("authorization") !== `Bearer ${cronSecret}`) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const resend = getResend();
-  const origin = new URL(request.url).origin;
+  const origin = siteUrl(request);
   const now = new Date();
   const windowEnd = new Date(now.getTime() + REMINDER_WINDOW_MS);
   let eventsReminded = 0;

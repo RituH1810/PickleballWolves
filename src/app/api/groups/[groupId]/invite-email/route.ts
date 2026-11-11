@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { siteUrl } from "@/lib/site-url";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -29,7 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ groupI
   const token = randomUUID();
   await prisma.groupInvite.create({ data: { groupId, invitedEmail: email, token, expiresAt: new Date(Date.now() + INVITE_TTL_MS), createdById: user.id } });
 
-  const origin = new URL(request.url).origin;
+  const origin = siteUrl(request);
   const nextPath = `/invite/accept?token=${token}`;
   const { error: otpError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true, emailRedirectTo: `${origin}${nextPath}` } });
   if (otpError) {

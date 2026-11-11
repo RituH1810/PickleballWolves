@@ -5,6 +5,7 @@ import { EMAIL_PATTERN, generateTempPassword } from "@/lib/admin-access";
 import { createAdminClient, findAuthUserByEmail } from "@/lib/supabase/admin";
 import { getResend, REMINDER_FROM_EMAIL } from "@/lib/resend";
 import { renderTempPasswordEmail } from "@/lib/temp-password-email";
+import { siteUrl } from "@/lib/site-url";
 
 /**
  * Admins only: give a player a temporary password -- for when emails (confirmation, reset) aren't
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
   const resend = getResend();
   if (!resend) emailError = "Email isn't set up (RESEND_API_KEY).";
   else {
-    const message = renderTempPasswordEmail({ name: playerName || email.split("@")[0], email, password, loginUrl: `${new URL(request.url).origin}/login` });
+    const message = renderTempPasswordEmail({ name: playerName || email.split("@")[0], email, password, loginUrl: `${siteUrl(request)}/login` });
     const sent = await resend.emails.send({ from: REMINDER_FROM_EMAIL, to: email, subject: message.subject, html: message.html, text: message.text }).catch((error: Error) => ({ error }));
     if (sent.error) emailError = sent.error.message;
   }

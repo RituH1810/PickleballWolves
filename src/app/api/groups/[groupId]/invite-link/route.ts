@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
+import { siteUrl } from "@/lib/site-url";
 
 const INVITE_TTL_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -22,6 +23,6 @@ export async function POST(request: Request, context: { params: Promise<{ groupI
     invite = await prisma.groupInvite.create({ data: { groupId, invitedEmail: user.email ?? "", token: randomUUID(), expiresAt: new Date(Date.now() + INVITE_TTL_MS), createdById: user.id } });
   }
 
-  const origin = new URL(request.url).origin;
+  const origin = siteUrl(request);
   return NextResponse.json({ url: `${origin}/invite/accept?token=${invite.token}` });
 }
