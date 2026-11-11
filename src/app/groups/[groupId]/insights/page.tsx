@@ -66,7 +66,7 @@ export default function GroupInsightsPage({ params }: { params: Promise<{ groupI
         <Link href={`/groups/${groupId}`} className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to group</Link>
         <div className="mt-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{insights?.groupName ?? "Group"} · Organizers only</p>
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{insights?.groupName ?? "Group"} · Organizers only</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em]">Attendance insights</h1>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Based on round robins with scored games. &quot;Played&quot; means in at least one scored match.</p>
           </div>
@@ -94,7 +94,7 @@ export default function GroupInsightsPage({ params }: { params: Promise<{ groupI
                 ["Members who played", `${insights.totals.activeMembers} of ${insights.totals.members}`],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-2xl border border-[var(--line)] bg-[var(--panel)] p-5">
-                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{label}</p>
+                  <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{label}</p>
                   <p className="mt-2 text-3xl font-black tracking-[-.04em]">{value}</p>
                 </div>
               ))}
@@ -108,12 +108,12 @@ export default function GroupInsightsPage({ params }: { params: Promise<{ groupI
                   <div className="flex h-40 items-end gap-1.5">
                     {insights.weeks.map((week) => (
                       <div key={week.start} className="flex h-full flex-1 flex-col items-center justify-end gap-1" title={`Week of ${new Date(`${week.start}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}: ${week.games} game${week.games === 1 ? "" : "s"}, ${week.averagePlayers} avg players`}>
-                        <span className="text-[10px] font-bold text-[var(--ink-soft)]">{week.games ? week.averagePlayers : ""}</span>
-                        <div className={`w-full rounded-t-md ${week.games ? "bg-[var(--lime)]" : "bg-[#1c2a1a]"}`} style={{ height: week.games ? `${Math.max(6, (week.averagePlayers / maxWeekly) * 100)}%` : "4px" }} />
+                        <span className="text-xs font-bold text-[var(--ink-soft)]">{week.games ? week.averagePlayers : ""}</span>
+                        <div className={`w-full rounded-t-md ${week.games ? "bg-[var(--lime)]" : "bg-[var(--surface-hover)]"}`} style={{ height: week.games ? `${Math.max(6, (week.averagePlayers / maxWeekly) * 100)}%` : "4px" }} />
                       </div>
                     ))}
                   </div>
-                  <div className="mt-2 flex justify-between text-[10px] font-semibold text-[var(--ink-soft)]">
+                  <div className="mt-2 flex justify-between text-xs font-semibold text-[var(--ink-soft)]">
                     <span>{new Date(`${insights.weeks[0].start}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
                     <span>This week</span>
                   </div>
@@ -124,7 +124,7 @@ export default function GroupInsightsPage({ params }: { params: Promise<{ groupI
                     {insights.slots.map((slot) => (
                       <div key={slot.label}>
                         <div className="flex items-baseline justify-between text-sm"><span className="font-bold">{slot.label}</span><span className="text-xs text-[var(--ink-soft)]"><strong className="text-[var(--foreground)]">{slot.averagePlayers}</strong> avg · {slot.games} game{slot.games === 1 ? "" : "s"}</span></div>
-                        <div className="mt-1 h-2 overflow-hidden rounded-full bg-[#1c2a1a]"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${(slot.averagePlayers / maxSlot) * 100}%` }} /></div>
+                        <div className="mt-1 h-2 overflow-hidden rounded-full bg-[var(--surface-hover)]"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${(slot.averagePlayers / maxSlot) * 100}%` }} /></div>
                       </div>
                     ))}
                   </div>
@@ -140,7 +140,7 @@ export default function GroupInsightsPage({ params }: { params: Promise<{ groupI
 
                 <Panel title="Haven't played yet" icon={Hourglass} hint="Members with no games in this period.">
                   {insights.notYet.length === 0 ? <p className="text-sm text-[var(--ink-soft)]">Every member has played at least once.</p> : (
-                    <div className="flex flex-wrap gap-2">{insights.notYet.map((member) => <Link key={member.id} href={`/players/${member.id}`} className="rounded-full bg-[#1c2a1a] px-3 py-1.5 text-xs font-bold hover:text-[var(--lime-deep)]">{member.name}</Link>)}</div>
+                    <div className="flex flex-wrap gap-2">{insights.notYet.map((member) => <Link key={member.id} href={`/players/${member.id}`} className="rounded-full bg-[var(--surface-hover)] px-3 py-1.5 text-xs font-bold hover:text-[var(--lime-deep)]">{member.name}</Link>)}</div>
                   )}
                 </Panel>
               </div>
@@ -151,13 +151,13 @@ export default function GroupInsightsPage({ params }: { params: Promise<{ groupI
                 <h2 className="flex items-center gap-2 font-extrabold"><Users size={17} className="text-[var(--lime-deep)]" />Members</h2>
                 <p className="mt-1 text-xs text-[var(--ink-soft)]">Attendance counts games held since each member joined. &quot;Joined, didn&apos;t play&quot; means they RSVP&apos;d in but weren&apos;t in a scored match.</p>
                 <table className="mt-4 w-full text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="pb-3">Member</th><th className="hidden pb-3 sm:table-cell">Played</th><th className="pb-3">Attendance</th><th className="pb-3 text-right sm:text-left">Last played</th><th className="hidden pb-3 text-right sm:table-cell">Joined, didn&apos;t play</th></tr></thead>
+                  <thead><tr className="border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><th className="pb-3">Member</th><th className="hidden pb-3 sm:table-cell">Played</th><th className="pb-3">Attendance</th><th className="pb-3 text-right sm:text-left">Last played</th><th className="hidden pb-3 text-right sm:table-cell">Joined, didn&apos;t play</th></tr></thead>
                   <tbody>
                     {insights.members.map((member) => (
                       <tr key={member.id} className="border-b border-[var(--line)] last:border-0">
                         <td className="break-words py-3 pr-2 font-bold"><Link href={`/players/${member.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{member.name}</Link></td>
                         <td className="hidden py-3 text-[var(--ink-soft)] sm:table-cell">{member.played} / {member.possible}</td>
-                        <td className="py-3 pr-2"><div className="flex items-center gap-2"><div className="h-2 w-12 overflow-hidden rounded-full bg-[#1c2a1a] sm:w-20"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${member.rate}%` }} /></div><span className="text-xs font-bold">{member.rate}%</span></div><span className="mt-0.5 block text-[11px] text-[var(--ink-soft)] sm:hidden">{member.played} / {member.possible} played</span></td>
+                        <td className="py-3 pr-2"><div className="flex items-center gap-2"><div className="h-2 w-12 overflow-hidden rounded-full bg-[var(--surface-hover)] sm:w-20"><div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${member.rate}%` }} /></div><span className="text-xs font-bold">{member.rate}%</span></div><span className="mt-0.5 block text-xs text-[var(--ink-soft)] sm:hidden">{member.played} / {member.possible} played</span></td>
                         <td className="py-3 text-right text-xs text-[var(--ink-soft)] sm:text-left">{ago(member.lastPlayedAt)}</td>
                         <td className={`hidden py-3 text-right sm:table-cell text-xs font-bold ${member.joinedButSatOut ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{member.joinedButSatOut || "—"}</td>
                       </tr>

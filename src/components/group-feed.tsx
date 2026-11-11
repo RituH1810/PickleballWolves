@@ -7,6 +7,7 @@ import { Avatar } from "@/components/avatar";
 import { Reactions } from "@/components/reactions";
 import type { FeedKind } from "@/lib/group-feed";
 import type { ReactionSummary } from "@/lib/reactions";
+import { CardHeading } from "@/components/card-heading";
 
 type Item = { id: string; kind: FeedKind; at: string; players: { userId: string; name: string; photoUrl: string | null }[]; text: string; href: string | null };
 
@@ -37,7 +38,7 @@ export function GroupFeed({ groupId }: { groupId: string }) {
   const shown = expanded ? feed.items : feed.items.slice(0, FIRST_SHOWN);
   return (
     <section id="group-activity" className="mt-5 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
-      <div className="flex items-center gap-2"><Activity size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group activity</h2></div>
+      <CardHeading icon={Activity} title="Group activity" />
       <p className="mt-1 text-xs text-[var(--ink-soft)]">The last 30 days: champions, milestones, streaks, records and new faces.</p>
       <ol className="mt-4 divide-y divide-[var(--line)]">
         {shown.map((item) => {
@@ -46,8 +47,8 @@ export function GroupFeed({ groupId }: { groupId: string }) {
           return (
             <li key={item.id} className="flex gap-3 py-4 first:pt-0 last:pb-0">
               <div className="relative h-10 w-10 shrink-0">
-                {first ? <Avatar name={first.name} photoUrl={first.photoUrl} className="h-10 w-10 rounded-full bg-[#22331f] text-xs font-black text-[var(--lime)]" /> : null}
-                <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--panel)] bg-[var(--lime)] text-[#0f1712]"><Icon size={11} /></span>
+                {first ? <Avatar name={first.name} photoUrl={first.photoUrl} className="h-10 w-10 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" /> : null}
+                <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--panel)] bg-[var(--lime)] text-[var(--on-lime)]"><Icon size={11} /></span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold leading-5">{item.href ? <Link href={item.href} className="hover:text-[var(--lime-deep)] hover:underline">{item.text}</Link> : item.text}</p>

@@ -19,8 +19,8 @@ const first = (name: string) => name.split(" ")[0];
 
 function Stat({ icon: Icon, label, children }: { icon: typeof Flame; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-[#131f19] p-4">
-      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={13} className="text-[var(--lime-deep)]" />{label}</p>
+    <div className="rounded-2xl bg-[var(--surface-2)] p-4">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={13} className="text-[var(--lime-deep)]" />{label}</p>
       <div className="mt-1.5 text-sm font-bold leading-5">{children}</div>
     </div>
   );
@@ -53,18 +53,18 @@ export default function RivalryPage({ params }: { params: Promise<{ playerA: str
         <Link href={`/players/${r.a.id}`} className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />{r.a.name}</Link>
 
         <section className="mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
-          <p className="text-center text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Rivalry</p>
+          <p className="text-center text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Rivalry</p>
           <div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-3">
             {[r.a, r.b].map((person, index) => (
               <Link key={person.id} href={`/players/${person.id}`} className={`flex flex-col items-center gap-2 text-center ${index === 1 ? "col-start-3" : ""}`}>
-                <Avatar name={person.name} photoUrl={person.photoUrl} className="h-16 w-16 rounded-2xl bg-[#d8f24e] text-xl font-black text-[#1b211e] sm:h-20 sm:w-20" />
+                <Avatar name={person.name} photoUrl={person.photoUrl} className="h-16 w-16 rounded-2xl bg-[var(--lime)] text-xl font-black text-[var(--ink-dark)] sm:h-20 sm:w-20" />
                 <span className="text-sm font-extrabold hover:underline sm:text-base">{person.name}</span>
-                <span className="text-[11px] text-[var(--ink-soft)]">{person.skillRating.toFixed(3)} rating</span>
+                <span className="text-xs text-[var(--ink-soft)]">{person.skillRating.toFixed(3)} rating</span>
               </Link>
             ))}
             <div className="col-start-2 row-start-1 text-center">
               <p className="text-4xl font-black tabular-nums tracking-[-.04em] sm:text-6xl">{r.winsA}<span className="text-[var(--ink-soft)]">-</span>{r.winsB}</p>
-              <p className="mt-1 text-[11px] text-[var(--ink-soft)]">{r.played} meeting{r.played === 1 ? "" : "s"}</p>
+              <p className="mt-1 text-xs text-[var(--ink-soft)]">{r.played} meeting{r.played === 1 ? "" : "s"}</p>
             </div>
           </div>
           {r.played > 0 && (
@@ -97,16 +97,16 @@ export default function RivalryPage({ params }: { params: Promise<{ playerA: str
               <div className="mt-3 divide-y divide-[var(--line)]">
                 {r.meetings.map((meeting) => (
                   <div key={meeting.id} className="flex items-center gap-3 py-3">
-                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-black ${meeting.winner === "a" ? "bg-[var(--lime)] text-[#0f1712]" : "bg-[var(--coral)] text-[#2e1a16]"}`}>{meeting.winner === "a" ? "W" : "L"}</span>
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${meeting.winner === "a" ? "bg-[var(--lime)] text-[var(--on-lime)]" : "bg-[var(--coral)] text-[var(--on-coral)]"}`}>{meeting.winner === "a" ? "W" : "L"}</span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{first(r.a.name)}{meeting.partnersA.length ? ` & ${meeting.partnersA.join(" & ")}` : ""} <span className="text-[var(--ink-soft)]">vs</span> {first(r.b.name)}{meeting.partnersB.length ? ` & ${meeting.partnersB.join(" & ")}` : ""}</p>
-                      <p className="truncate text-[11px] text-[var(--ink-soft)]">{meeting.event}{/* Round robin names already carry the date. */}{!meeting.event.includes(day(meeting.playedAt)) && ` · ${day(meeting.playedAt)}`}</p>
+                      <p className="truncate text-xs text-[var(--ink-soft)]">{meeting.event}{/* Round robin names already carry the date. */}{!meeting.event.includes(day(meeting.playedAt)) && ` · ${day(meeting.playedAt)}`}</p>
                     </div>
                     <span className={`shrink-0 text-xs font-bold tabular-nums ${meeting.winner === "a" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{meeting.games.map(([x, y]) => `${x}-${y}`).join(", ")}</span>
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-[11px] text-[var(--ink-soft)]">W/L and scores from {first(r.a.name)}&apos;s side.</p>
+              <p className="mt-2 text-xs text-[var(--ink-soft)]">W/L and scores from {first(r.a.name)}&apos;s side.</p>
             </section>
           </>
         )}

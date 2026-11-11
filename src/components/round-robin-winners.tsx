@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Crown } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { CardHeading } from "@/components/card-heading";
 
 type Winner = { userId: string; name: string; photoUrl: string | null; titles: number; rank: number };
 
@@ -20,13 +21,13 @@ export function RoundRobinWinners({ groupId }: { groupId: string }) {
   if (!winners?.length) return null;
   return (
     <section id="round-robin-winners" className="mt-5 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
-      <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Crown size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Most round robin wins</h2></div><Link href={`/groups/${groupId}/hall-of-fame`} className="text-xs font-bold text-[var(--lime-deep)] hover:underline">Hall of Fame</Link></div>
+      <div className="flex items-center justify-between gap-3"><CardHeading icon={Crown} title="Most round robin wins" /><Link href={`/groups/${groupId}/hall-of-fame`} className="text-xs font-bold text-[var(--lime-deep)] hover:underline">Hall of Fame</Link></div>
       <p className="mt-1 text-xs text-[var(--ink-soft)]">All-time titles in this group · co-champions each get the title</p>
       <div className="mt-4 space-y-2">
         {winners.map((winner) => (
-          <Link key={winner.userId} href={`/players/${winner.userId}`} className="flex items-center gap-3 rounded-2xl bg-[#131f19] p-3 text-sm hover:text-[var(--lime-deep)]">
+          <Link key={winner.userId} href={`/players/${winner.userId}`} className="flex items-center gap-3 rounded-2xl bg-[var(--surface-2)] p-3 text-sm hover:text-[var(--lime-deep)]">
             <span className={`w-5 shrink-0 text-center text-base font-black ${MEDALS[winner.rank - 1]}`}>{winner.rank}</span>
-            <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-9 w-9 shrink-0 rounded-full bg-[#22331f] text-xs font-black text-[var(--lime)]" />
+            <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-9 w-9 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />
             <span className="min-w-0 flex-1 truncate font-bold">{winner.name}</span>
             <span className="shrink-0 text-xs font-bold text-[var(--lime-deep)]">{winner.titles} {winner.titles === 1 ? "win" : "wins"}</span>
           </Link>

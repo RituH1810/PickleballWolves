@@ -10,12 +10,12 @@ type Leader = { rank: number; id: string; name: string; photoUrl: string | null;
 function PodiumCard({ leader, place }: { leader: Leader; place: 1 | 2 | 3 }) {
   const isFirst = place === 1;
   return (
-    <div className={`flex flex-col items-center rounded-[20px] border px-4 pb-5 text-center transition-transform hover:-translate-y-1 ${isFirst ? "col-start-2 border-[var(--lime-deep)] bg-[var(--lime)] pt-8 text-[#0f1712] sm:scale-105" : place === 2 ? "col-start-1 border-[var(--line)] bg-[var(--panel)] pt-6 text-[var(--foreground)]" : "col-start-3 border-[var(--line)] bg-[var(--panel)] pt-6 text-[var(--foreground)]"}`}>
-      {isFirst ? <Crown size={22} className="mb-2 text-[#0f1712]" /> : <Medal size={20} className={`mb-2 ${place === 2 ? "text-[#c7d0d8]" : "text-[#d69a63]"}`} />}
-      <Avatar name={leader.name} photoUrl={leader.photoUrl} className={`rounded-full font-black ${isFirst ? "h-16 w-16 bg-[#0f1712] text-xl text-[var(--lime)]" : "h-12 w-12 bg-[#22331f] text-sm text-[var(--lime)]"}`} />
+    <div className={`flex flex-col items-center rounded-[20px] border px-4 pb-5 text-center transition-transform hover:-translate-y-1 ${isFirst ? "col-start-2 border-[var(--lime-deep)] bg-[var(--lime)] pt-8 text-[var(--on-lime)] sm:scale-105" : place === 2 ? "col-start-1 border-[var(--line)] bg-[var(--panel)] pt-6 text-[var(--foreground)]" : "col-start-3 border-[var(--line)] bg-[var(--panel)] pt-6 text-[var(--foreground)]"}`}>
+      {isFirst ? <Crown size={22} className="mb-2 text-[var(--on-lime)]" /> : <Medal size={20} className={`mb-2 ${place === 2 ? "text-[#c7d0d8]" : "text-[#d69a63]"}`} />}
+      <Avatar name={leader.name} photoUrl={leader.photoUrl} className={`rounded-full font-black ${isFirst ? "h-16 w-16 bg-[var(--background)] text-xl text-[var(--lime)]" : "h-12 w-12 bg-[var(--avatar-bg)] text-sm text-[var(--lime)]"}`} />
       <Link href={`/players/${leader.id}`} className={`mt-3 max-w-full truncate font-extrabold hover:underline ${isFirst ? "text-base" : "text-sm"}`}>{leader.name}</Link>
       <p className={`mt-1 text-xs font-bold ${isFirst ? "text-[#3c4a1e]" : "text-[var(--lime-deep)]"}`}>{leader.winPct}% win rate</p>
-      <p className={`mt-1 text-[11px] font-semibold ${isFirst ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>{leader.wins}-{leader.losses} · {leader.differential > 0 ? "+" : ""}{leader.differential} diff</p>
+      <p className={`mt-1 text-xs font-semibold ${isFirst ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>{leader.wins}-{leader.losses} · {leader.differential > 0 ? "+" : ""}{leader.differential} diff</p>
     </div>
   );
 }
@@ -30,7 +30,7 @@ export default function LeaderboardsPage() {
         <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
         <div className="mt-8 flex items-end justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">PickleballWolves</p>
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">PickleballWolves</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Leaderboard.</h1>
             <p className="mt-3 text-sm text-[var(--ink-soft)]">Ranked by win %, then point differential, across every recorded match.</p>
           </div>
@@ -45,7 +45,7 @@ export default function LeaderboardsPage() {
           {leaders.length === 0 ? <div className="py-10 text-center"><PawPrint size={22} className="mx-auto text-[var(--lime-deep)]" /><p className="mt-3 text-sm text-[var(--ink-soft)]">Play 20 matches to appear on the leaderboard.</p></div> : (
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">
+                <tr className="border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">
                   <th className="w-7 pb-3">#</th>
                   <th className="pb-3">Player</th>
                   <th className="hidden pb-3 text-center sm:table-cell">Matches</th>

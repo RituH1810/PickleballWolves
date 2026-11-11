@@ -42,7 +42,7 @@ export function AddToCalendar({ items, label = "Add to calendar", compact = fals
     setOpen(false);
   }
 
-  const itemClass = "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]";
+  const itemClass = "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]";
   return (
     <div ref={rootRef} className="relative inline-block">
       <button
@@ -53,13 +53,13 @@ export function AddToCalendar({ items, label = "Add to calendar", compact = fals
         aria-label={compact ? label : undefined}
         title={compact ? label : undefined}
         className={compact
-          ? "grid h-7 w-7 place-items-center rounded-full border border-[var(--line)] text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"
-          : "flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"}
+          ? "grid h-7 w-7 place-items-center rounded-full border border-[var(--line)] text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]"
+          : "flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]"}
       >
         <CalendarPlus size={compact ? 13 : 14} />{!compact && label}
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-[var(--line)] bg-[#0f1712] p-1.5 shadow-lg">
+        <div role="menu" className="absolute right-0 z-20 mt-2 w-56 rounded-xl border border-[var(--line)] bg-[var(--background)] p-1.5 shadow-lg">
           {items.length === 1 && (
             <a role="menuitem" href={googleCalendarUrl(absolute()[0])} target="_blank" rel="noopener noreferrer" onClick={() => setOpen(false)} className={itemClass}>
               <CalendarPlus size={14} className="text-[var(--lime-deep)]" />Google Calendar

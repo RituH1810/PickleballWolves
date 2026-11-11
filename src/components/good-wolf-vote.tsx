@@ -31,7 +31,7 @@ export function GoodWolfVote({ roundRobinId }: { roundRobinId: string }) {
     setBusy(false);
   }
 
-  const header = <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-[var(--lime-deep)]"><PawPrint size={15} />Good Wolf{state.open && " vote · anonymous"}</p>;
+  const header = <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[.12em] text-[var(--lime-deep)]"><PawPrint size={15} />Good Wolf{state.open && " vote · anonymous"}</p>;
   if (!state.open) {
     if (!state.winners.length) return (
       <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
@@ -45,7 +45,7 @@ export function GoodWolfVote({ roundRobinId }: { roundRobinId: string }) {
         <div className="mt-3 flex flex-wrap gap-4">
           {state.winners.map((winner) => (
             <div key={winner.id} className="flex items-center gap-3">
-              <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-11 w-11 rounded-full bg-[#22331f] text-sm font-black text-[var(--lime)]" />
+              <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-11 w-11 rounded-full bg-[var(--avatar-bg)] text-sm font-black text-[var(--lime)]" />
               <div><p className="text-lg font-black">{winner.name}</p><p className="text-xs text-[var(--ink-soft)]">{winner.votes} votes for best sportsmanship</p></div>
             </div>
           ))}
@@ -63,12 +63,12 @@ export function GoodWolfVote({ roundRobinId }: { roundRobinId: string }) {
           <p className="mt-1 text-xs text-[var(--ink-soft)]">Fair line calls, good attitude, helping others. Nobody sees who you picked -- only the winner is shown, after voting closes {closing(state.closesAt)}.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {state.candidates.map((person) => (
-              <button key={person.id} onClick={() => vote(person.id)} disabled={busy} aria-pressed={state.myVote === person.id} className={`flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-xs font-bold transition-colors disabled:cursor-wait ${state.myVote === person.id ? "border-[var(--lime)] bg-[var(--lime)] text-[#0f1712]" : "border-[var(--line)] hover:bg-[#1c2a1a]"}`}>
-                <Avatar name={person.name} photoUrl={person.photoUrl} className="h-6 w-6 rounded-full bg-[#22331f] text-[9px] font-black text-[var(--lime)]" />{person.name}
+              <button key={person.id} onClick={() => vote(person.id)} disabled={busy} aria-pressed={state.myVote === person.id} className={`flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 text-xs font-bold transition-colors disabled:cursor-wait ${state.myVote === person.id ? "border-[var(--lime)] bg-[var(--lime)] text-[var(--on-lime)]" : "border-[var(--line)] hover:bg-[var(--surface-hover)]"}`}>
+                <Avatar name={person.name} photoUrl={person.photoUrl} className="h-6 w-6 rounded-full bg-[var(--avatar-bg)] text-[9px] font-black text-[var(--lime)]" />{person.name}
               </button>
             ))}
           </div>
-          {state.myVote && <p className="mt-3 text-[11px] font-semibold text-[var(--lime-deep)]">Vote saved -- you can change it until voting closes.</p>}
+          {state.myVote && <p className="mt-3 text-xs font-semibold text-[var(--lime-deep)]">Vote saved -- you can change it until voting closes.</p>}
         </>
       ) : (
         <p className="mt-2 text-xs text-[var(--ink-soft)]">Players are voting for the night&apos;s Good Wolf. The winner is shown after {closing(state.closesAt)} · {state.totalVotes} vote{state.totalVotes === 1 ? "" : "s"} so far.</p>

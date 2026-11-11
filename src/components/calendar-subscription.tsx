@@ -42,23 +42,23 @@ export function CalendarSubscription() {
   const button = "flex items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold transition-colors";
   return (
     <section id="calendar" className="mt-6 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-2">
-      <h2 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Calendar</h2>
+      <h2 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Calendar</h2>
       <div className="px-4 pb-4">
         <p className="text-sm font-extrabold text-[var(--foreground)]">Subscribe to your games</p>
         <p className="mt-0.5 text-xs leading-5 text-[var(--ink-soft)]">Add this once and every round robin, event, and league match you join appears in your calendar -- and updates when times change or games are cancelled. Calendar apps usually refresh every few hours.</p>
         {!links ? <p className="mt-3 text-xs text-[var(--ink-soft)]">Loading your link...</p> : (
           <>
             <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <a href={links.google} target="_blank" rel="noopener noreferrer" className={`${button} bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]`}><CalendarPlus size={14} />Add to Google Calendar</a>
-              <a href={links.webcal} className={`${button} border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]`}><CalendarPlus size={14} />Apple / Outlook</a>
+              <a href={links.google} target="_blank" rel="noopener noreferrer" className={`${button} bg-[var(--lime)] text-[var(--on-lime)] hover:bg-[var(--lime-hover)]`}><CalendarPlus size={14} />Add to Google Calendar</a>
+              <a href={links.webcal} className={`${button} border border-[var(--line)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]`}><CalendarPlus size={14} />Apple / Outlook</a>
             </div>
-            <div className="mt-3 flex items-center gap-2 rounded-xl border border-[var(--line)] bg-[#0f1712] p-1.5 pl-3">
+            <div className="mt-3 flex items-center gap-2 rounded-xl border border-[var(--line)] bg-[var(--background)] p-1.5 pl-3">
               <input readOnly value={links.https} onFocus={(event) => event.currentTarget.select()} aria-label="Your private calendar link" className="min-w-0 flex-1 bg-transparent text-xs text-[var(--ink-soft)] outline-none" />
-              <button onClick={copy} className={`${button} shrink-0 border border-[var(--line)] py-1.5 text-[var(--foreground)] hover:bg-[#1c2a1a]`}><Copy size={13} />Copy</button>
+              <button onClick={copy} className={`${button} shrink-0 border border-[var(--line)] py-1.5 text-[var(--foreground)] hover:bg-[var(--surface-hover)]`}><Copy size={13} />Copy</button>
             </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-[11px] text-[var(--ink-soft)]">Keep this link private -- anyone with it can see your schedule.</p>
-              <button onClick={reset} disabled={resetting} className="flex items-center gap-1.5 text-[11px] font-bold text-[var(--coral)] hover:underline disabled:opacity-50"><RefreshCw size={12} />{resetting ? "Resetting..." : "Reset link"}</button>
+              <p className="text-xs text-[var(--ink-soft)]">Keep this link private -- anyone with it can see your schedule.</p>
+              <button onClick={reset} disabled={resetting} className="flex items-center gap-1.5 text-xs font-bold text-[var(--coral)] hover:underline disabled:opacity-50"><RefreshCw size={12} />{resetting ? "Resetting..." : "Reset link"}</button>
             </div>
           </>
         )}

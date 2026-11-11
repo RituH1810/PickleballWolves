@@ -26,8 +26,8 @@ export function TitleTimeline({ userId }: { userId?: string }) {
           <li key={title.roundRobinId} className="relative flex gap-3 pb-3 last:pb-0">
             {/* The line joining each title to the next one down. */}
             {index < titles.length - 1 && <span aria-hidden className="absolute bottom-0 left-4 top-8 w-0.5 -translate-x-1/2 bg-[#f5c542]/30" />}
-            <span className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f5c542] text-[#1b211e]"><Crown size={15} /></span>
-            <Link href={`/round-robin/${title.roundRobinId}`} className="min-w-0 flex-1 rounded-2xl bg-[#131f19] px-4 py-3 transition-colors hover:bg-[#1c2a1a]">
+            <span className="relative grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#f5c542] text-[var(--ink-dark)]"><Crown size={15} /></span>
+            <Link href={`/round-robin/${title.roundRobinId}`} className="min-w-0 flex-1 rounded-2xl bg-[var(--surface-2)] px-4 py-3 transition-colors hover:bg-[var(--surface-hover)]">
               <div className="flex items-baseline justify-between gap-3">
                 <p className="truncate text-sm font-extrabold">{title.name}</p>
                 <p className="shrink-0 text-xs font-bold text-[var(--ink-soft)]">{new Date(title.endedAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</p>

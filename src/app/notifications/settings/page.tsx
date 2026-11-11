@@ -88,12 +88,12 @@ export default function NotificationSettingsPage() {
           <>
             {SECTIONS.map((section) => (
               <section key={section.title} className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-2">
-                <h2 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{section.title}</h2>
+                <h2 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{section.title}</h2>
                 {section.items.map(({ key, label, detail, icon: Icon }) => {
                   const on = preferences[key];
                   return (
-                    <label key={key} className="flex cursor-pointer items-center gap-4 rounded-2xl px-4 py-4 hover:bg-[#1c2a1a]">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#131f19] text-[var(--lime-deep)]"><Icon size={18} /></span>
+                    <label key={key} className="flex cursor-pointer items-center gap-4 rounded-2xl px-4 py-4 hover:bg-[var(--surface-hover)]">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--lime-deep)]"><Icon size={18} /></span>
                       <span className="min-w-0 flex-1">
                         <span className="block text-sm font-extrabold text-[var(--foreground)]">{label}</span>
                         <span className="mt-0.5 block text-xs leading-5 text-[var(--ink-soft)]">{detail}</span>
@@ -107,7 +107,7 @@ export default function NotificationSettingsPage() {
                         onClick={() => toggle(key)}
                         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-60 ${on ? "bg-[var(--lime)]" : "bg-[#2c4234]"}`}
                       >
-                        <span className={`absolute top-1 h-5 w-5 rounded-full transition-all ${on ? "left-6 bg-[#0f1712]" : "left-1 bg-[var(--ink-soft)]"}`} />
+                        <span className={`absolute top-1 h-5 w-5 rounded-full transition-all ${on ? "left-6 bg-[var(--background)]" : "left-1 bg-[var(--ink-soft)]"}`} />
                       </button>
                     </label>
                   );

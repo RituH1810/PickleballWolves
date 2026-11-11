@@ -33,16 +33,16 @@ const shortDate = (value: string) => new Date(value).toLocaleDateString(undefine
 function WinnersPodium({ winners }: { winners: Winner[] }) {
   return (
     <section className="mt-4 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Crown size={15} className="text-[var(--lime-deep)]" />Top round robin winners</p>
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Crown size={15} className="text-[var(--lime-deep)]" />Top round robin winners</p>
       <ol className="mt-4 grid gap-3 sm:grid-cols-3">
         {winners.map((winner) => {
           const medal = MEDALS[winner.rank] ?? MEDALS[3];
           return (
             <li key={winner.userId}>
-              <Link href={`/players/${winner.userId}`} className={`flex items-center gap-3 rounded-2xl border-2 ${medal.ring} bg-[#131f19] p-3 transition-colors hover:bg-[#1c2a1a]`}>
+              <Link href={`/players/${winner.userId}`} className={`flex items-center gap-3 rounded-2xl border-2 ${medal.ring} bg-[var(--surface-2)] p-3 transition-colors hover:bg-[var(--surface-hover)]`}>
                 <div className="relative shrink-0">
-                  <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-11 w-11 rounded-full bg-[#22331f] text-xs font-black text-[var(--lime)]" />
-                  <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-black text-[#0f1712]" style={{ backgroundColor: medal.color }}>{medal.label}</span>
+                  <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-11 w-11 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />
+                  <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-black text-[var(--on-lime)]" style={{ backgroundColor: medal.color }}>{medal.label}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="truncate font-extrabold">{winner.name}</p>
@@ -61,24 +61,24 @@ function WinnersPodium({ winners }: { winners: Winner[] }) {
 function StreakPodium({ title, hint, icon: Icon, entries }: { title: string; hint: string; icon: typeof Flame; entries: StreakPlace[] }) {
   return (
     <section className="mt-4 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Icon size={15} className="text-[var(--lime-deep)]" />{title}</p>
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={15} className="text-[var(--lime-deep)]" />{title}</p>
       <p className="mt-1 text-xs text-[var(--ink-soft)]">{hint}</p>
       <ol className="mt-4 grid gap-3 sm:grid-cols-3">
         {entries.map((duo) => {
           const medal = MEDALS[duo.rank] ?? MEDALS[3];
           return (
-            <li key={duo.players.map((player) => player.userId).join(":")} className={`rounded-2xl border-2 ${medal.ring} bg-[#131f19] p-3`}>
+            <li key={duo.players.map((player) => player.userId).join(":")} className={`rounded-2xl border-2 ${medal.ring} bg-[var(--surface-2)] p-3`}>
               <div className="flex items-center gap-3">
                 <div className="relative flex shrink-0 -space-x-3">
-                  {duo.players.map((player) => <Avatar key={player.userId} name={player.name} photoUrl={player.photoUrl} className="h-10 w-10 rounded-full border-2 border-[#131f19] bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />)}
-                  <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-black text-[#0f1712]" style={{ backgroundColor: medal.color }}>{medal.label}</span>
+                  {duo.players.map((player) => <Avatar key={player.userId} name={player.name} photoUrl={player.photoUrl} className="h-10 w-10 rounded-full border-2 border-[var(--surface-2)] bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />)}
+                  <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-black text-[var(--on-lime)]" style={{ backgroundColor: medal.color }}>{medal.label}</span>
                 </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-extrabold"><PlayerLinks players={duo.players} /></p>
                   <p className="text-xs text-[var(--ink-soft)]"><span className="font-bold" style={{ color: medal.color }}>{duo.streak} wins in a row</span></p>
                 </div>
               </div>
-              <p className="mt-2 text-[11px] text-[var(--ink-soft)]">{duo.ongoing ? <span className="font-bold text-[var(--lime-deep)]">🔥 Still going</span> : <>Set {shortDate(duo.at)}</>} · <Link href={`/round-robin/${duo.roundRobin.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{duo.roundRobin.name}</Link></p>
+              <p className="mt-2 text-xs text-[var(--ink-soft)]">{duo.ongoing ? <span className="font-bold text-[var(--lime-deep)]">🔥 Still going</span> : <>Set {shortDate(duo.at)}</>} · <Link href={`/round-robin/${duo.roundRobin.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{duo.roundRobin.name}</Link></p>
             </li>
           );
         })}
@@ -94,7 +94,7 @@ function PlayerLinks({ players }: { players: Ref[] }) {
 function Section({ icon: Icon, title, hint, children, tone = "lime" }: { icon: typeof Trophy; title: string; hint?: string; children: ReactNode; tone?: "lime" | "coral" }) {
   return (
     <section className="mt-4 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Icon size={15} className={tone === "lime" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"} />{title}</p>
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={15} className={tone === "lime" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"} />{title}</p>
       {hint && <p className="mt-1 text-xs text-[var(--ink-soft)]">{hint}</p>}
       <div className="mt-3">{children}</div>
     </section>
@@ -152,7 +152,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
       <div className="mx-auto max-w-5xl">
         <Link href={`/groups/${groupId}`} className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to group</Link>
         <div className="mt-7">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{data?.groupName ?? "Group"} · {allTime ? "All time" : data?.monthLabel || "This month"}</p>
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{data?.groupName ?? "Group"} · {allTime ? "All time" : data?.monthLabel || "This month"}</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-.04em]">Hall of Fame</h1>
           <p className="mt-2 text-sm text-[var(--ink-soft)]">Records from {allTime ? "every ended round robin" : "this month's ended round robins"} in this group. Each scored game counts as a win or loss, and guests don&apos;t hold records.</p>
           <div className="mt-4 inline-flex rounded-full bg-[#1a2a1c] p-1" role="tablist" aria-label="Period">
@@ -175,7 +175,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
           <div className="mt-4">
             {allTime && !!data.chases?.length && (
               <section className="mt-4 rounded-[20px] border border-[var(--coral)] bg-[#2a1c17] p-5 sm:p-6">
-                <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[#f6b5a3]"><Target size={15} />Chasing a record</p>
+                <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[#f6b5a3]"><Target size={15} />Chasing a record</p>
                 <ul className="mt-3 space-y-2">{data.chases.map((chase) => <li key={`${chase.key}-${chase.userId}`} className="text-sm font-bold"><Link href={`/players/${chase.userId}`} className="hover:underline">{chase.text}</Link></li>)}</ul>
               </section>
             )}
@@ -190,13 +190,13 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
                 return (
                   <section key={record.key} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Icon size={15} className="text-[var(--lime-deep)]" />{record.label}</p>
+                      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={15} className="text-[var(--lime-deep)]" />{record.label}</p>
                       <p className="text-2xl font-black tracking-[-.04em] text-[var(--lime)]">{record.value}</p>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
                       {record.holders.map((holder) => (
                         <Link key={holder.userId} href={`/players/${holder.userId}`} className="flex min-w-0 items-center gap-2 font-extrabold hover:text-[var(--lime-deep)]">
-                          <Avatar name={holder.name} photoUrl={holder.photoUrl} className="h-8 w-8 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />
+                          <Avatar name={holder.name} photoUrl={holder.photoUrl} className="h-8 w-8 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />
                           <span className="truncate">{holder.name}</span>
                         </Link>
                       ))}
@@ -207,7 +207,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
                       {record.at && <> · {new Date(record.at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</>}
                     </p>
                     {reigns.length > 1 && (
-                      <button type="button" onClick={() => setOpenHistory((current) => (current === record.key ? null : record.key))} aria-expanded={openHistory === record.key} className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-[var(--lime-deep)] hover:underline"><History size={12} />{openHistory === record.key ? "Hide history" : `Record history (${reigns.length})`}</button>
+                      <button type="button" onClick={() => setOpenHistory((current) => (current === record.key ? null : record.key))} aria-expanded={openHistory === record.key} className="mt-3 flex items-center gap-1.5 text-xs font-bold text-[var(--lime-deep)] hover:underline"><History size={12} />{openHistory === record.key ? "Hide history" : `Record history (${reigns.length})`}</button>
                     )}
                     {openHistory === record.key && <RecordHistory reigns={reigns} />}
                     {allTime && <Reactions targetType="RECORD" targetId={recordTarget(groupId, record)} className="mt-4" />}
@@ -220,12 +220,12 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
               <Section icon={UserRound} title="Your place in the Hall" hint="Where you rank on each record among everyone who's played here.">
                 <ul className="grid gap-2 sm:grid-cols-2">
                   {data.place.map((placing) => (
-                    <li key={placing.key} className="flex items-center justify-between gap-3 rounded-xl bg-[#131f19] px-3 py-2.5 text-sm">
+                    <li key={placing.key} className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface-2)] px-3 py-2.5 text-sm">
                       <span className="min-w-0">
                         <span className="font-bold">{placing.label}</span> <span className="text-xs text-[var(--ink-soft)]">· {placing.value}</span>
-                        {placing.tied > 0 && <span className="block text-[11px] text-[var(--ink-soft)]">Shared with {placing.tied} {placing.tied === 1 ? "other" : "others"}</span>}
+                        {placing.tied > 0 && <span className="block text-xs text-[var(--ink-soft)]">Shared with {placing.tied} {placing.tied === 1 ? "other" : "others"}</span>}
                       </span>
-                      <span className={`shrink-0 font-black ${placing.rank === 1 ? "text-[#f5c542]" : placing.rank <= 3 ? "text-[var(--lime)]" : "text-[var(--ink-soft)]"}`}>{placing.tied > 0 ? "T-" : ""}#{placing.rank}<span className="text-[10px] font-bold text-[var(--ink-soft)]"> of {placing.of}</span></span>
+                      <span className={`shrink-0 font-black ${placing.rank === 1 ? "text-[#f5c542]" : placing.rank <= 3 ? "text-[var(--lime)]" : "text-[var(--ink-soft)]"}`}>{placing.tied > 0 ? "T-" : ""}#{placing.rank}<span className="text-xs font-bold text-[var(--ink-soft)]"> of {placing.of}</span></span>
                     </li>
                   ))}
                 </ul>
@@ -236,7 +236,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
               <Section icon={BadgeCheck} title="Milestone clubs" hint="With the date each player got in.">
                 <div className="grid gap-3 sm:grid-cols-3">
                   {data.clubs.map((club) => (
-                    <div key={club.key} className="rounded-2xl bg-[#131f19] p-4">
+                    <div key={club.key} className="rounded-2xl bg-[var(--surface-2)] p-4">
                       <p className="font-extrabold">{club.label}</p>
                       {club.members.length ? (
                         <ul className="mt-2 space-y-1 text-xs">{club.members.map((member) => <li key={member.userId} className="flex justify-between gap-2"><Link href={`/players/${member.userId}`} className="truncate font-bold hover:text-[var(--lime-deep)]">{member.name}</Link><span className="shrink-0 text-[var(--ink-soft)]">{shortDate(member.joinedAt)}</span></li>)}</ul>
@@ -251,10 +251,10 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
               <Section icon={Dumbbell} title="Hall of Grit" hint="For the effort, not the scoreline." tone="coral">
                 <div className="grid gap-3 sm:grid-cols-3">
                   {data.grit.map((record) => (
-                    <div key={record.key} className="rounded-2xl bg-[#131f19] p-4">
+                    <div key={record.key} className="rounded-2xl bg-[var(--surface-2)] p-4">
                       <div className="flex items-start justify-between gap-2"><p className="text-xs font-bold text-[var(--ink-soft)]">{record.label}</p><p className="text-xl font-black text-[var(--coral)]">{record.value}</p></div>
                       <p className="mt-2 text-sm"><PlayerLinks players={record.holders} /></p>
-                      <p className="mt-1 text-[11px] text-[var(--ink-soft)]">{record.detail}</p>
+                      <p className="mt-1 text-xs text-[var(--ink-soft)]">{record.detail}</p>
                     </div>
                   ))}
                 </div>

@@ -15,6 +15,7 @@ import { GroupFeed } from "@/components/group-feed";
 import { FormDots } from "@/components/form-dots";
 import type { FormResult } from "@/lib/form";
 import { DirectionsLink } from "@/components/directions-link";
+import { CardHeading } from "@/components/card-heading";
 
 type Player = { id: string; name: string; rank: number | null };
 type Member = { id: string; name: string; photoUrl: string | null; skillRating: string; role: "MEMBER" | "ORGANIZER"; rank: number | null };
@@ -167,85 +168,85 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
       <div className="mx-auto max-w-4xl">
         <Link href="/groups" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to groups</Link>
 
-        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}
+        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{notice.text}</p>}
 
         <section className="mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[#d8f24e] text-lg font-black text-[#1b211e]">{mark}</div>
+            <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-[var(--lime)] text-lg font-black text-[var(--ink-dark)]">{mark}</div>
             <div className="flex-1">
               <h1 className="text-2xl font-black tracking-[-.03em] text-[var(--foreground)] sm:text-3xl">{group.name}</h1>
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[var(--ink-soft)]"><span className="flex items-center gap-1"><MapPin size={14} />{group.location}</span><DirectionsLink address={group.location} /></p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {group.myRole === "ORGANIZER" && (
-                <Link href={`/groups/${groupId}/insights`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]">
+                <Link href={`/groups/${groupId}/insights`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]">
                   <BarChart3 size={15} />Insights
                 </Link>
               )}
               {group.isMember && (
-                <Link href={`/groups/${groupId}/hall-of-fame`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                <Link href={`/groups/${groupId}/hall-of-fame`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]">
                   <Trophy size={15} />Hall of Fame
                 </Link>
               )}
               {group.isMember && (
-                <Link href={`/groups/${groupId}/chemistry`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                <Link href={`/groups/${groupId}/chemistry`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]">
                   <FlaskConical size={15} />Chemistry
                 </Link>
               )}
               {group.isMember && (
-                <Link href={`/round-robin?groupId=${groupId}`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                <Link href={`/round-robin?groupId=${groupId}`} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]">
                   <Repeat size={15} />Create round robin
                 </Link>
               )}
               {group.isMember && (
-                <button onClick={() => setShowInvite((current) => !current)} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">
+                <button onClick={() => setShowInvite((current) => !current)} className="flex h-11 items-center justify-center gap-2 rounded-full border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]">
                   <UserPlus size={15} />Invite players
                 </button>
               )}
-              <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember || group.myStatus === "PENDING" ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>
+              <button onClick={toggleMembership} disabled={updating} className={`flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${group.isMember || group.myStatus === "PENDING" ? "bg-[var(--success-bg)] text-[var(--success-ink)]" : "bg-[var(--lime)] text-[var(--on-lime)] hover:bg-[var(--lime-hover)]"}`}>
                 {(group.isMember || group.myStatus === "PENDING") && <Check size={15} />}
                 {group.isMember ? "Joined" : group.myStatus === "PENDING" ? "Requested" : "Join group"}
               </button>
             </div>
           </div>
-          {group.description && <p className="mt-5 text-sm leading-6 text-[#c3d0c5]">{group.description}</p>}
+          {group.description && <p className="mt-5 text-sm leading-6 text-[var(--ink-muted)]">{group.description}</p>}
           <p className="mt-5 flex items-center gap-2 text-sm font-semibold text-[var(--ink-soft)]"><Users size={16} />{group.memberCount} member{group.memberCount === 1 ? "" : "s"}</p>
 
           {showInvite && group.isMember && (
-            <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[#131f19] p-5">
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Share invite link</p>
+            <div className="mt-6 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-5">
+              <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Share invite link</p>
               <p className="mt-1 text-xs text-[var(--ink-soft)]">Send this link on WhatsApp, text, email, or anywhere else.</p>
               {loadingInviteLink ? (
                 <div className="skeleton mt-3 h-11 rounded-xl" />
               ) : inviteLink ? (
                 <>
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                    <input readOnly value={inviteLink} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
-                    <button onClick={copyInviteLink} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
+                    <input readOnly value={inviteLink} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm text-[var(--ink-soft)] outline-none" />
+                    <button onClick={copyInviteLink} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Copy size={15} />Copy</button>
                   </div>
-                  <label className="mt-3 block text-xs font-bold text-[#c3d0c5]">Message -- edit freely, send whenever you like
-                    <textarea value={inviteMessage} onChange={(event) => setInviteMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
+                  <label className="mt-3 block text-xs font-bold text-[var(--ink-muted)]">Message -- edit freely, send whenever you like
+                    <textarea value={inviteMessage} onChange={(event) => setInviteMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
                   </label>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <a href={`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
-                    <a href={`sms:?body=${encodeURIComponent(inviteMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
-                    <a href={`mailto:?subject=${encodeURIComponent(`${groupName} on PickleballWolves`)}&body=${encodeURIComponent(inviteMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(inviteMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />WhatsApp</a>
+                    <a href={`sms:?body=${encodeURIComponent(inviteMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />Text</a>
+                    <a href={`mailto:?subject=${encodeURIComponent(`${groupName} on PickleballWolves`)}&body=${encodeURIComponent(inviteMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Mail size={14} />Email</a>
                   </div>
                 </>
               ) : (
                 <p className="mt-3 text-sm text-[var(--ink-soft)]">Unable to load an invite link right now.</p>
               )}
 
-              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Invite by email</p>
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Invite by email</p>
               <p className="mt-1 text-xs text-[var(--ink-soft)]">Send a sign-in link to anyone, even if they&apos;re not on the platform yet.</p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <input value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} type="email" placeholder="player@example.com" className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm outline-none focus:border-[var(--lime-deep)]" />
-                <button onClick={sendEmailInvite} disabled={sendingEmailInvite || !inviteEmail.trim()} className="flex h-11 items-center justify-center rounded-xl bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">
+                <input value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} type="email" placeholder="player@example.com" className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm outline-none focus:border-[var(--lime-deep)]" />
+                <button onClick={sendEmailInvite} disabled={sendingEmailInvite || !inviteEmail.trim()} className="flex h-11 items-center justify-center rounded-xl bg-[var(--lime)] px-5 text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">
                   {sendingEmailInvite ? "Sending..." : "Send invite"}
                 </button>
               </div>
 
-              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Add existing players</p>
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Add existing players</p>
               <p className="mt-1 text-xs text-[var(--ink-soft)]">Add players who are already on the platform straight to the group.</p>
               {(() => {
                 const memberIds = new Set(group.members.map((member) => member.id));
@@ -255,13 +256,13 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                   <>
                     <div className="mt-4 grid max-h-56 gap-2 overflow-y-auto sm:grid-cols-2">
                       {candidates.map((player) => (
-                        <button key={player.id} onClick={() => setInviteSelected((current) => current.includes(player.id) ? current.filter((id) => id !== player.id) : [...current, player.id])} className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${inviteSelected.includes(player.id) ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                        <button key={player.id} onClick={() => setInviteSelected((current) => current.includes(player.id) ? current.filter((id) => id !== player.id) : [...current, player.id])} className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${inviteSelected.includes(player.id) ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                           <span className="font-bold">{player.name}</span>
                           {inviteSelected.includes(player.id) && <Check size={15} className="text-[var(--lime-deep)]" />}
                         </button>
                       ))}
                     </div>
-                    <button onClick={inviteSelectedPlayers} disabled={inviting || inviteSelected.length === 0} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">
+                    <button onClick={inviteSelectedPlayers} disabled={inviting || inviteSelected.length === 0} className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">
                       {inviting ? "Adding..." : `Add ${inviteSelected.length || ""} to group`.trim()}
                     </button>
                   </>
@@ -277,12 +278,12 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Any group member can approve or decline.</p>
             <div className="mt-4 space-y-2">
               {group.pendingRequests.map((request) => (
-                <div key={request.id} className="flex items-center gap-3 rounded-xl bg-[#131f19] px-4 py-3">
-                  <Avatar name={request.name} photoUrl={request.photoUrl} className="h-9 w-9 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />
+                <div key={request.id} className="flex items-center gap-3 rounded-xl bg-[var(--surface-2)] px-4 py-3">
+                  <Avatar name={request.name} photoUrl={request.photoUrl} className="h-9 w-9 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />
                   <p className="min-w-0 flex-1 truncate text-sm font-bold">{request.name}</p>
                   <div className="flex shrink-0 gap-2">
-                    <button onClick={() => respondToRequest(request.id, "ACTIVE")} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Approve</button>
-                    <button onClick={() => respondToRequest(request.id, "DECLINED")} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]">Decline</button>
+                    <button onClick={() => respondToRequest(request.id, "ACTIVE")} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Approve</button>
+                    <button onClick={() => respondToRequest(request.id, "DECLINED")} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]">Decline</button>
                   </div>
                 </div>
               ))}
@@ -301,14 +302,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               <div className="mt-4 divide-y divide-[var(--line)]">
                 {group.members.map((member) => (
                   <div key={member.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <Avatar name={member.name} photoUrl={member.photoUrl} className="h-9 w-9 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />
+                    <Avatar name={member.name} photoUrl={member.photoUrl} className="h-9 w-9 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />
                     <div className="min-w-0 flex-1">
                       <Link href={`/players/${member.id}`} className="block truncate text-sm font-bold hover:text-[var(--lime-deep)] hover:underline">{member.name}</Link>
-                      <p className="text-[11px] text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"} · {member.skillRating} rating</p>
+                      <p className="text-xs text-[var(--ink-soft)]">{member.rank ? `#${member.rank} rank` : "Unranked"} · {member.skillRating} rating</p>
                     </div>
-                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">{member.id === group.createdById ? "Organizer" : "Co-organizer"}</span>}
+                    {member.role === "ORGANIZER" && <span className="rounded-full bg-[var(--surface-hover)] px-2.5 py-1 text-xs font-bold text-[var(--ink-soft)]">{member.id === group.createdById ? "Organizer" : "Co-organizer"}</span>}
                     {group.myRole === "ORGANIZER" && member.id !== group.createdById && (
-                      <button onClick={() => setMemberRole(member, member.role === "ORGANIZER" ? "MEMBER" : "ORGANIZER")} disabled={roleUpdatingId === member.id} title={member.role === "ORGANIZER" ? "Remove co-organizer" : "Make co-organizer: they can run the group's round robins, post announcements, and set up recurring games"} className="shrink-0 rounded-full border border-[var(--line)] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)] hover:border-[var(--lime-deep)] hover:text-[var(--foreground)] disabled:opacity-50">
+                      <button onClick={() => setMemberRole(member, member.role === "ORGANIZER" ? "MEMBER" : "ORGANIZER")} disabled={roleUpdatingId === member.id} title={member.role === "ORGANIZER" ? "Remove co-organizer" : "Make co-organizer: they can run the group's round robins, post announcements, and set up recurring games"} className="shrink-0 rounded-full border border-[var(--line)] px-2.5 py-1 text-xs font-bold text-[var(--ink-soft)] hover:border-[var(--lime-deep)] hover:text-[var(--foreground)] disabled:opacity-50">
                         {roleUpdatingId === member.id ? "..." : member.role === "ORGANIZER" ? "Make member" : "Make co-organizer"}
                       </button>
                     )}
@@ -333,7 +334,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
               {upcomingGames.map((item) => {
                 const content = (
                   <>
-                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]">{item.kind === "roundRobin" ? <Repeat size={16} /> : <CalendarDays size={16} />}</div>
+                    <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--surface-hover)] text-[var(--lime-deep)]">{item.kind === "roundRobin" ? <Repeat size={16} /> : <CalendarDays size={16} />}</div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{item.title}</p>
                       <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{new Date(item.date).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · {item.detail}</p>
@@ -352,19 +353,19 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
 
         {group.isMember && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
-            <div className="flex items-center gap-2"><Repeat size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Round robins</h2></div>
+            <CardHeading icon={Repeat} title="Round robins" />
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Last 5 completed. Upcoming games are listed above.</p>
             <div className="mt-4 space-y-3">
               {group.recentRoundRobins.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No completed round robins yet.</p>}
               {group.recentRoundRobins.map((roundRobin) => (
                 <Link key={roundRobin.id} href={`/round-robin/${roundRobin.id}`} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 transition-colors last:border-0 last:pb-0 hover:text-[var(--lime-deep)]">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#1c2a1a] text-[var(--lime-deep)]"><Repeat size={16} /></div>
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[var(--surface-hover)] text-[var(--lime-deep)]"><Repeat size={16} /></div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-bold">{roundRobin.name}</p>
                     <p className="mt-0.5 truncate text-xs text-[var(--ink-soft)]">{roundRobin.scheduledAt ? new Date(roundRobin.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) : "No date"} · {groupPartnerFormatLabels[roundRobin.partnerFormat] ?? roundRobin.partnerFormat} · {groupPlayFormatLabels[roundRobin.playFormat] ?? roundRobin.playFormat} · {roundRobin.gameCount} game{roundRobin.gameCount === 1 ? "" : "s"}</p>
                   </div>
                   {roundRobin.champions.length > 0 && (
-                    <span className="flex max-w-[45%] shrink-0 items-center gap-1.5 rounded-full bg-[#1e2b17] px-2.5 py-1 text-[11px] font-bold text-[#c7e572]" title={`Champion${roundRobin.champions.length > 1 ? "s" : ""}: ${roundRobin.champions.map((entry) => `${entry.name} (${entry.wins}-${entry.losses})`).join(", ")}`}>
+                    <span className="flex max-w-[45%] shrink-0 items-center gap-1.5 rounded-full bg-[var(--success-bg)] px-2.5 py-1 text-xs font-bold text-[var(--success-ink)]" title={`Champion${roundRobin.champions.length > 1 ? "s" : ""}: ${roundRobin.champions.map((entry) => `${entry.name} (${entry.wins}-${entry.losses})`).join(", ")}`}>
                       <Crown size={12} className="shrink-0" /><span className="truncate">{roundRobin.champions.length > 1 ? `${roundRobin.champions[0].name} +${roundRobin.champions.length - 1}` : `${roundRobin.champions[0].name} · ${roundRobin.champions[0].wins}-${roundRobin.champions[0].losses}`}</span>
                     </span>
                   )}
@@ -382,14 +383,14 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
         {group.isMember && <MonthlyLeaderboard groupId={groupId} />}
 
         <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-4 sm:p-8">
-          <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Group leaderboard</h2></div>
+          <CardHeading icon={Trophy} title="Group leaderboard" />
           {group.isMember ? (
             group.leaderboard.length === 0 ? (
               <p className="mt-4 text-sm text-[var(--ink-soft)]">No one has played 20 matches in this group yet.</p>
             ) : (
               <div className="mt-4">
                 <table className="w-full text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="w-9 pb-3">#</th><th className="pb-3">Player</th><th className="hidden pb-3 sm:table-cell">Form</th><th className="hidden pb-3 text-center sm:table-cell">Matches</th><th className="w-8 pb-3 text-center sm:w-14">W</th><th className="w-8 pb-3 text-center sm:w-14">L</th><th className="w-12 pb-3 text-center sm:w-auto">Win%</th><th className="hidden pb-3 text-center sm:table-cell">Points earned</th><th className="hidden pb-3 text-center sm:table-cell">Points against</th><th className="w-12 pb-3 text-right sm:w-auto"><span className="sm:hidden">Diff</span><span className="hidden sm:inline">Avg pt diff</span></th></tr></thead>
+                  <thead><tr className="border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><th className="w-9 pb-3">#</th><th className="pb-3">Player</th><th className="hidden pb-3 sm:table-cell">Form</th><th className="hidden pb-3 text-center sm:table-cell">Matches</th><th className="w-8 pb-3 text-center sm:w-14">W</th><th className="w-8 pb-3 text-center sm:w-14">L</th><th className="w-12 pb-3 text-center sm:w-auto">Win%</th><th className="hidden pb-3 text-center sm:table-cell">Points earned</th><th className="hidden pb-3 text-center sm:table-cell">Points against</th><th className="w-12 pb-3 text-right sm:w-auto"><span className="sm:hidden">Diff</span><span className="hidden sm:inline">Avg pt diff</span></th></tr></thead>
                   <tbody>
                     {group.leaderboard.map((entry) => (
                       <tr key={entry.id} className="border-b border-[var(--line)] last:border-0">
@@ -401,7 +402,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
                             {entry.rank}
                           </span>
                         </td>
-                        <td className="py-3 pr-2"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" /><span className="min-w-0"><Link href={`/players/${entry.id}`} className="break-words hover:text-[var(--lime-deep)] hover:underline">{entry.name}</Link><span className="mt-1 block sm:hidden"><FormDots results={entry.form ?? []} size="sm" /></span></span></span></td>
+                        <td className="py-3 pr-2"><span className="flex items-center gap-2 font-bold"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" /><span className="min-w-0"><Link href={`/players/${entry.id}`} className="break-words hover:text-[var(--lime-deep)] hover:underline">{entry.name}</Link><span className="mt-1 block sm:hidden"><FormDots results={entry.form ?? []} size="sm" /></span></span></span></td>
                         <td className="hidden py-3 sm:table-cell"><FormDots results={entry.form ?? []} size="sm" /></td>
                         <td className="hidden py-3 text-center font-semibold text-[var(--ink-soft)] sm:table-cell">{entry.matches}</td>
                         <td className="py-3 text-center font-semibold">{entry.wins}</td>
@@ -435,7 +436,7 @@ export default function GroupDetailPage({ params }: { params: Promise<{ groupId:
             ) : (
               <div className="mt-4 space-y-3">
                 {group.recentResults.map((result) => (
-                  <div key={result.id} className="rounded-xl bg-[#131f19] px-4 py-3">
+                  <div key={result.id} className="rounded-xl bg-[var(--surface-2)] px-4 py-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="text-sm font-bold">
                         <span className={result.winnerSide === "A" ? "text-[var(--lime-deep)]" : result.winnerSide === "B" ? "text-[var(--coral)]" : "text-[var(--foreground)]"}>{result.sideA}</span>

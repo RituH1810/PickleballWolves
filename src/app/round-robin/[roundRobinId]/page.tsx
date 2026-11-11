@@ -20,6 +20,7 @@ import { isUpset, type Prediction } from "@/lib/match-prediction";
 import { PREVIEW_SCORE } from "@/lib/rating";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
+import { CardHeading } from "@/components/card-heading";
 
 type Match = { prediction?: Prediction | null; myStakes?: { win: number; lose: number } | null; id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; stage: "SEMIFINAL" | "FINAL" | null; matches: Match[] };
@@ -46,6 +47,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [generating, setGenerating] = useState(false);
   const [addingRound, setAddingRound] = useState(false);
   const [playoffBusy, setPlayoffBusy] = useState(false);
+  // Phones show matches or standings, one at a time; desktop shows both side by side.
+  const [mobileTab, setMobileTab] = useState<"matches" | "standings">("matches");
   const [showShare, setShowShare] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [shareMessage, setShareMessage] = useState("");
@@ -380,7 +383,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         <Link href="/round-robin" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to round robin builder</Link>
         <div className="mt-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{partnerFormatLabels[room.partnerFormat] ?? room.partnerFormat} · {playFormatLabels[room.playFormat] ?? room.playFormat}</p>
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{partnerFormatLabels[room.partnerFormat] ?? room.partnerFormat} · {playFormatLabels[room.playFormat] ?? room.playFormat}</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{room.name}</h1>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{room.isOwner ? "you" : room.organizerName}</span>{room.coHosts.length > 0 && <>, co-hosted by <span className="font-bold text-[var(--foreground)]">{room.coHosts.map((coHost) => coHost.id === room.myUserId ? "you" : coHost.name).join(", ")}</span></>}{room.groupName && <> for <span className="font-bold text-[var(--foreground)]">{room.groupName}</span></>}</p>
             {room.location && <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-[var(--ink-soft)]"><MapPin size={15} />{room.location}<DirectionsLink address={room.location} /></p>}
@@ -399,37 +402,37 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             {room.scheduledAt && <p className="mt-1 flex items-center gap-2 text-sm font-bold text-[var(--lime-deep)]"><CalendarDays size={15} />{new Date(room.scheduledAt).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>}
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className={`flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-xs font-bold ${room.status === "COMPLETED" ? "bg-[#1c2a1a] text-[var(--ink-soft)]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{room.status === "LIVE" ? <LivePulse color="#c7e572" size={9} /> : <Check size={15} />}{room.status === "LIVE" ? "Live schedule" : room.status === "COMPLETED" ? "Completed" : room.status}</span>
+            <span className={`flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-xs font-bold ${room.status === "COMPLETED" ? "bg-[var(--surface-hover)] text-[var(--ink-soft)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{room.status === "LIVE" ? <LivePulse color="#c7e572" size={9} /> : <Check size={15} />}{room.status === "LIVE" ? "Live schedule" : room.status === "COMPLETED" ? "Completed" : room.status}</span>
             {room.scheduledAt && room.status !== "COMPLETED" && <AddToCalendar items={[{ uid: `roundRobin-${roundRobinId}`, title: room.groupName ? `${room.groupName} - ${room.name}` : room.name, start: room.scheduledAt, location: room.location, description: `Organized by ${room.organizerName}.`, url: `/round-robin/${roundRobinId}` }]} />}
-            <button onClick={toggleShare} className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
-            {room.isOwner && !room.hasScores && <Link href={`/round-robin/${roundRobinId}/edit`} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]">Edit round robin</Link>}
-            {room.canRun && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
-            {room.isOwner && !room.hasScores && <button onClick={deleteRoundRobin} disabled={deleting} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--coral)] px-4 text-xs font-bold text-[var(--coral)] transition-colors hover:bg-[#2e1a16] disabled:cursor-not-allowed disabled:opacity-60">{deleting ? "Deleting..." : "Delete round robin"}</button>}
+            <button onClick={toggleShare} className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]"><Share2 size={14} />Share</button>
+            {room.isOwner && !room.hasScores && <Link href={`/round-robin/${roundRobinId}/edit`} className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]">Edit round robin</Link>}
+            {room.canRun && room.status !== "COMPLETED" && <button onClick={endRoundRobin} disabled={ending} className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-60">{ending ? "Ending..." : "End round robin"}</button>}
+            {room.isOwner && !room.hasScores && <button onClick={deleteRoundRobin} disabled={deleting} className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--coral)] px-4 text-xs font-bold text-[var(--coral)] transition-colors hover:bg-[var(--danger-bg)] disabled:cursor-not-allowed disabled:opacity-60">{deleting ? "Deleting..." : "Delete round robin"}</button>}
           </div>
         </div>
         {notice && (
-          <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>
+          <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{notice.text}</p>
         )}
 
         {showShare && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Share this round robin</p>
+            <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Share this round robin</p>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">{room.groupId ? "Anyone who opens this link joins the group and lands right here." : "Send this link on WhatsApp, text, email, or anywhere else."}</p>
             {loadingShare ? (
               <div className="skeleton mt-3 h-11 rounded-xl" />
             ) : shareUrl ? (
               <>
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
-                  <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
+                  <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm text-[var(--ink-soft)] outline-none" />
+                  <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Copy size={15} />Copy</button>
                 </div>
-                <label className="mt-3 block text-xs font-bold text-[#c3d0c5]">Message -- edit freely, send whenever you like
-                  <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
+                <label className="mt-3 block text-xs font-bold text-[var(--ink-muted)]">Message -- edit freely, send whenever you like
+                  <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
                 </label>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
-                  <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
-                  <a href={`mailto:?subject=${encodeURIComponent(`${room.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+                  <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />WhatsApp</a>
+                  <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />Text</a>
+                  <a href={`mailto:?subject=${encodeURIComponent(`${room.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Mail size={14} />Email</a>
                 </div>
               </>
             ) : (
@@ -447,17 +450,17 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               </div>
               {room.isGroupMember && (
                 <div className="flex gap-2">
-                  <button onClick={() => respondRsvp("JOINED")} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${room.myRsvpStatus === "JOINED" ? "bg-[var(--lime)] text-[#0f1712]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{room.myRsvpStatus === "JOINED" ? "You're in" : "Join"}</button>
-                  <button onClick={() => respondRsvp("DECLINED")} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${room.myRsvpStatus === "DECLINED" ? "bg-[var(--coral)] text-[#2e1a16]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]"}`}>{room.myRsvpStatus === "DECLINED" ? "Declined" : "Decline"}</button>
+                  <button onClick={() => respondRsvp("JOINED")} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${room.myRsvpStatus === "JOINED" ? "bg-[var(--lime)] text-[var(--on-lime)]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]"}`}>{room.myRsvpStatus === "JOINED" ? "You're in" : "Join"}</button>
+                  <button onClick={() => respondRsvp("DECLINED")} className={`rounded-full px-4 py-2 text-xs font-bold transition-colors ${room.myRsvpStatus === "DECLINED" ? "bg-[var(--coral)] text-[var(--on-coral)]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]"}`}>{room.myRsvpStatus === "DECLINED" ? "Declined" : "Decline"}</button>
                 </div>
               )}
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {room.joinedPlayers.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one has joined yet.</p>}
               {room.joinedPlayers.map((player) => (
-                <span key={player.id} className={`flex items-center gap-1 rounded-full bg-[#1e2b17] py-1.5 text-xs font-bold text-[#c7e572] ${room.canRun ? "pl-3 pr-1.5" : "px-3"} ${removingPlayerId === player.id ? "opacity-50" : ""}`}>
-                  {player.name}{player.isGuest ? <span title="Added by name -- not on PickleballWolves" className="rounded-full bg-[#0f1712] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Guest</span> : player.fromOutside && <span title="Not in the group -- added to this game by the organizer" className="rounded-full bg-[#0f1712] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Outside</span>}
-                  {room.canRun && <button onClick={() => removePlayerFromRoster(player)} disabled={removingPlayerId === player.id} aria-label={`Remove ${player.name}`} title={`Remove ${player.name}`} className="grid h-5 w-5 place-items-center rounded-full text-[#c7e572] transition-colors hover:bg-[var(--coral)] hover:text-[#2e1a16]"><X size={12} /></button>}
+                <span key={player.id} className={`flex items-center gap-1 rounded-full bg-[var(--success-bg)] py-1.5 text-xs font-bold text-[var(--success-ink)] ${room.canRun ? "pl-3 pr-1.5" : "px-3"} ${removingPlayerId === player.id ? "opacity-50" : ""}`}>
+                  {player.name}{player.isGuest ? <span title="Added by name -- not on PickleballWolves" className="rounded-full bg-[var(--background)] px-1.5 py-0.5 text-[11px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Guest</span> : player.fromOutside && <span title="Not in the group -- added to this game by the organizer" className="rounded-full bg-[var(--background)] px-1.5 py-0.5 text-[11px] font-black uppercase tracking-wide text-[var(--ink-soft)]">Outside</span>}
+                  {room.canRun && <button onClick={() => removePlayerFromRoster(player)} disabled={removingPlayerId === player.id} aria-label={`Remove ${player.name}`} title={`Remove ${player.name}`} className="grid h-5 w-5 place-items-center rounded-full text-[var(--success-ink)] transition-colors hover:bg-[var(--coral)] hover:text-[var(--on-coral)]"><X size={12} /></button>}
                 </span>
               ))}
             </div>
@@ -465,14 +468,14 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               const notYetJoined = rosterCandidates.filter((member) => !room.joinedPlayers.some((player) => player.id === member.id));
               return (
                 <div className="mt-4 border-t border-[var(--line)] pt-4">
-                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Add players directly</p>
+                  <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Add players directly</p>
                   <p className="mt-1 text-xs text-[var(--ink-soft)]">{room.groupId ? "Skip waiting on an RSVP -- add anyone from the group straight to the roster." : "Add anyone on PickleballWolves to this round robin's players."}</p>
                   {notYetJoined.length === 0 ? (
                     <p className="mt-2 text-sm text-[var(--ink-soft)]">{room.groupId ? "Everyone in the group has already joined." : "Everyone's already in."}</p>
                   ) : (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {notYetJoined.map((member) => (
-                        <button key={member.id} onClick={() => addPlayerToRoster(member.id)} disabled={addingPlayerId === member.id} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold text-[var(--foreground)] transition-colors hover:border-[var(--lime-deep)] hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">
+                        <button key={member.id} onClick={() => addPlayerToRoster(member.id)} disabled={addingPlayerId === member.id} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold text-[var(--foreground)] transition-colors hover:border-[var(--lime-deep)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-60">
                           {addingPlayerId === member.id ? "Adding..." : `+ ${member.name}`}
                         </button>
                       ))}
@@ -489,7 +492,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               <div className="mt-5 border-t border-[var(--line)] pt-5">
                 {needsFixedTeams ? (
                   <>
-                    <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Pair up teams from who&apos;s joined</p>
+                    <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Pair up teams from who&apos;s joined</p>
                     {room.joinedPlayers.length === 0 ? <p className="mt-3 text-sm text-[var(--ink-soft)]">Wait for members to join first.</p> : (
                       <>
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -497,7 +500,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                             const paired = pairedPlayerIds.has(player.id);
                             const isPending = pendingPartner === player.id;
                             return (
-                              <button key={player.id} onClick={() => toggleJoinedPairing(player.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[#0f1712]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
+                              <button key={player.id} onClick={() => toggleJoinedPairing(player.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--success-ink)]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[var(--on-lime)]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
                                 {player.name}{isPending ? " · pick a partner" : ""}
                               </button>
                             );
@@ -506,7 +509,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                         <div className="mt-4 space-y-2">
                           {teams.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No teams yet.</p>}
                           {teams.map(([a, b], index) => (
-                            <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[#131f19] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]">
+                            <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]">
                               <span>Team {index + 1}: {joinedPlayerName(a)} &amp; {joinedPlayerName(b)}</span>
                               <button onClick={() => toggleJoinedPairing(a)} className="text-xs font-bold text-[var(--lime-deep)]">Unpair</button>
                             </div>
@@ -518,7 +521,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                 ) : (
                   <p className="text-sm text-[var(--ink-soft)]">{room.joinedPlayers.length < 4 ? `Need at least ${4 - room.joinedPlayers.length} more member${4 - room.joinedPlayers.length === 1 ? "" : "s"} to join before generating.` : "Ready to generate the schedule."}</p>
                 )}
-                <button onClick={() => generateFromJoined(needsFixedTeams)} disabled={generating || (needsFixedTeams ? teams.length < 2 : room.joinedPlayers.length < 4)} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{generating ? "Generating..." : "Generate matches"} <ArrowRight size={16} /></button>
+                <button onClick={() => generateFromJoined(needsFixedTeams)} disabled={generating || (needsFixedTeams ? teams.length < 2 : room.joinedPlayers.length < 4)} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{generating ? "Generating..." : "Generate matches"} <ArrowRight size={16} /></button>
               </div>
             )}
           </section>
@@ -529,7 +532,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-extrabold">Create a match</h2>
               {eligibleMatchPlayers.length >= (room.playFormat === "SINGLES" ? 2 : 4) && (
-                <button onClick={suggestMatch} className="flex items-center gap-1.5 rounded-full border border-[var(--lime-deep)] px-3.5 py-2 text-xs font-bold text-[var(--lime-deep)] hover:bg-[#1e2b17]">
+                <button onClick={suggestMatch} className="flex items-center gap-1.5 rounded-full border border-[var(--lime-deep)] px-3.5 py-2 text-xs font-bold text-[var(--lime-deep)] hover:bg-[var(--success-bg)]">
                   <Sparkles size={14} />{suggestions && suggestions.options.length > 1 ? `Shuffle (${suggestions.index + 1}/${suggestions.options.length})` : "Suggest a match"}
                 </button>
               )}
@@ -537,7 +540,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Pick from players who&apos;ve joined or already have a match -- tap to assign; once a team fills up, the next tap goes to the other side. Or let Suggest pick a fair match from who&apos;s waiting.</p>
             {suggestions && Object.keys(matchAssignment).length > 0 && (() => {
               const option = suggestions.options[suggestions.index];
-              return <p className="mt-2 text-[11px] font-semibold text-[var(--lime-deep)]">Suggested: longest-waiting players · teams {option.ratingGap === 0 ? "evenly rated" : `within ${option.ratingGap.toFixed(2)} rating`}{option.repeats === 0 ? " · no repeat partners or opponents" : ` · ${option.repeats} repeat${option.repeats === 1 ? "" : "s"} from earlier`}</p>;
+              return <p className="mt-2 text-xs font-semibold text-[var(--lime-deep)]">Suggested: longest-waiting players · teams {option.ratingGap === 0 ? "evenly rated" : `within ${option.ratingGap.toFixed(2)} rating`}{option.repeats === 0 ? " · no repeat partners or opponents" : ` · ${option.repeats} repeat${option.repeats === 1 ? "" : "s"} from earlier`}</p>;
             })()}
             {eligibleMatchPlayers.length === 0 ? <p className="mt-4 text-sm text-[var(--ink-soft)]">No joined or scheduled players yet.</p> : (
               <>
@@ -545,26 +548,26 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                   {eligibleMatchPlayers.map((player) => {
                     const side = matchAssignment[player.id];
                     return (
-                      <button key={player.id} onClick={() => toggleMatchAssignment(player.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${side === "A" ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : side === "B" ? "border-[var(--coral)] bg-[#2e1a16] text-[#f2a08c]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
+                      <button key={player.id} onClick={() => toggleMatchAssignment(player.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${side === "A" ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--success-ink)]" : side === "B" ? "border-[var(--coral)] bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
                         {player.name}{side ? ` · Team ${side}` : ""}
                       </button>
                     );
                   })}
                 </div>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl bg-[#131f19] p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Team A</p>
+                  <div className="rounded-xl bg-[var(--surface-2)] p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Team A</p>
                     <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "A").map(([id]) => eligiblePlayerName(id)).join(" & ") || "—"}</p>
                   </div>
-                  <div className="rounded-xl bg-[#131f19] p-3">
-                    <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--coral)]">Team B</p>
+                  <div className="rounded-xl bg-[var(--surface-2)] p-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--coral)]">Team B</p>
                     <p className="mt-1 text-sm font-bold text-[var(--foreground)]">{Object.entries(matchAssignment).filter(([, side]) => side === "B").map(([id]) => eligiblePlayerName(id)).join(" & ") || "—"}</p>
                   </div>
                 </div>
                 <button
                   onClick={createManualMatch}
                   disabled={creatingMatch || Object.values(matchAssignment).filter((side) => side === "A").length !== (room.playFormat === "SINGLES" ? 1 : 2) || Object.values(matchAssignment).filter((side) => side === "B").length !== (room.playFormat === "SINGLES" ? 1 : 2)}
-                  className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {creatingMatch ? "Creating..." : "Create match"} <ArrowRight size={16} />
                 </button>
@@ -577,8 +580,14 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         {room.status === "COMPLETED" && <GoodWolfVote roundRobinId={roundRobinId} />}
         {(room.canRun || room.isGroupMember || room.myRsvpStatus === "JOINED") && <GameChat roundRobinId={roundRobinId} />}
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_.35fr]">
-          <section className="space-y-4">
+        <div role="tablist" aria-label="Show" className="mt-6 flex rounded-full bg-[var(--surface-2)] p-1 lg:hidden">
+          {(["matches", "standings"] as const).map((tab) => (
+            <button key={tab} role="tab" aria-selected={mobileTab === tab} onClick={() => setMobileTab(tab)} className={`h-10 flex-1 rounded-full text-sm font-bold capitalize transition-colors ${mobileTab === tab ? "bg-[var(--lime)] text-[var(--on-lime)]" : "text-[var(--ink-soft)]"}`}>{tab}</button>
+          ))}
+        </div>
+
+        <div className="mt-4 grid gap-6 lg:mt-6 lg:grid-cols-[1fr_.35fr]">
+          <section className={`space-y-4 ${mobileTab === "standings" ? "hidden lg:block" : ""}`}>
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black tracking-tight">Live matches</h2>
               <div className="flex items-center gap-4">
@@ -611,8 +620,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               </section>
             ))}
           </section>
-          <aside className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
-            <div className="flex items-center gap-2"><Trophy size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Standings</h2></div>
+          <aside className={`rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 ${mobileTab === "matches" ? "hidden lg:block" : ""}`}>
+            <CardHeading icon={Trophy} title="Standings" />
             {/* Equal games guard: who's fallen behind on games while the night is still on. */}
             {room.status !== "COMPLETED" && (() => {
               const balance = gameBalance([
@@ -621,7 +630,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               ]);
               if (!balance.uneven) return null;
               return (
-                <div role="status" className="mt-3 rounded-xl border border-[#8a6a2a] bg-[#2a2414] p-3 text-[11px] leading-5 text-[#f0d28a]">
+                <div role="status" className="mt-3 rounded-xl border border-[#8a6a2a] bg-[#2a2414] p-3 text-xs leading-5 text-[#f0d28a]">
                   <p className="font-black">Uneven games · most played: {balance.most}</p>
                   <p>{balance.behind.map((player) => `${player.name} ${player.games}`).join(" · ")}</p>
                   <p className="mt-1 text-[#c9b27a]">{room.partnerFormat === "MANUAL" ? "Suggest a match picks them first." : "+ Add round gives them courts first."} Even games keep the standings fair.</p>
@@ -631,17 +640,17 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
             <div className="mt-4 space-y-2">
               {standings.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No results yet.</p>}
               {standings.map((player) => (
-                <div key={player.name} className="rounded-xl bg-[#131f19] px-3 py-3">
+                <div key={player.name} className="rounded-xl bg-[var(--surface-2)] px-3 py-3">
                   <div className="flex items-center gap-2">
                     <span className="w-5 text-xs font-black text-[var(--lime-deep)]">{player.rank}</span>
                     <span className="flex-1 truncate text-xs font-bold">{player.name}</span>
                     <span className="text-xs font-black text-[var(--lime-deep)]">{player.winPct}%</span>
                   </div>
-                  <div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-[var(--ink-soft)]">
+                  <div className="mt-2 flex items-center justify-between text-xs font-semibold text-[var(--ink-soft)]">
                     <span>{player.matches} match{player.matches === 1 ? "" : "es"}</span>
                     <span>{player.wins}W &ndash; {player.losses}L</span>
                   </div>
-                  <div className="mt-1 flex items-center justify-between text-[10px] font-semibold text-[var(--ink-soft)]">
+                  <div className="mt-1 flex items-center justify-between text-xs font-semibold text-[var(--ink-soft)]">
                     <span>{player.scored} earned</span>
                     <span>{player.conceded} against</span>
                   </div>
@@ -660,16 +669,42 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
               return (
                 <div className="mt-5 border-t border-[var(--line)] pt-4">
                   <p className="text-xs font-extrabold">Playoffs <span className="font-semibold text-[var(--ink-soft)]">(optional)</span></p>
-                  <p className="mt-1 text-[11px] text-[var(--ink-soft)]">End the night with the top of the standings playing for the title. Playoff games count for ratings, not standings.</p>
+                  <p className="mt-1 text-xs text-[var(--ink-soft)]">End the night with the top of the standings playing for the title. Playoff games count for ratings, not standings.</p>
                   <div className="mt-3 grid gap-2">
-                    <button onClick={() => startPlayoffs("FINAL")} disabled={playoffBusy} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold hover:bg-[#1c2a1a] disabled:opacity-60">Final · {top("FINAL")}</button>
-                    <button onClick={() => startPlayoffs("SEMIS")} disabled={playoffBusy} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold hover:bg-[#1c2a1a] disabled:opacity-60">Semis + final · {top("SEMIS")}</button>
+                    <button onClick={() => startPlayoffs("FINAL")} disabled={playoffBusy} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold hover:bg-[var(--surface-hover)] disabled:opacity-60">Final · {top("FINAL")}</button>
+                    <button onClick={() => startPlayoffs("SEMIS")} disabled={playoffBusy} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold hover:bg-[var(--surface-hover)] disabled:opacity-60">Semis + final · {top("SEMIS")}</button>
                   </div>
                 </div>
               );
             })()}
           </aside>
         </div>
+
+        {/* Phones: a sticky shortcut to your next unscored match while the night is on. */}
+        {room.status !== "COMPLETED" && room.myUserId && (() => {
+          const regular = rounds.filter((round) => !round.stage).sort((a, b) => a.roundNumber - b.roundNumber);
+          const playoff = rounds.filter((round) => round.stage).sort((a, b) => a.roundNumber - b.roundNumber);
+          const queue = [
+            ...[...regular, ...playoff].flatMap((round) => round.matches.map((match) => ({ match, where: `${round.stage === "FINAL" ? "Final" : round.stage === "SEMIFINAL" ? "Semifinal" : `Round ${round.roundNumber}`}${match.courtNumber ? ` · Court ${match.courtNumber}` : ""}` }))),
+            ...manualMatches.map((match, index) => ({ match, where: `Match ${index + 1}${match.courtNumber ? ` · Court ${match.courtNumber}` : ""}` })),
+          ];
+          const next = queue.find(({ match }) => !match.scores.length && match.players.some((player) => player.userId === room.myUserId));
+          if (!next) return null;
+          const mySide = next.match.players.find((player) => player.userId === room.myUserId)!.side;
+          const team = (mine: boolean) => next.match.players.filter((player) => (player.side === mySide) === mine).map((player) => (player.userId === room.myUserId ? "You" : player.name)).join(" & ");
+          return (
+            <>
+              <div className="h-20 lg:hidden" aria-hidden />
+              <button onClick={() => { setMobileTab("matches"); requestAnimationFrame(() => document.getElementById(`match-${next.match.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" })); }} className="fixed inset-x-4 bottom-4 z-30 flex items-center gap-3 rounded-2xl bg-[var(--lime)] px-4 py-3 text-left text-[var(--on-lime)] shadow-lg lg:hidden">
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[11px] font-black uppercase tracking-[.12em]">Your next match · {next.where}</span>
+                  <span className="block truncate text-sm font-bold">{team(true)} vs {team(false)}</span>
+                </span>
+                <ArrowRight size={18} className="shrink-0" />
+              </button>
+            </>
+          );
+        })()}
       </div>
     </main>
   );
@@ -685,13 +720,13 @@ function MatchCard({ match, number, onSave, onDelete, canManage, canScore }: { m
   const upset = isUpset(prediction, winner);
   const chance = (side: "A" | "B") => (prediction ? (side === "A" ? prediction.chanceA : 100 - prediction.chanceA) : null);
   return (
-    <article className="rounded-xl border border-[var(--line)] p-4">
+    <article id={`match-${match.id}`} className="scroll-mt-24 rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{number !== undefined && <span className="text-[var(--foreground)]">Match {number} · </span>}Court {match.courtNumber}</span>
+        <span className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{number !== undefined && <span className="text-[var(--foreground)]">Match {number} · </span>}Court {match.courtNumber}</span>
         <div className="flex items-center gap-2">
-          {upset && winner && <span title={`Won with a ${chance(winner)}% chance going in`} className="rounded-full bg-[var(--coral)] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-[#2e1a16]">Upset!</span>}
-          {hasScore ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
-          {canManage && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[#2e1a16] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
+          {upset && winner && <span title={`Won with a ${chance(winner)}% chance going in`} className="rounded-full bg-[var(--coral)] px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[var(--on-coral)]">Upset!</span>}
+          {hasScore ? <span className="rounded-full bg-[var(--success-bg)] px-2 py-1 text-xs font-bold text-[var(--success-ink)]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[var(--surface-hover)] px-2 py-1 text-xs font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
+          {canManage && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[var(--danger-bg)] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
         </div>
       </div>
       {/* Scoreboard layout: each team's score sits on the right of its names. */}
@@ -702,17 +737,17 @@ function MatchCard({ match, number, onSave, onDelete, canManage, canScore }: { m
         const won = saved !== null && other !== null && saved > other;
         return (
           <div key={side}>
-            {side === "B" && <p className="my-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">vs</p>}
+            {side === "B" && <p className="my-1.5 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">vs</p>}
             <div className="flex items-center justify-between gap-3">
               <p className={`min-w-0 flex-1 text-sm font-bold ${saved !== null && !won ? "text-[var(--ink-soft)]" : "text-[var(--foreground)]"}`}>
                 {names}
                 {/* Before it's played: each side's chance, from ratings. */}
-                {!hasScore && prediction && <span title="Chance to win, from players' ratings" className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-black ${prediction.favorite === side ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{chance(side)}%</span>}
+                {!hasScore && prediction && <span title="Chance to win, from players' ratings" className={`ml-2 rounded-full px-1.5 py-0.5 text-xs font-black ${prediction.favorite === side ? "bg-[var(--success-bg)] text-[var(--success-ink)]" : "bg-[var(--surface-hover)] text-[var(--ink-soft)]"}`}>{chance(side)}%</span>}
               </p>
               {canScore ? (
                 <input value={side === "A" ? sideA : sideB} onChange={(event) => (side === "A" ? setSideA : setSideB)(event.target.value)} placeholder="0" type="number" inputMode="numeric" min={0} aria-label={`${names} score`} className={`h-11 w-16 shrink-0 rounded-lg border text-center text-base font-black ${won ? "border-[var(--lime-deep)] text-[var(--lime)]" : "border-[var(--line)]"}`} />
               ) : (
-                <span className={`grid h-11 w-16 shrink-0 place-items-center rounded-lg bg-[#131f19] text-base font-black ${won ? "text-[var(--lime)]" : saved === null ? "text-[var(--ink-soft)]" : "text-[var(--foreground)]"}`}>{saved ?? "-"}</span>
+                <span className={`grid h-11 w-16 shrink-0 place-items-center rounded-lg bg-[var(--surface-2)] text-base font-black ${won ? "text-[var(--lime)]" : saved === null ? "text-[var(--ink-soft)]" : "text-[var(--foreground)]"}`}>{saved ?? "-"}</span>
               )}
             </div>
           </div>
@@ -720,21 +755,21 @@ function MatchCard({ match, number, onSave, onDelete, canManage, canScore }: { m
       })}
       {/* Before it's played: what it means for the viewer's own rating. */}
       {!hasScore && match.myStakes && (
-        <p title={`Assuming an ${PREVIEW_SCORE[0]}-${PREVIEW_SCORE[1]} result`} className="mt-3 rounded-lg bg-[#131f19] px-3 py-2 text-[11px] font-semibold text-[var(--ink-soft)]">
+        <p title={`Assuming an ${PREVIEW_SCORE[0]}-${PREVIEW_SCORE[1]} result`} className="mt-3 rounded-lg bg-[var(--surface-2)] px-3 py-2 text-xs font-semibold text-[var(--ink-soft)]">
           Your rating: win <span className="font-black text-[var(--lime)]">{match.myStakes.win >= 0 ? "+" : ""}{match.myStakes.win.toFixed(3)}</span> · lose <span className="font-black text-[var(--coral)]">{match.myStakes.lose > 0 ? "+" : ""}{match.myStakes.lose.toFixed(3)}</span>
         </p>
       )}
       {/* Before it's played: everyone's form, clutch label and history with you. */}
       {!hasScore && (
         <>
-          <button onClick={() => setScouting((current) => !current)} aria-expanded={scouting} className="mt-3 flex items-center gap-1.5 text-[11px] font-bold text-[var(--lime-deep)] hover:underline"><Search size={12} />{scouting ? "Hide scouting" : "Scout players"}</button>
+          <button onClick={() => setScouting((current) => !current)} aria-expanded={scouting} className="mt-3 flex items-center gap-1.5 text-xs font-bold text-[var(--lime-deep)] hover:underline"><Search size={12} />{scouting ? "Hide scouting" : "Scout players"}</button>
           {scouting && <ScoutPanel players={match.players.map((player) => ({ userId: player.userId, side: player.side }))} />}
         </>
       )}
       {canScore ? (
-        <button onClick={() => onSave(match.id, sideA, sideB)} className="mt-4 w-full rounded-full bg-[#d8f24e] px-3 py-2.5 text-xs font-bold text-[#1b211e] hover:bg-[#c3e043]">{hasScore ? "Update score" : "Save score"}</button>
+        <button onClick={() => onSave(match.id, sideA, sideB)} className="mt-4 w-full rounded-full bg-[var(--lime)] px-3 py-2.5 text-xs font-bold text-[var(--ink-dark)] hover:bg-[var(--lime-hover)]">{hasScore ? "Update score" : "Save score"}</button>
       ) : !hasScore && (
-        <p className="mt-3 text-[11px] font-semibold text-[var(--ink-soft)]">Score not entered yet · players in the game can enter it</p>
+        <p className="mt-3 text-xs font-semibold text-[var(--ink-soft)]">Score not entered yet · players in the game can enter it</p>
       )}
     </article>
   );

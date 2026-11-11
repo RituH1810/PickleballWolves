@@ -7,6 +7,7 @@ import { AlertTriangle, ArrowLeft, Award, CalendarDays, Check, Copy, Mail, MapPi
 import { bracketRoundLabel, isThirdPlaceMatch } from "@/lib/tournament";
 import { TournamentBranding } from "@/components/tournament-branding";
 import { DirectionsLink } from "@/components/directions-link";
+import { CardHeading } from "@/components/card-heading";
 
 type MatchPlayerT = { userId: string; name: string; side: "A" | "B" };
 type MatchT = { id: string; courtNumber: number | null; players: MatchPlayerT[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
@@ -37,10 +38,10 @@ function MatchCard({ match, onSave, onDelete, canScore, canDelete }: { match: Ma
   return (
     <article className="rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Court {match.courtNumber}</span>
+        <span className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Court {match.courtNumber}</span>
         <div className="flex items-center gap-2">
-          {hasScore ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
-          {canDelete && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[#2e1a16] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
+          {hasScore ? <span className="rounded-full bg-[var(--success-bg)] px-2 py-1 text-xs font-bold text-[var(--success-ink)]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[var(--surface-hover)] px-2 py-1 text-xs font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
+          {canDelete && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[var(--danger-bg)] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
         </div>
       </div>
       <div className="space-y-2 text-sm font-bold text-[var(--foreground)]">
@@ -53,10 +54,10 @@ function MatchCard({ match, onSave, onDelete, canScore, canDelete }: { match: Ma
           <input value={sideA} onChange={(event) => setSideA(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
           <span className="text-[var(--ink-soft)]">-</span>
           <input value={sideB} onChange={(event) => setSideB(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
-          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold text-[#1b211e]">{hasScore ? "Update score" : "Save score"}</button>
+          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[var(--lime)] px-3 py-2 text-xs font-bold text-[var(--ink-dark)]">{hasScore ? "Update score" : "Save score"}</button>
         </div>
       ) : (
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-[#131f19] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-[var(--surface-2)] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
           {hasScore ? <span className="font-bold text-[var(--foreground)]">{match.scores[0].sideAScore} - {match.scores[0].sideBScore}</span> : <span>Score not entered yet</span>}
           <span>Players only</span>
         </div>
@@ -291,41 +292,41 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
         <Link href="/tournaments" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to tournaments</Link>
         <div className="mt-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{skillLabels[tournament.skillLevel]} · {eventTypeLabels[tournament.eventType]}</p>
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{skillLabels[tournament.skillLevel]} · {eventTypeLabels[tournament.eventType]}</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{tournament.name}</h1>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{isOwner ? "you" : tournament.createdBy.name}</span></p>
             <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-bold text-[var(--lime-deep)]"><span className="flex items-center gap-1.5"><CalendarDays size={15} />{new Date(tournament.startDate).toLocaleString(undefined, { weekday: "long", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span><span className="flex items-center gap-1.5"><MapPin size={15} />{tournament.location}</span><DirectionsLink address={tournament.location} /></p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#1e2b17] px-4 text-xs font-bold text-[#c7e572]"><Trophy size={13} />{statusLabels[tournament.status] ?? tournament.status}</span>
-            <button onClick={toggleShare} className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
-            {isOwner && !tournament.hasScores && <button onClick={deleteTournament} className="flex h-10 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--coral)] px-4 text-xs font-bold text-[var(--coral)] transition-colors hover:bg-[#2e1a16]">Delete tournament</button>}
+            <span className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[var(--success-bg)] px-4 text-xs font-bold text-[var(--success-ink)]"><Trophy size={13} />{statusLabels[tournament.status] ?? tournament.status}</span>
+            <button onClick={toggleShare} className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]"><Share2 size={14} />Share</button>
+            {isOwner && !tournament.hasScores && <button onClick={deleteTournament} className="flex h-11 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--coral)] px-4 text-xs font-bold text-[var(--coral)] transition-colors hover:bg-[var(--danger-bg)]">Delete tournament</button>}
           </div>
         </div>
 
-        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}
+        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{notice.text}</p>}
 
         {showShare && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Share this tournament</p>
+            <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Share this tournament</p>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">{tournament.registrationMode === "OPEN" ? "Anyone with this link can register while sign-up is open." : "Send this link so players can follow the schedule and results."}</p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
-              <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
+              <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm text-[var(--ink-soft)] outline-none" />
+              <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Copy size={15} />Copy</button>
             </div>
-            <label className="mt-3 block text-xs font-bold text-[#c3d0c5]">Message -- edit freely, send whenever you like
-              <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
+            <label className="mt-3 block text-xs font-bold text-[var(--ink-muted)]">Message -- edit freely, send whenever you like
+              <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
             </label>
             <div className="mt-3 flex flex-wrap gap-2">
-              <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
-              <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
-              <a href={`mailto:?subject=${encodeURIComponent(`${tournament.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+              <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />WhatsApp</a>
+              <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />Text</a>
+              <a href={`mailto:?subject=${encodeURIComponent(`${tournament.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Mail size={14} />Email</a>
             </div>
           </section>
         )}
 
         {tournament.isPublic && tournament.publicSlug && !isOwner && (
-          <a href={`/t/${tournament.publicSlug}`} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--lime-deep)] hover:bg-[#1c2a1a]">View the public tournament page</a>
+          <a href={`/t/${tournament.publicSlug}`} target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--lime-deep)] hover:bg-[var(--surface-hover)]">View the public tournament page</a>
         )}
         {isOwner && <TournamentBranding tournamentId={tournamentId} />}
 
@@ -333,18 +334,18 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
         <section className="mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div><h2 className="font-extrabold">Registered players</h2><p className="mt-1 text-xs text-[var(--ink-soft)]">{registeredEntrants.length} registered{tournament.registrationDeadline ? ` · Registration closes ${new Date(tournament.registrationDeadline).toLocaleDateString()}` : ""}</p></div>
-            {canRegisterOpenly && (tournament.myEntrantStatus === "REGISTERED" ? <button onClick={withdrawSelf} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]">Withdraw</button> : <button onClick={() => registerSelf()} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Register</button>)}
+            {canRegisterOpenly && (tournament.myEntrantStatus === "REGISTERED" ? <button onClick={withdrawSelf} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]">Withdraw</button> : <button onClick={() => registerSelf()} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Register</button>)}
           </div>
           {isOwner && (
             <div className="mt-4 flex flex-col gap-2 border-t border-[var(--line)] pt-4 sm:flex-row">
               <input value={addEmail} onChange={(event) => setAddEmail(event.target.value)} placeholder="player@email.com" type="email" className="h-11 flex-1 rounded-xl border border-[var(--line)] px-4 text-sm" />
-              <button onClick={() => addEntrant()} disabled={busy || !addEmail.trim()} className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />Add player</button>
+              <button onClick={() => addEntrant()} disabled={busy || !addEmail.trim()} className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />Add player</button>
             </div>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
             {registeredEntrants.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one registered yet.</p>}
             {registeredEntrants.map((entrant) => (
-              <span key={entrant.id} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${entrant.matchesSkillLevel ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#2e1a16] text-[#f2a08c]"}`}>
+              <span key={entrant.id} className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${entrant.matchesSkillLevel ? "bg-[var(--success-bg)] text-[var(--success-ink)]" : "bg-[var(--danger-bg)] text-[var(--danger-ink)]"}`}>
                 {!entrant.matchesSkillLevel && <AlertTriangle size={11} />}
                 {entrant.name}
                 {isOwner && canManage && <button onClick={() => removeEntrant(entrant.id)} aria-label={`Remove ${entrant.name}`}><X size={12} /></button>}
@@ -359,26 +360,26 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
             <h2 className="font-extrabold">Form teams</h2>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">{tournament.teams.length} team{tournament.teams.length === 1 ? "" : "s"} formed · {unpairedEntrants.length} player{unpairedEntrants.length === 1 ? "" : "s"} unpaired.</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => formTeams("AUTO_BALANCED")} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">Auto: balanced</button>
-              <button onClick={() => formTeams("AUTO_RANDOM")} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">Auto: random</button>
+              <button onClick={() => formTeams("AUTO_BALANCED")} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">Auto: balanced</button>
+              <button onClick={() => formTeams("AUTO_RANDOM")} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-60">Auto: random</button>
             </div>
             {unpairedEntrants.length > 0 && (
               <div className="mt-4 border-t border-[var(--line)] pt-4">
-                <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Or pair manually -- tap two players</p>
+                <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Or pair manually -- tap two players</p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {unpairedEntrants.map((entrant) => {
                     const paired = manuallyPairedIds.has(entrant.id);
                     const isPending = pendingPartner === entrant.id;
-                    return <button key={entrant.id} onClick={() => toggleManualPairing(entrant.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[#0f1712]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>{entrant.name}{isPending ? " · pick a partner" : ""}</button>;
+                    return <button key={entrant.id} onClick={() => toggleManualPairing(entrant.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--success-ink)]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[var(--on-lime)]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>{entrant.name}{isPending ? " · pick a partner" : ""}</button>;
                   })}
                 </div>
                 {manualPairs.length > 0 && (
                   <div className="mt-3 space-y-2">
                     {manualPairs.map(([a, b]) => {
                       const nameOf = (id: string) => tournament.entrants.find((entrant) => entrant.id === id)?.name ?? "Unknown";
-                      return <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[#131f19] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]"><span>{nameOf(a)} &amp; {nameOf(b)}</span><button onClick={() => toggleManualPairing(a)} className="text-xs font-bold text-[var(--lime-deep)]">Unpair</button></div>;
+                      return <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]"><span>{nameOf(a)} &amp; {nameOf(b)}</span><button onClick={() => toggleManualPairing(a)} className="text-xs font-bold text-[var(--lime-deep)]">Unpair</button></div>;
                     })}
-                    <button onClick={() => formTeams("MANUAL", manualPairs)} disabled={busy} className="mt-2 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Save {manualPairs.length} manual team{manualPairs.length === 1 ? "" : "s"}</button>
+                    <button onClick={() => formTeams("MANUAL", manualPairs)} disabled={busy} className="mt-2 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Save {manualPairs.length} manual team{manualPairs.length === 1 ? "" : "s"}</button>
                   </div>
                 )}
               </div>
@@ -391,19 +392,19 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
             <h2 className="font-extrabold">Assign groups</h2>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">{tournament.teams.length} team{tournament.teams.length === 1 ? "" : "s"} registered{tournament.pools.length > 0 ? ` · ${tournament.pools.length} group${tournament.pools.length === 1 ? "" : "s"} set up` : ""}. Decide how many groups (A, B, C...) to split them into.</p>
-            <label className="mt-3 block w-40 text-xs font-bold text-[#c3d0c5]">Number of groups
+            <label className="mt-3 block w-40 text-xs font-bold text-[var(--ink-muted)]">Number of groups
               <input type="number" min="1" value={groupCountInput} onChange={(event) => setGroupCountInput(Math.max(1, Number(event.target.value)))} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
             </label>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => assignGroups("RANDOM")} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">Random</button>
-              <button onClick={() => assignGroups("SEEDED")} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">Seeded</button>
+              <button onClick={() => assignGroups("RANDOM")} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">Random</button>
+              <button onClick={() => assignGroups("SEEDED")} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-60">Seeded</button>
             </div>
             <div className="mt-4 border-t border-[var(--line)] pt-4">
-              <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Or assign manually -- tap a team to cycle through the {groupCountInput} group{groupCountInput === 1 ? "" : "s"} above</p>
+              <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Or assign manually -- tap a team to cycle through the {groupCountInput} group{groupCountInput === 1 ? "" : "s"} above</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {tournament.teams.map((team) => {
                   const assigned = manualPoolByTeam[team.id];
-                  return <button key={team.id} onClick={() => cycleManualPool(team.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${assigned !== undefined ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>{teamName(team)}{assigned !== undefined ? ` · Group ${String.fromCharCode(65 + assigned)}` : ""}</button>;
+                  return <button key={team.id} onClick={() => cycleManualPool(team.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${assigned !== undefined ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--success-ink)]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>{teamName(team)}{assigned !== undefined ? ` · Group ${String.fromCharCode(65 + assigned)}` : ""}</button>;
                 })}
               </div>
               {Object.keys(manualPoolByTeam).length > 0 && (
@@ -411,7 +412,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
                   const groups: string[][] = Array.from({ length: groupCountInput }, () => []);
                   for (const [teamId, poolIndex] of Object.entries(manualPoolByTeam)) groups[poolIndex]?.push(teamId);
                   assignGroups("MANUAL", groups);
-                }} disabled={busy} className="mt-3 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Save manual groups</button>
+                }} disabled={busy} className="mt-3 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Save manual groups</button>
               )}
             </div>
           </section>
@@ -428,10 +429,10 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
                     <button key={count} onClick={() => setMatchesPerPairing(count)} className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${matchesPerPairing === count ? "bg-[var(--panel)] text-[var(--foreground)] shadow-sm" : "text-[var(--ink-soft)]"}`}>{count}&times;</button>
                   ))}
                 </div>
-                <button onClick={generateSchedule} disabled={busy || unassignedTeams.length > 0} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate matches"}</button>
+                <button onClick={generateSchedule} disabled={busy || unassignedTeams.length > 0} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate matches"}</button>
               </div>
             </div>
-            {unassignedTeams.length > 0 && <p className="mt-2 text-xs font-semibold text-[#f2a08c]">{unassignedTeams.length} team{unassignedTeams.length === 1 ? "" : "s"} not yet assigned to a group.</p>}
+            {unassignedTeams.length > 0 && <p className="mt-2 text-xs font-semibold text-[var(--danger-ink)]">{unassignedTeams.length} team{unassignedTeams.length === 1 ? "" : "s"} not yet assigned to a group.</p>}
           </section>
         )}
 
@@ -442,7 +443,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
             <h2 className="font-extrabold">Generate knockout bracket</h2>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Group play is complete. Pick how many teams advance from each pool.</p>
             <div className="mt-3 flex flex-wrap items-end gap-4">
-              <div className="text-xs font-bold text-[#c3d0c5]">Advance per group
+              <div className="text-xs font-bold text-[var(--ink-muted)]">Advance per group
                 {/* Buttons, not a number box: clearing a number box to type a new value snapped it back to 1. */}
                 <div className="mt-2 flex gap-1 rounded-full bg-[#1a2a1c] p-1">
                   {Array.from({ length: Math.max(1, Math.min(4, ...tournament.pools.map((pool) => pool.teams.length))) }, (_, index) => index + 1).map((count) => (
@@ -450,22 +451,22 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
                   ))}
                 </div>
               </div>
-              <label className="flex h-10 items-center gap-2 text-xs font-bold text-[#c3d0c5]"><input type="checkbox" checked={thirdPlace} onChange={(event) => setThirdPlace(event.target.checked)} className="h-4 w-4 accent-[var(--lime)]" />Third-place match</label>
-              <button onClick={generateBracket} disabled={busy} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate bracket"}</button>
+              <label className="flex h-10 items-center gap-2 text-xs font-bold text-[var(--ink-muted)]"><input type="checkbox" checked={thirdPlace} onChange={(event) => setThirdPlace(event.target.checked)} className="h-4 w-4 accent-[var(--lime)]" />Third-place match</label>
+              <button onClick={generateBracket} disabled={busy} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate bracket"}</button>
             </div>
           </section>
         )}
 
         {tournament.bracketMatches.length > 0 && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-            <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Knockout bracket</h2></div>
+            <CardHeading icon={Trophy} title="Knockout bracket" />
             <div className="mt-4 flex gap-4 overflow-x-auto pb-2">
               {bracketRounds.map((round) => (
                 <div key={round} className="w-64 shrink-0 space-y-3">
-                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{bracketRoundLabel(round, totalBracketRounds)}</p>
+                  <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{bracketRoundLabel(round, totalBracketRounds)}</p>
                   {tournament.bracketMatches.filter((bracketMatch) => bracketMatch.round === round).map((bracketMatch) => (
                     <div key={bracketMatch.id} className="rounded-xl border border-[var(--line)] p-3">
-                      {isThirdPlaceMatch(bracketMatch.round, bracketMatch.position, totalBracketRounds) && <p className="mb-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Third place</p>}
+                      {isThirdPlaceMatch(bracketMatch.round, bracketMatch.position, totalBracketRounds) && <p className="mb-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Third place</p>}
                       {bracketMatch.match ? (
                         <MatchCard key={`${bracketMatch.match.id}:${bracketMatch.match.scores[0]?.sideAScore ?? ""}:${bracketMatch.match.scores[0]?.sideBScore ?? ""}`} match={bracketMatch.match} onSave={saveScore} onDelete={deleteMatchFn} canScore={isOwner || (Boolean(myUserId) && bracketMatch.match.players.some((player) => player.userId === myUserId))} canDelete={isOwner} />
                       ) : (
@@ -491,7 +492,7 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
               return (
                 <section key={pool.id} className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
                   <div className="flex items-center gap-2"><Award size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">{pool.name}</h2><span className="text-xs text-[var(--ink-soft)]">{pool.teams.length} teams</span></div>
-                  <div className="mt-3 flex flex-wrap gap-2">{pool.teams.map((team) => <span key={team.id} className="rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[#c7e572]">{teamName(team)}</span>)}</div>
+                  <div className="mt-3 flex flex-wrap gap-2">{pool.teams.map((team) => <span key={team.id} className="rounded-full bg-[var(--success-bg)] px-3 py-1.5 text-xs font-bold text-[var(--success-ink)]">{teamName(team)}</span>)}</div>
                   {pool.matches.length > 0 && (
                     <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_.4fr]">
                       <div className="grid gap-3 sm:grid-cols-2">
@@ -501,8 +502,8 @@ export default function TournamentDetailPage({ params }: { params: Promise<{ tou
                         })}
                       </div>
                       {poolStandings && (
-                        <div className="rounded-[16px] bg-[#131f19] p-4">
-                          <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Standings</p>
+                        <div className="rounded-2xl bg-[var(--surface-2)] p-4">
+                          <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Standings</p>
                           <div className="mt-3 space-y-2">
                             {poolStandings.standings.map((entry) => (
                               <div key={entry.teamId} className="flex items-center gap-2 rounded-xl bg-[var(--panel)] px-3 py-2.5">

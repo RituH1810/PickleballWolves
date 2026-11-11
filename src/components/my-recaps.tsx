@@ -20,8 +20,8 @@ function hoursLeft(expiresAt: string) {
 
 function Stat({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-[#131f19] p-3.5">
-      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={13} className="text-[var(--lime-deep)]" />{label}</p>
+    <div className="rounded-2xl bg-[var(--surface-2)] p-3.5">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={13} className="text-[var(--lime-deep)]" />{label}</p>
       <div className="mt-1.5 text-sm font-bold leading-5 text-[var(--foreground)]">{children}</div>
     </div>
   );
@@ -48,10 +48,10 @@ export function MyRecaps() {
       <div className="grid gap-4 lg:grid-cols-2">
         {recaps.map(({ roundRobinId, name, expiresAt, recap }) => (
           <article key={roundRobinId} className="overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--panel)]">
-            <div className={`p-5 ${recap.champion ? "bg-[var(--lime)] text-[#0f1712]" : "bg-[#1b2a20]"}`}>
+            <div className={`p-5 ${recap.champion ? "bg-[var(--lime)] text-[var(--on-lime)]" : "bg-[#1b2a20]"}`}>
               <div className="flex items-start justify-between gap-3">
                 <p className={`truncate text-xs font-bold ${recap.champion ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>{name}</p>
-                <span className={`shrink-0 text-[10px] font-bold ${recap.champion ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>{hoursLeft(expiresAt)}</span>
+                <span className={`shrink-0 text-xs font-bold ${recap.champion ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>{hoursLeft(expiresAt)}</span>
               </div>
               <p className="mt-2 flex items-center gap-2 text-2xl font-black tracking-[-.03em]">{recap.champion && <Crown size={20} />}{playerRecapHeadline(recap).split(" · ")[0]}</p>
               <p className={`mt-1 text-sm font-bold ${recap.champion ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>

@@ -17,13 +17,13 @@ export function OnThisDay() {
   if (!memory) return null;
   const body = (
     <>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#131f19] text-[var(--lime-deep)]"><History size={18} /></span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--lime-deep)]"><History size={18} /></span>
       <div className="min-w-0">
-        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{memory.when}</p>
+        <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{memory.when}</p>
         <p className="mt-0.5 text-sm font-extrabold">{memory.text}</p>
       </div>
     </>
   );
-  const className = "panel mt-5 flex items-center gap-4 rounded-2xl p-4";
+  const className = "panel mt-5 flex items-center gap-4 rounded-[20px] p-4";
   return memory.href ? <Link href={memory.href} className={`${className} hover:border-[var(--lime-deep)]`}>{body}</Link> : <section className={className}>{body}</section>;
 }

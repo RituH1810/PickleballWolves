@@ -37,11 +37,11 @@ export default function TournamentsPage() {
         <Link href="/dashboard" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
         <div className="mt-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Bracket play</p>
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Bracket play</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Tournaments.</h1>
             <p className="mt-3 text-sm text-[var(--ink-soft)]">Open to everyone -- pools, fixed teams, and live standings.</p>
           </div>
-          <Link href="/tournaments/new" className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]"><Plus size={16} />Create tournament</Link>
+          <Link href="/tournaments/new" className="flex h-12 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]"><Plus size={16} />Create tournament</Link>
         </div>
 
         {loading ? (
@@ -58,10 +58,10 @@ export default function TournamentsPage() {
               <Link key={tournament.id} href={`/tournaments/${tournament.id}`} className="panel flex flex-col gap-3 rounded-[20px] p-5 transition-transform hover:-translate-y-1">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{skillLabels[tournament.skillLevel]} · {eventTypeLabels[tournament.eventType]}</p>
+                    <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{skillLabels[tournament.skillLevel]} · {eventTypeLabels[tournament.eventType]}</p>
                     <h2 className="mt-1 truncate text-lg font-extrabold text-[var(--foreground)]">{tournament.name}</h2>
                   </div>
-                  <span className="shrink-0 rounded-full bg-[#1e2b17] px-2.5 py-1 text-[10px] font-bold text-[#c7e572]">{statusLabels[tournament.status] ?? tournament.status}</span>
+                  <span className="shrink-0 rounded-full bg-[var(--success-bg)] px-2.5 py-1 text-xs font-bold text-[var(--success-ink)]">{statusLabels[tournament.status] ?? tournament.status}</span>
                 </div>
                 <div className="space-y-1.5 text-xs text-[var(--ink-soft)]">
                   <p className="flex items-center gap-2"><CalendarDays size={13} />{new Date(tournament.startDate).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}</p>

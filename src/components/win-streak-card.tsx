@@ -26,7 +26,7 @@ export function WinStreakCard({ userId }: { userId: string }) {
       <button type="button" onClick={() => canOpen && setOpen((current) => !current)} disabled={!canOpen} aria-expanded={open} className="flex w-full items-center gap-4 text-left disabled:cursor-default">
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#2e1f12] text-[#ff9a3c]"><Flame size={19} /></span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Best winning streak</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Best winning streak</p>
           <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
             <span className="text-2xl font-black tracking-[-.04em] text-[#ff9a3c]">{streak.best} win{streak.best === 1 ? "" : "s"}</span>
             <span className="text-xs text-[var(--ink-soft)]">{first && last ? (first.id === last.id ? day(first.playedAt, true) : `${day(first.playedAt)} – ${day(last.playedAt, true)}`) : "in a row"}{streak.current > 1 ? ` · on ${streak.current} now` : ""}</span>
@@ -35,7 +35,7 @@ export function WinStreakCard({ userId }: { userId: string }) {
         {canOpen && <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--lime-deep)]">{open ? "Hide" : "See matches"}<ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} /></span>}
       </button>
       {open && (
-        <ol className="mt-4 divide-y divide-[var(--line)] rounded-2xl bg-[#131f19] px-4">
+        <ol className="mt-4 divide-y divide-[var(--line)] rounded-2xl bg-[var(--surface-2)] px-4">
           {streak.matches.map((match, index) => (
             <MatchDetailRow key={match.id} match={match} marker={<span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[#2e1f12] text-[10px] font-black text-[#ff9a3c]">{index + 1}</span>} />
           ))}

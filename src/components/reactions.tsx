@@ -31,8 +31,8 @@ export function Reactions({ targetType, targetId, initial, tone = "dark", classN
 
   const base = "flex h-8 items-center gap-1 rounded-full px-2.5 text-sm transition-colors disabled:cursor-wait";
   const styles = tone === "lime"
-    ? { mine: "bg-[#0f1712] text-[var(--lime)]", other: "bg-[#0f1712]/10 text-[#0f1712] hover:bg-[#0f1712]/20" }
-    : { mine: "border border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]", other: "border border-[var(--line)] text-[var(--ink-soft)] hover:bg-[#1c2a1a]" };
+    ? { mine: "bg-[var(--background)] text-[var(--lime)]", other: "bg-[var(--background)]/10 text-[var(--on-lime)] hover:bg-[var(--background)]/20" }
+    : { mine: "border border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--success-ink)]", other: "border border-[var(--line)] text-[var(--ink-soft)] hover:bg-[var(--surface-hover)]" };
   return (
     <div className={`flex flex-wrap gap-1.5 ${className}`}>
       {REACTION_EMOJIS.map((emoji) => {

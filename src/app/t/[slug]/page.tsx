@@ -37,11 +37,11 @@ function Bracket({ rounds, accent }: { rounds: PublicTournament["rounds"]; accen
     <div className="flex gap-4 overflow-x-auto pb-2">
       {rounds.map((round) => (
         <div key={round.round} className="w-64 shrink-0">
-          <p className="mb-2 text-xs font-black uppercase tracking-[.14em]" style={{ color: accent }}>{round.label}</p>
+          <p className="mb-2 text-xs font-black uppercase tracking-[.12em]" style={{ color: accent }}>{round.label}</p>
           <div className="space-y-3">
             {round.matches.map((match) => (
-              <div key={match.id} className="rounded-xl border border-[var(--line)] bg-[#131f19] p-3">
-                {match.label && <p className="mb-2 text-[10px] font-black uppercase tracking-[.14em]" style={{ color: accent }}>{match.label}</p>}
+              <div key={match.id} className="rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-3">
+                {match.label && <p className="mb-2 text-[11px] font-black uppercase tracking-[.12em]" style={{ color: accent }}>{match.label}</p>}
                 <div className="flex items-center justify-between gap-2"><TeamLine name={match.teamA} won={match.winnerSide === "A"} />{match.winnerSide === "A" && <Trophy size={13} style={{ color: accent }} />}</div>
                 <div className="mt-1 flex items-center justify-between gap-2"><TeamLine name={match.teamB} won={match.winnerSide === "B"} />{match.winnerSide === "B" && <Trophy size={13} style={{ color: accent }} />}</div>
                 <div className="mt-2 border-t border-[var(--line)] pt-2"><Score scores={match.scores} winnerSide={match.winnerSide} /></div>
@@ -81,7 +81,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
               : <div className="grid h-24 w-24 shrink-0 place-items-center rounded-2xl border-4 border-[var(--background)] text-2xl font-black sm:h-28 sm:w-28" style={{ background: brand, color: onBrand }}>{tournament.presentedBy.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</div>}
             <span className="mb-2 rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[.12em]" style={{ background: brand, color: onBrand }}>{STATUS_LABELS[tournament.status] ?? tournament.status}</span>
           </div>
-          <p className="mt-5 text-xs font-bold uppercase tracking-[.18em]" style={{ color: accent }}>{tournament.presentedBy} presents</p>
+          <p className="mt-5 text-xs font-bold uppercase tracking-[.14em]" style={{ color: accent }}>{tournament.presentedBy} presents</p>
           <h1 className="mt-1 break-words text-3xl font-black tracking-[-.04em] sm:text-5xl">{tournament.name}</h1>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-[var(--ink-soft)]">
             <span className="flex items-center gap-1.5"><CalendarDays size={15} />{tournamentDates(tournament.startDate, tournament.endDate)}</span>
@@ -99,7 +99,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
         {tournament.champion && (
           <section className="flex items-center gap-4 rounded-[20px] p-5" style={{ background: brand, color: onBrand }}>
             <Crown size={28} />
-            <div><p className="text-xs font-black uppercase tracking-[.16em] opacity-80">Champions</p><p className="text-2xl font-black tracking-[-.03em]">{tournament.champion}</p></div>
+            <div><p className="text-xs font-black uppercase tracking-[.12em] opacity-80">Champions</p><p className="text-2xl font-black tracking-[-.03em]">{tournament.champion}</p></div>
           </section>
         )}
 
@@ -116,7 +116,7 @@ export default async function PublicTournamentPage({ params }: { params: Promise
             {pool.standings.length > 0 && (
               <div className="mt-3">
                 <table className="w-full text-left text-sm">
-                  <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="w-7 pb-2">#</th><th className="pb-2">Team</th><th className="w-9 pb-2 text-center">W</th><th className="w-9 pb-2 text-center">L</th><th className="w-12 pb-2 text-right">Diff</th></tr></thead>
+                  <thead><tr className="border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><th className="w-7 pb-2">#</th><th className="pb-2">Team</th><th className="w-9 pb-2 text-center">W</th><th className="w-9 pb-2 text-center">L</th><th className="w-12 pb-2 text-right">Diff</th></tr></thead>
                   <tbody>{pool.standings.map((entry) => <tr key={entry.teamId} className="border-b border-[var(--line)] last:border-0"><td className="py-2.5 font-black" style={{ color: entry.rank === 1 ? accent : undefined }}>{entry.rank}</td><td className="break-words py-2.5 pr-2 font-bold">{entry.teamName}</td><td className="py-2.5 text-center">{entry.wins}</td><td className="py-2.5 text-center">{entry.losses}</td><td className="py-2.5 text-right font-bold">{entry.differential > 0 ? "+" : ""}{entry.differential}</td></tr>)}</tbody>
                 </table>
               </div>
@@ -124,8 +124,8 @@ export default async function PublicTournamentPage({ params }: { params: Promise
             {pool.matches.length > 0 && (
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {pool.matches.map((match) => (
-                  <div key={match.id} className="rounded-xl bg-[#131f19] p-3">
-                    <div className="flex items-center justify-between gap-2"><TeamLine name={match.teamA} won={match.winnerSide === "A"} />{match.court && <span className="shrink-0 text-[10px] text-[var(--ink-soft)]">Court {match.court}</span>}</div>
+                  <div key={match.id} className="rounded-xl bg-[var(--surface-2)] p-3">
+                    <div className="flex items-center justify-between gap-2"><TeamLine name={match.teamA} won={match.winnerSide === "A"} />{match.court && <span className="shrink-0 text-xs text-[var(--ink-soft)]">Court {match.court}</span>}</div>
                     <TeamLine name={match.teamB} won={match.winnerSide === "B"} />
                     <div className="mt-1.5"><Score scores={match.scores} winnerSide={match.winnerSide} /></div>
                   </div>
@@ -141,19 +141,19 @@ export default async function PublicTournamentPage({ params }: { params: Promise
 
         {tournament.sponsors.length > 0 && (
           <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-            <h2 className="text-xs font-bold uppercase tracking-[.16em] text-[var(--ink-soft)]">Presented with our sponsors</h2>
+            <h2 className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Presented with our sponsors</h2>
             <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {tournament.sponsors.map((sponsor) => {
                 const inner = (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     {sponsor.logoUrl ? <img src={sponsor.logoUrl} alt={sponsor.name} className="h-14 w-full object-contain" /> : <span className="grid h-14 place-items-center text-center text-sm font-extrabold">{sponsor.name}</span>}
-                    {sponsor.logoUrl && <span className="mt-2 block truncate text-center text-[11px] text-[#3a4a3f]">{sponsor.name}</span>}
+                    {sponsor.logoUrl && <span className="mt-2 block truncate text-center text-xs text-[#3a4a3f]">{sponsor.name}</span>}
                   </>
                 );
                 return sponsor.url
-                  ? <a key={sponsor.id} href={sponsor.url} target="_blank" rel="noopener noreferrer sponsored" className="rounded-xl bg-white p-3 text-[#0f1712] transition-transform hover:-translate-y-0.5">{inner}</a>
-                  : <div key={sponsor.id} className="rounded-xl bg-white p-3 text-[#0f1712]">{inner}</div>;
+                  ? <a key={sponsor.id} href={sponsor.url} target="_blank" rel="noopener noreferrer sponsored" className="rounded-xl bg-white p-3 text-[var(--on-lime)] transition-transform hover:-translate-y-0.5">{inner}</a>
+                  : <div key={sponsor.id} className="rounded-xl bg-white p-3 text-[var(--on-lime)]">{inner}</div>;
               })}
             </div>
           </section>

@@ -5,9 +5,9 @@ import { Timer } from "lucide-react";
 import { CLOSE_GAME_MARGIN, CLUTCH_MIN_GAMES, type ClutchStats } from "@/lib/clutch";
 
 const VERDICTS = {
-  clutch: { label: "Clutch", hint: "wins close games more often than usual", className: "bg-[var(--lime)] text-[#0f1712]" },
-  steady: { label: "Steady", hint: "close games go about like any other", className: "border border-[var(--lime-deep)] text-[#c7e572]" },
-  shaky: { label: "Room to grow", hint: "close games are tougher than usual", className: "bg-[var(--coral)] text-[#2e1a16]" },
+  clutch: { label: "Clutch", hint: "wins close games more often than usual", className: "bg-[var(--lime)] text-[var(--on-lime)]" },
+  steady: { label: "Steady", hint: "close games go about like any other", className: "border border-[var(--lime-deep)] text-[var(--success-ink)]" },
+  shaky: { label: "Room to grow", hint: "close games are tougher than usual", className: "bg-[var(--coral)] text-[var(--on-coral)]" },
 };
 
 // Each stat is colored by how it reflects on the player: lime good, coral not so good, plain in between.
@@ -43,9 +43,9 @@ export function ClutchCard({ userId }: { userId: string }) {
   return (
     <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
       <div className="flex items-center gap-4">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#131f19] text-[var(--lime-deep)]"><Timer size={18} /></span>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--lime-deep)]"><Timer size={18} /></span>
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Clutch stats</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Clutch stats</p>
           {verdict ? (
             <p className="mt-0.5 flex flex-wrap items-center gap-2 text-sm"><span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${verdict.className}`}>{verdict.label}</span><span className="text-xs text-[var(--ink-soft)]">{verdict.hint}</span></p>
           ) : (
@@ -55,10 +55,10 @@ export function ClutchCard({ userId }: { userId: string }) {
       </div>
       <div className={`mt-4 grid grid-cols-2 gap-2 ${tiles.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3"}`}>
         {tiles.map(([label, value, hint, tone]) => (
-          <div key={label} className={`rounded-2xl border-l-4 bg-[#131f19] p-3 ${TONES[tone].tile}`}>
-            <p className="text-[10px] font-bold uppercase tracking-[.1em] text-[var(--ink-soft)]">{label}</p>
+          <div key={label} className={`rounded-2xl border-l-4 bg-[var(--surface-2)] p-3 ${TONES[tone].tile}`}>
+            <p className="text-[11px] font-bold uppercase tracking-[.1em] text-[var(--ink-soft)]">{label}</p>
             <p className={`mt-1 text-xl font-black tracking-[-.03em] ${TONES[tone].value}`}>{value}</p>
-            <p className="mt-0.5 text-[11px] text-[var(--ink-soft)]">{hint}</p>
+            <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{hint}</p>
           </div>
         ))}
       </div>

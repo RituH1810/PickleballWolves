@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CalendarRange, Crown, Medal } from "lucide-react";
 import { BragButton } from "@/components/brag-button";
 import { Avatar } from "@/components/avatar";
+import { CardHeading } from "@/components/card-heading";
 
 type Entry = { userId: string; name: string; photoUrl: string | null; matches: number; wins: number; losses: number; winPct: number; avgPointDiff: number; differential: number; rank?: number };
 type Month = { key: string; label: string; isCurrent: boolean; matchCount: number; ranked: (Entry & { rank: number })[]; unranked: Entry[] };
@@ -38,12 +39,12 @@ export function MonthlyLeaderboard({ groupId }: { groupId: string }) {
   return (
     <section id="monthly-leaderboard" className="mt-5 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2"><CalendarRange size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Monthly leaderboard</h2></div>
+        <CardHeading icon={CalendarRange} title="Monthly leaderboard" />
         <div className="flex flex-wrap items-center gap-2">
         {month.ranked.length > 0 && <BragButton key={month.key} card={{ kind: "leaderboard", groupId, month: month.key }} label={`Share the ${month.label} leaderboard as a picture`} />}
-        <div role="tablist" aria-label="Month" className="flex rounded-full bg-[#131f19] p-1">
+        <div role="tablist" aria-label="Month" className="flex rounded-full bg-[var(--surface-2)] p-1">
           {data.months.map((entry, index) => (
-            <button key={entry.key} role="tab" aria-selected={index === selected} onClick={() => setSelected(index)} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${index === selected ? "bg-[var(--lime)] text-[#0f1712]" : "text-[var(--ink-soft)] hover:text-[var(--foreground)]"}`}>
+            <button key={entry.key} role="tab" aria-selected={index === selected} onClick={() => setSelected(index)} className={`rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${index === selected ? "bg-[var(--lime)] text-[var(--on-lime)]" : "text-[var(--ink-soft)] hover:text-[var(--foreground)]"}`}>
               {entry.isCurrent ? "This month" : entry.label.split(" ")[0]}
             </button>
           ))}
@@ -55,11 +56,11 @@ export function MonthlyLeaderboard({ groupId }: { groupId: string }) {
       </p>
 
       {leader && (
-        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[#1e2b17] p-4">
+        <div className="mt-4 flex items-center gap-3 rounded-2xl bg-[var(--success-bg)] p-4">
           <Crown size={20} className="shrink-0 text-[var(--lime)]" />
-          <Avatar name={leader.name} photoUrl={leader.photoUrl} className="h-10 w-10 shrink-0 rounded-full bg-[#22331f] text-xs font-black text-[var(--lime)]" />
+          <Avatar name={leader.name} photoUrl={leader.photoUrl} className="h-10 w-10 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#c7e572]">{month.isCurrent ? "Leading this month" : `${month.label.split(" ")[0]} winner`}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--success-ink)]">{month.isCurrent ? "Leading this month" : `${month.label.split(" ")[0]} winner`}</p>
             <Link href={`/players/${leader.userId}`} className="block truncate text-lg font-black hover:underline">{leader.name}</Link>
             <p className="text-xs text-[var(--ink-soft)]">{leader.wins}-{leader.losses} · {Math.round(leader.winPct * 100)}% · {leader.avgPointDiff > 0 ? "+" : ""}{leader.avgPointDiff} avg</p>
           </div>
@@ -71,12 +72,12 @@ export function MonthlyLeaderboard({ groupId }: { groupId: string }) {
       ) : (
         <div className="mt-4">
           <table className="w-full text-left text-sm">
-            <thead><tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><th className="w-9 pb-3">#</th><th className="pb-3">Player</th><th className="hidden pb-3 text-center sm:table-cell">Matches</th><th className="w-12 pb-3 text-center sm:w-auto">W-L</th><th className="w-12 pb-3 text-center sm:w-auto">Win%</th><th className="w-12 pb-3 text-right sm:w-auto"><span className="sm:hidden">Diff</span><span className="hidden sm:inline">Avg diff</span></th></tr></thead>
+            <thead><tr className="border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><th className="w-9 pb-3">#</th><th className="pb-3">Player</th><th className="hidden pb-3 text-center sm:table-cell">Matches</th><th className="w-12 pb-3 text-center sm:w-auto">W-L</th><th className="w-12 pb-3 text-center sm:w-auto">Win%</th><th className="w-12 pb-3 text-right sm:w-auto"><span className="sm:hidden">Diff</span><span className="hidden sm:inline">Avg diff</span></th></tr></thead>
             <tbody>
               {month.ranked.map((entry) => (
                 <tr key={entry.userId} className="border-b border-[var(--line)] last:border-0">
                   <td className={`py-3 font-black ${MEDALS[entry.rank - 1] ?? "text-[var(--ink-soft)]"}`}><span className="flex items-center gap-1">{entry.rank <= 3 && <Medal size={13} />}{entry.rank}</span></td>
-                  <td className="py-3 pr-2"><Link href={`/players/${entry.userId}`} className="flex items-center gap-2 font-bold hover:text-[var(--lime-deep)]"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" /><span className="min-w-0 break-words">{entry.name}</span></Link></td>
+                  <td className="py-3 pr-2"><Link href={`/players/${entry.userId}`} className="flex items-center gap-2 font-bold hover:text-[var(--lime-deep)]"><Avatar name={entry.name} photoUrl={entry.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" /><span className="min-w-0 break-words">{entry.name}</span></Link></td>
                   <td className="hidden py-3 text-center text-[var(--ink-soft)] sm:table-cell">{entry.matches}</td>
                   <td className="py-3 text-center">{entry.wins}-{entry.losses}</td>
                   <td className="py-3 text-center font-bold">{Math.round(entry.winPct * 100)}%</td>
@@ -90,10 +91,10 @@ export function MonthlyLeaderboard({ groupId }: { groupId: string }) {
 
       {month.unranked.length > 0 && (
         <div className="mt-4 border-t border-[var(--line)] pt-3">
-          <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Not enough matches {month.isCurrent ? "yet" : ""}</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Not enough matches {month.isCurrent ? "yet" : ""}</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {month.unranked.map((entry) => (
-              <Link key={entry.userId} href={`/players/${entry.userId}`} className="rounded-full bg-[#131f19] px-3 py-1.5 text-[11px] font-semibold text-[var(--ink-soft)] hover:text-[var(--foreground)]">
+              <Link key={entry.userId} href={`/players/${entry.userId}`} className="rounded-full bg-[var(--surface-2)] px-3 py-1.5 text-xs font-semibold text-[var(--ink-soft)] hover:text-[var(--foreground)]">
                 {entry.name} · {entry.wins}-{entry.losses}{month.isCurrent ? ` · ${data.minMatches - entry.matches} to go` : ""}
               </Link>
             ))}

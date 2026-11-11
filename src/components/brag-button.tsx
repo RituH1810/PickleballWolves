@@ -86,10 +86,10 @@ export function BragButton({ card, label, compact = false, text = "Share", align
   }
 
   const canCopyImage = Boolean(share?.file) && typeof window !== "undefined" && "ClipboardItem" in window;
-  const item = "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[#1c2a1a]";
+  const item = "flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold hover:bg-[var(--surface-hover)]";
   return (
     <div className="relative">
-      <button type="button" onClick={onClick} disabled={busy} aria-label={label} aria-expanded={open} title={label} className={compact ? "grid h-7 w-7 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[#1c2a1a] hover:text-[var(--lime-deep)] disabled:opacity-50" : "flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold hover:bg-[#1c2a1a] disabled:opacity-50"}>
+      <button type="button" onClick={onClick} disabled={busy} aria-label={label} aria-expanded={open} title={label} className={compact ? "grid h-7 w-7 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[var(--surface-hover)] hover:text-[var(--lime-deep)] disabled:opacity-50" : "flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold hover:bg-[var(--surface-hover)] disabled:opacity-50"}>
         <Share2 size={compact ? 14 : 13} className={busy ? "animate-pulse" : ""} />{!compact && (busy ? "Making card..." : text)}
       </button>
       {open && (
@@ -109,7 +109,7 @@ export function BragButton({ card, label, compact = false, text = "Share", align
               <a href={share.url} target="_blank" rel="noopener noreferrer" className={item}><ExternalLink size={14} />Open card</a>
             </>
           ) : null}
-          {notice && <p role="status" className="px-3 py-2 text-[11px] font-bold text-[var(--lime-deep)]">{notice}</p>}
+          {notice && <p role="status" className="px-3 py-2 text-xs font-bold text-[var(--lime-deep)]">{notice}</p>}
         </div>
       )}
     </div>

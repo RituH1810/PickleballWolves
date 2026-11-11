@@ -22,12 +22,12 @@ export function PlayerOfTheWeek({ groupId }: { groupId: string }) {
   const [latest, ...earlier] = weeks;
   return (
     <section id="player-of-the-week" className="mt-5 scroll-mt-6 overflow-hidden rounded-[20px] border border-[var(--line)] bg-[var(--panel)]">
-      <div className="bg-[var(--lime)] p-5 text-[#0f1712] sm:p-6">
-        <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[.16em]"><Star size={14} fill="currentColor" />Player of the week · {latest.label}</p>
+      <div className="bg-[var(--lime)] p-5 text-[var(--on-lime)] sm:p-6">
+        <p className="flex items-center gap-1.5 text-xs font-black uppercase tracking-[.12em]"><Star size={14} fill="currentColor" />Player of the week · {latest.label}</p>
         <div className="mt-3 flex flex-wrap gap-4">
           {latest.winners.map((winner) => (
             <Link key={winner.userId} href={`/players/${winner.userId}`} className="flex items-center gap-3 hover:opacity-90">
-              <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-14 w-14 shrink-0 rounded-2xl bg-[#0f1712] text-lg font-black text-[var(--lime)]" />
+              <Avatar name={winner.name} photoUrl={winner.photoUrl} className="h-14 w-14 shrink-0 rounded-2xl bg-[var(--background)] text-lg font-black text-[var(--lime)]" />
               <div>
                 <p className="text-2xl font-black tracking-[-.03em]">{winner.name}</p>
                 <p className="text-sm font-bold text-[#3c4a1e]">{winner.wins}-{winner.losses} in {winner.matches} matches · {winner.avgPointDiff > 0 ? "+" : ""}{winner.avgPointDiff} avg{winner.timesWon > 1 ? ` · ${winner.timesWon}x winner` : ""}</p>

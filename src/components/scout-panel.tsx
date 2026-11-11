@@ -23,7 +23,7 @@ export function ScoutPanel({ players }: { players: { userId: string; side: "A" |
   if (!reports) return <div className="skeleton mt-3 h-24 rounded-xl" />;
   const bySide = (side: "A" | "B") => players.filter((player) => player.side === side).map((player) => reports.find((report) => report.userId === player.userId)).filter((report): report is Report => Boolean(report));
   return (
-    <div className="mt-3 space-y-3 rounded-xl bg-[#131f19] p-3">
+    <div className="mt-3 space-y-3 rounded-xl bg-[var(--surface-2)] p-3">
       {(["A", "B"] as const).map((side) => (
         <div key={side} className="space-y-2">
           {bySide(side).map((report) => {
@@ -31,19 +31,19 @@ export function ScoutPanel({ players }: { players: { userId: string; side: "A" |
             const history = report.withViewer;
             return (
               <div key={report.userId} className="flex items-start gap-2.5">
-                <Avatar name={report.name} photoUrl={report.photoUrl} className="h-8 w-8 shrink-0 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />
+                <Avatar name={report.name} photoUrl={report.photoUrl} className="h-8 w-8 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />
                 <div className="min-w-0 flex-1">
                   <p className="flex flex-wrap items-center gap-x-2 text-xs font-bold">
                     <Link href={`/players/${report.userId}`} className="truncate hover:text-[var(--lime-deep)] hover:underline">{report.name}</Link>
                     <span className="font-semibold text-[var(--ink-soft)]">{report.rating.toFixed(3)}</span>
-                    {report.clutch && <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${report.clutch === "clutch" ? "bg-[var(--lime)] text-[#0f1712]" : report.clutch === "shaky" ? "bg-[var(--coral)] text-[#2e1a16]" : "border border-[var(--lime-deep)] text-[#c7e572]"}`}>{CLUTCH_LABELS[report.clutch]}</span>}
+                    {report.clutch && <span className={`rounded-full px-1.5 py-0.5 text-xs font-black ${report.clutch === "clutch" ? "bg-[var(--lime)] text-[var(--on-lime)]" : report.clutch === "shaky" ? "bg-[var(--coral)] text-[var(--on-coral)]" : "border border-[var(--lime-deep)] text-[var(--success-ink)]"}`}>{CLUTCH_LABELS[report.clutch]}</span>}
                   </p>
                   <div className="mt-1 flex flex-wrap items-center gap-2">
-                    {report.results.length ? <FormDots results={report.results} size="sm" /> : <span className="text-[11px] text-[var(--ink-soft)]">No results yet</span>}
-                    {run && <span className={`text-[11px] font-bold ${report.streak!.result === "W" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{run}</span>}
+                    {report.results.length ? <FormDots results={report.results} size="sm" /> : <span className="text-xs text-[var(--ink-soft)]">No results yet</span>}
+                    {run && <span className={`text-xs font-bold ${report.streak!.result === "W" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{run}</span>}
                   </div>
                   {history && (history.against.wins + history.against.losses + history.together.wins + history.together.losses > 0) && (
-                    <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
+                    <p className="mt-1 text-xs text-[var(--ink-soft)]">
                       {history.against.wins + history.against.losses > 0 && <>You vs them: <span className="font-bold text-[var(--foreground)]">{history.against.wins}-{history.against.losses}</span></>}
                       {history.against.wins + history.against.losses > 0 && history.together.wins + history.together.losses > 0 && " · "}
                       {history.together.wins + history.together.losses > 0 && <>Together: <span className="font-bold text-[var(--foreground)]">{history.together.wins}-{history.together.losses}</span></>}
@@ -53,7 +53,7 @@ export function ScoutPanel({ players }: { players: { userId: string; side: "A" |
               </div>
             );
           })}
-          {side === "A" && <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">vs</p>}
+          {side === "A" && <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">vs</p>}
         </div>
       ))}
     </div>

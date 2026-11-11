@@ -67,18 +67,18 @@ export function AddressInput({ value, onChange, placeholder, className, ariaLabe
         className={className}
       />
       {places.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-[var(--line)] bg-[#0f1712] shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--background)] shadow-lg">
           <ul id={listId} role="listbox">
             {places.map((place, index) => (
               <li key={placeText(place)} id={`${listId}-${index}`} role="option" aria-selected={index === active}>
-                <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => pick(place)} className={`flex w-full items-start gap-2 px-3 py-2.5 text-left ${index === active ? "bg-[#1c2a1a]" : "hover:bg-[#1c2a1a]"}`}>
+                <button type="button" onMouseDown={(event) => event.preventDefault()} onClick={() => pick(place)} className={`flex w-full items-start gap-2 px-3 py-2.5 text-left ${index === active ? "bg-[var(--surface-hover)]" : "hover:bg-[var(--surface-hover)]"}`}>
                   <MapPin size={14} className="mt-0.5 shrink-0 text-[var(--lime-deep)]" />
-                  <span className="min-w-0"><span className="block truncate text-sm font-bold text-[var(--foreground)]">{place.label}</span>{place.detail && <span className="block truncate text-[11px] text-[var(--ink-soft)]">{place.detail}</span>}</span>
+                  <span className="min-w-0"><span className="block truncate text-sm font-bold text-[var(--foreground)]">{place.label}</span>{place.detail && <span className="block truncate text-xs text-[var(--ink-soft)]">{place.detail}</span>}</span>
                 </button>
               </li>
             ))}
           </ul>
-          <p className="border-t border-[var(--line)] px-3 py-1.5 text-[10px] text-[var(--ink-soft)]">Search by <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap</a> contributors</p>
+          <p className="border-t border-[var(--line)] px-3 py-1.5 text-xs text-[var(--ink-soft)]">Search by <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap</a> contributors</p>
         </div>
       )}
     </div>

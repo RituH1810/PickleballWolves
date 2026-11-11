@@ -56,7 +56,7 @@ export default function ChemistryPage({ params }: { params: Promise<{ groupId: s
       <div className="mx-auto max-w-5xl">
         <Link href={`/groups/${groupId}`} className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to group</Link>
         <div className="mt-7">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{data?.groupName ?? "Group"} · All time</p>
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{data?.groupName ?? "Group"} · All time</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-.04em]">Chemistry</h1>
           <p className="mt-2 text-sm text-[var(--ink-soft)]">How every pair does together in this group&apos;s ended round robins, game by game. Green pairs win together, red pairs don&apos;t. Faded squares have fewer than {data?.minGames ?? 5} games.</p>
         </div>
@@ -76,11 +76,11 @@ export default function ChemistryPage({ params }: { params: Promise<{ groupId: s
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
                 {data.best.length > 0 && (
                   <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
-                    <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Handshake size={15} className="text-[var(--lime-deep)]" />Best duos</p>
+                    <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Handshake size={15} className="text-[var(--lime-deep)]" />Best duos</p>
                     <ol className="mt-3 space-y-2">
                       {data.best.map((pair, index) => (
                         <li key={keyOf(pair.a, pair.b)}>
-                          <button type="button" onClick={() => setSelected(keyOf(pair.a, pair.b))} className="flex w-full items-center gap-3 rounded-xl px-1 py-1 text-left hover:bg-[#1c2a1a]">
+                          <button type="button" onClick={() => setSelected(keyOf(pair.a, pair.b))} className="flex w-full items-center gap-3 rounded-xl px-1 py-1 text-left hover:bg-[var(--surface-hover)]">
                             <span className="w-4 text-xs font-black text-[var(--ink-soft)]">{index + 1}</span>
                             <span className="min-w-0 flex-1 truncate font-extrabold">{pairNames(pair)}</span>
                             <span className="text-xs text-[var(--ink-soft)]">{pair.wins}-{pair.losses}</span>
@@ -93,8 +93,8 @@ export default function ChemistryPage({ params }: { params: Promise<{ groupId: s
                 )}
                 {data.worst && (
                   <section className="rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
-                    <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><TrendingDown size={15} className="text-[var(--coral)]" />Still finding their groove</p>
-                    <button type="button" onClick={() => setSelected(keyOf(data.worst!.a, data.worst!.b))} className="mt-3 flex w-full items-center gap-3 rounded-xl px-1 py-1 text-left hover:bg-[#1c2a1a]">
+                    <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><TrendingDown size={15} className="text-[var(--coral)]" />Still finding their groove</p>
+                    <button type="button" onClick={() => setSelected(keyOf(data.worst!.a, data.worst!.b))} className="mt-3 flex w-full items-center gap-3 rounded-xl px-1 py-1 text-left hover:bg-[var(--surface-hover)]">
                       <span className="min-w-0 flex-1 truncate font-extrabold">{pairNames(data.worst)}</span>
                       <span className="text-xs text-[var(--ink-soft)]">{data.worst.wins}-{data.worst.losses}</span>
                       <span className="w-11 text-right font-black text-[var(--coral)]">{percent(data.worst)}%</span>
@@ -105,7 +105,7 @@ export default function ChemistryPage({ params }: { params: Promise<{ groupId: s
             )}
 
             <section className="mt-3 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-4 sm:p-5">
-              <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><FlaskConical size={15} className="text-[var(--lime-deep)]" />Tap a square</p>
+              <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><FlaskConical size={15} className="text-[var(--lime-deep)]" />Tap a square</p>
               <p className="mt-2 min-h-5 text-sm">
                 {chosen ? (
                   <><span className="font-extrabold">{pairNames(chosen)}</span> <span className="text-[var(--ink-soft)]">are</span> <span className="font-bold">{chosen.wins}-{chosen.losses}</span> <span className="text-[var(--ink-soft)]">together ·</span> <span className={`font-black ${percent(chosen) >= 50 ? "text-[var(--lime)]" : "text-[var(--coral)]"}`}>{percent(chosen)}%</span></>
@@ -116,13 +116,13 @@ export default function ChemistryPage({ params }: { params: Promise<{ groupId: s
                 )}
               </p>
               <div className="mt-3 overflow-x-auto">
-                <table className="border-separate border-spacing-1 text-center text-[11px]">
+                <table className="border-separate border-spacing-1 text-center text-xs">
                   <thead>
                     <tr>
                       <th className="sticky left-0 z-10 bg-[var(--panel)]" />
                       {data.players.map((player) => (
                         <th key={player.userId} title={player.name} className="min-w-9 font-bold">
-                          <Avatar name={player.name} photoUrl={player.photoUrl} className={`mx-auto h-7 w-7 rounded-full bg-[#22331f] text-[9px] font-black text-[var(--lime)] ${player.userId === data.myId ? "ring-2 ring-[var(--lime)]" : ""}`} />
+                          <Avatar name={player.name} photoUrl={player.photoUrl} className={`mx-auto h-7 w-7 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)] ${player.userId === data.myId ? "ring-2 ring-[var(--lime)]" : ""}`} />
                         </th>
                       ))}
                     </tr>
@@ -132,12 +132,12 @@ export default function ChemistryPage({ params }: { params: Promise<{ groupId: s
                       <tr key={row.userId}>
                         <th scope="row" className={`sticky left-0 z-10 max-w-24 truncate bg-[var(--panel)] pr-2 text-left text-xs font-extrabold ${row.userId === data.myId ? "text-[var(--lime)]" : ""}`}>{nameOf.get(row.userId)}</th>
                         {data.players.map((column) => {
-                          if (row.userId === column.userId) return <td key={column.userId} className="h-9 min-w-9 rounded-md bg-[#131f19]" />;
+                          if (row.userId === column.userId) return <td key={column.userId} className="h-9 min-w-9 rounded-md bg-[var(--surface-2)]" />;
                           const key = keyOf(row.userId, column.userId);
                           const pair = pairOf.get(key);
                           return (
                             <td key={column.userId} className="p-0">
-                              <button type="button" onClick={() => setSelected(key)} title={pair ? `${row.name} & ${column.name}: ${pair.wins}-${pair.losses}` : `${row.name} & ${column.name}: no games together`} style={cellStyle(pair, data.minGames)} className={`h-9 w-full min-w-9 rounded-md font-black ${pair ? "text-[var(--foreground)]" : "bg-[#131f19] text-[var(--ink-soft)]"} ${selected === key ? "outline outline-2 outline-[var(--foreground)]" : ""}`}>
+                              <button type="button" onClick={() => setSelected(key)} title={pair ? `${row.name} & ${column.name}: ${pair.wins}-${pair.losses}` : `${row.name} & ${column.name}: no games together`} style={cellStyle(pair, data.minGames)} className={`h-9 w-full min-w-9 rounded-md font-black ${pair ? "text-[var(--foreground)]" : "bg-[var(--surface-2)] text-[var(--ink-soft)]"} ${selected === key ? "outline outline-2 outline-[var(--foreground)]" : ""}`}>
                                 {pair ? `${percent(pair)}` : "·"}
                               </button>
                             </td>
@@ -148,7 +148,7 @@ export default function ChemistryPage({ params }: { params: Promise<{ groupId: s
                   </tbody>
                 </table>
               </div>
-              <p className="mt-3 text-[11px] text-[var(--ink-soft)]">Numbers are win % together. Showing the {data.players.length} players with the most doubles games; guests aren&apos;t shown.</p>
+              <p className="mt-3 text-xs text-[var(--ink-soft)]">Numbers are win % together. Showing the {data.players.length} players with the most doubles games; guests aren&apos;t shown.</p>
             </section>
           </>
         )}

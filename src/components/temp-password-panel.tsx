@@ -40,13 +40,13 @@ export function TempPasswordPanel() {
       <h2 className="flex items-center gap-2 font-extrabold"><KeyRound size={18} className="text-[var(--lime-deep)]" />Temporary password</h2>
       <p className="mt-1 text-sm text-[var(--ink-soft)]">For players who aren&apos;t getting confirmation or reset emails. Emails them a temporary password, confirms their email, and creates the account if their sign-up never arrived. They&apos;ll pick their own password when they sign in.</p>
       <form onSubmit={submit} className="mt-4 flex flex-wrap gap-2">
-        <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder="Player's email" aria-label="Player's email" className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-3 text-sm" />
-        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Name (only for new accounts)" aria-label="Player's name" className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-3 text-sm" />
-        <button type="submit" disabled={busy || !email.trim()} className="h-11 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:opacity-50">{busy ? "Setting..." : "Set temporary password"}</button>
+        <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder="Player's email" aria-label="Player's email" className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 text-sm" />
+        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Name (only for new accounts)" aria-label="Player's name" className="h-11 min-w-0 flex-1 rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 text-sm" />
+        <button type="submit" disabled={busy || !email.trim()} className="h-11 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:opacity-50">{busy ? "Setting..." : "Set temporary password"}</button>
       </form>
-      {error && <p role="alert" className="mt-3 rounded-xl bg-[#2e1a16] px-4 py-3 text-sm font-semibold text-[#f2a08c]">{error}</p>}
+      {error && <p role="alert" className="mt-3 rounded-xl bg-[var(--danger-bg)] px-4 py-3 text-sm font-semibold text-[var(--danger-ink)]">{error}</p>}
       {result && (result.emailed ? (
-        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--lime-deep)] bg-[#1e2b17] p-4">
+        <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[var(--lime-deep)] bg-[var(--success-bg)] p-4">
           <MailCheck size={20} className="mt-0.5 shrink-0 text-[var(--lime)]" />
           <div>
             <p className="font-extrabold">Temporary password emailed to {result.email}</p>
@@ -54,11 +54,11 @@ export function TempPasswordPanel() {
           </div>
         </div>
       ) : (
-        <div className="mt-4 rounded-2xl border border-[var(--coral)] bg-[#2e1a16] p-4">
-          <p className="text-sm font-bold text-[#f2a08c]">The password is set, but the email couldn&apos;t be sent{result.emailError ? ` (${result.emailError})` : ""}. Pass it on yourself:</p>
+        <div className="mt-4 rounded-2xl border border-[var(--coral)] bg-[var(--danger-bg)] p-4">
+          <p className="text-sm font-bold text-[var(--danger-ink)]">The password is set, but the email couldn&apos;t be sent{result.emailError ? ` (${result.emailError})` : ""}. Pass it on yourself:</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
-            <code className="rounded-lg bg-[#0f1712] px-3 py-2 text-lg font-black tracking-wide text-[var(--lime)]">{result.password}</code>
-            <button type="button" onClick={() => copy(result.password ?? "", "password")} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold hover:bg-[#1c2a1a]">{copied === "password" ? <Check size={13} /> : <Copy size={13} />}Copy password</button>
+            <code className="rounded-lg bg-[var(--background)] px-3 py-2 text-lg font-black tracking-wide text-[var(--lime)]">{result.password}</code>
+            <button type="button" onClick={() => copy(result.password ?? "", "password")} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold hover:bg-[var(--surface-hover)]">{copied === "password" ? <Check size={13} /> : <Copy size={13} />}Copy password</button>
           </div>
         </div>
       ))}

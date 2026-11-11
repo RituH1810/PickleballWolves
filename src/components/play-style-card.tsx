@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Trophy } from "lucide-react";
 import { STYLE_FIELDS, STYLE_MIN_GAMES, STYLE_OPTIONS, styleLabel, type StyleField } from "@/lib/play-style";
+import { CardHeading } from "@/components/card-heading";
 
 type Style = Record<StyleField, string | null>;
 type Insight = { field: StyleField; value: string; label: string; wins: number; losses: number };
@@ -39,15 +40,15 @@ export function PlayStyleCard({ userId, isMe = true, className = "mt-5" }: { use
   const percent = (insight: Insight) => Math.round((insight.wins / (insight.wins + insight.losses)) * 100);
   return (
     <div className={`${className} rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
-      <div className="flex items-center gap-2"><Trophy size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Playing style</h2></div>
+      <CardHeading icon={Trophy} title="Playing style" />
       {isMe ? (
         <div className="mt-4 space-y-3">
           {STYLE_FIELDS.map((field) => (
             <div key={field}>
-              <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{FIELD_NAMES[field]}</p>
+              <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{FIELD_NAMES[field]}</p>
               <div className="mt-1.5 flex flex-wrap gap-1.5">
                 {STYLE_OPTIONS[field].map(([value, label]) => (
-                  <button key={value} type="button" disabled={saving || !data.ready} onClick={() => pick(field, value)} aria-pressed={style[field] === value} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-60 ${style[field] === value ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[var(--lime)]" : "border-[var(--line)] text-[var(--ink-soft)] hover:border-[var(--lime-deep)]"}`}>{label}</button>
+                  <button key={value} type="button" disabled={saving || !data.ready} onClick={() => pick(field, value)} aria-pressed={style[field] === value} className={`rounded-full border px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-60 ${style[field] === value ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--lime)]" : "border-[var(--line)] text-[var(--ink-soft)] hover:border-[var(--lime-deep)]"}`}>{label}</button>
                 ))}
               </div>
             </div>
@@ -56,10 +57,10 @@ export function PlayStyleCard({ userId, isMe = true, className = "mt-5" }: { use
           {error && <p role="alert" className="text-xs font-bold text-[var(--coral)]">{error}</p>}
         </div>
       ) : (
-        <div className="mt-4 flex flex-wrap gap-1.5">{tags.length ? tags.map((tag) => <span key={tag} className="rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[var(--lime)]">{tag}</span>) : <span className="text-sm text-[var(--ink-soft)]">No style picked yet.</span>}</div>
+        <div className="mt-4 flex flex-wrap gap-1.5">{tags.length ? tags.map((tag) => <span key={tag} className="rounded-full bg-[var(--success-bg)] px-3 py-1.5 text-xs font-bold text-[var(--lime)]">{tag}</span>) : <span className="text-sm text-[var(--ink-soft)]">No style picked yet.</span>}</div>
       )}
       <div className="mt-5 border-t border-[var(--line)] pt-4">
-        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{isMe ? "Your record" : "Record"} with…</p>
+        <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{isMe ? "Your record" : "Record"} with…</p>
         {data.insights.length ? (
           <ul className="mt-2 space-y-1.5">
             {data.insights.slice(0, 4).map((insight) => (

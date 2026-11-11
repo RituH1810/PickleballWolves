@@ -29,10 +29,10 @@ function MatchCard({ match, onSave, onDelete, canScore, canDelete, weekNumber }:
   return (
     <article className="rounded-xl border border-[var(--line)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Week {weekNumber}</span>
+        <span className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Week {weekNumber}</span>
         <div className="flex items-center gap-2">
-          {hasScore ? <span className="rounded-full bg-[#1e2b17] px-2 py-1 text-[10px] font-bold text-[#c7e572]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[#1c2a1a] px-2 py-1 text-[10px] font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
-          {canDelete && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[#2e1a16] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
+          {hasScore ? <span className="rounded-full bg-[var(--success-bg)] px-2 py-1 text-xs font-bold text-[var(--success-ink)]"><Check size={11} className="mr-1 inline" />Completed</span> : <span className="rounded-full bg-[var(--surface-hover)] px-2 py-1 text-xs font-bold"><Users size={11} className="mr-1 inline" />Ready</span>}
+          {canDelete && <button onClick={() => onDelete(match.id)} aria-label="Delete match" className="rounded-full p-1.5 text-[var(--ink-soft)] hover:bg-[var(--danger-bg)] hover:text-[var(--coral)]"><Trash2 size={13} /></button>}
         </div>
       </div>
       <div className="space-y-2 text-sm font-bold text-[var(--foreground)]">
@@ -45,10 +45,10 @@ function MatchCard({ match, onSave, onDelete, canScore, canDelete, weekNumber }:
           <input value={sideA} onChange={(event) => setSideA(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
           <span className="text-[var(--ink-soft)]">-</span>
           <input value={sideB} onChange={(event) => setSideB(event.target.value)} placeholder="0" type="number" className="h-10 w-16 rounded-lg border border-[var(--line)] text-center font-bold" />
-          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[#d8f24e] px-3 py-2 text-xs font-bold text-[#1b211e]">{hasScore ? "Update score" : "Save score"}</button>
+          <button onClick={() => onSave(match.id, sideA, sideB)} className="ml-auto rounded-full bg-[var(--lime)] px-3 py-2 text-xs font-bold text-[var(--ink-dark)]">{hasScore ? "Update score" : "Save score"}</button>
         </div>
       ) : (
-        <div className="mt-4 flex items-center justify-between rounded-lg bg-[#131f19] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-[var(--surface-2)] px-3 py-2.5 text-xs font-semibold text-[var(--ink-soft)]">
           {hasScore ? <span className="font-bold text-[var(--foreground)]">{match.scores[0].sideAScore} - {match.scores[0].sideBScore}</span> : <span>Score not entered yet</span>}
           <span>Players only</span>
         </div>
@@ -279,34 +279,34 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
         <Link href="/leagues" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to leagues</Link>
         <div className="mt-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">{season.league.name} · {formatLabels[season.league.format] ?? season.league.format}</p>
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">{season.league.name} · {formatLabels[season.league.format] ?? season.league.format}</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{season.name}</h1>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">Organized by <span className="font-bold text-[var(--foreground)]">{isOwner ? "you" : season.league.createdBy.name}</span></p>
             <p className="mt-1 flex items-center gap-1.5 text-sm font-bold text-[var(--lime-deep)]"><CalendarDays size={15} />{new Date(season.startDate).toLocaleDateString()} - {new Date(season.endDate).toLocaleDateString()}</p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[#1e2b17] px-4 text-xs font-bold text-[#c7e572]"><Trophy size={13} />{statusLabels[season.status] ?? season.status}</span>
-            <button onClick={toggleShare} className="flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[#1c2a1a]"><Share2 size={14} />Share</button>
+            <span className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full bg-[var(--success-bg)] px-4 text-xs font-bold text-[var(--success-ink)]"><Trophy size={13} />{statusLabels[season.status] ?? season.status}</span>
+            <button onClick={toggleShare} className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-hover)]"><Share2 size={14} />Share</button>
           </div>
         </div>
 
-        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}
+        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{notice.text}</p>}
 
         {showShare && (
           <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-            <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Share this season</p>
+            <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Share this season</p>
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Anyone signed in can follow this link to view divisions and register themselves while registration is open.</p>
             <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm text-[var(--ink-soft)] outline-none" />
-              <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Copy size={15} />Copy</button>
+              <input readOnly value={shareUrl} onFocus={(event) => event.target.select()} className="h-11 flex-1 rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm text-[var(--ink-soft)] outline-none" />
+              <button onClick={copyShareUrl} className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[var(--line)] px-5 text-sm font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Copy size={15} />Copy</button>
             </div>
-            <label className="mt-3 block text-xs font-bold text-[#c3d0c5]">Message -- edit freely, send whenever you like
-              <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
+            <label className="mt-3 block text-xs font-bold text-[var(--ink-muted)]">Message -- edit freely, send whenever you like
+              <textarea value={shareMessage} onChange={(event) => setShareMessage(event.target.value)} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 py-3 text-sm text-[var(--foreground)] outline-none focus:border-[var(--lime-deep)]" />
             </label>
             <div className="mt-3 flex flex-wrap gap-2">
-              <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />WhatsApp</a>
-              <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><MessageCircle size={14} />Text</a>
-              <a href={`mailto:?subject=${encodeURIComponent(`${season.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-10 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]"><Mail size={14} />Email</a>
+              <a href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`} target="_blank" rel="noopener noreferrer" className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />WhatsApp</a>
+              <a href={`sms:?body=${encodeURIComponent(shareMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><MessageCircle size={14} />Text</a>
+              <a href={`mailto:?subject=${encodeURIComponent(`${season.name}`)}&body=${encodeURIComponent(shareMessage)}`} className="flex h-11 items-center gap-2 rounded-full border border-[var(--line)] px-4 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Mail size={14} />Email</a>
             </div>
           </section>
         )}
@@ -319,7 +319,7 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
               <input value={newDivisionName} onChange={(event) => setNewDivisionName(event.target.value)} placeholder="Division name (e.g. Open, 3.5+)" className="h-11 rounded-xl border border-[var(--line)] px-3 text-sm" />
               <input value={newDivisionMin} onChange={(event) => setNewDivisionMin(event.target.value)} placeholder="Min" type="number" step="0.1" min="2" max="6" className="h-11 w-20 rounded-xl border border-[var(--line)] px-3 text-sm" />
               <input value={newDivisionMax} onChange={(event) => setNewDivisionMax(event.target.value)} placeholder="Max" type="number" step="0.1" min="2" max="6" className="h-11 w-20 rounded-xl border border-[var(--line)] px-3 text-sm" />
-              <button onClick={createDivision} disabled={busy || !newDivisionName.trim()} className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />Add division</button>
+              <button onClick={createDivision} disabled={busy || !newDivisionName.trim()} className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />Add division</button>
             </div>
           </section>
         )}
@@ -358,18 +358,18 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
               <div className="flex flex-wrap items-center gap-2">
                 <Award size={17} className="text-[var(--lime-deep)]" />
                 <h2 className="font-extrabold">{division.name}</h2>
-                {band && <span className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[10px] font-bold text-[var(--ink-soft)]">{band} rating</span>}
+                {band && <span className="rounded-full bg-[var(--surface-hover)] px-2.5 py-1 text-xs font-bold text-[var(--ink-soft)]">{band} rating</span>}
               </div>
 
               <div className="mt-4 border-t border-[var(--line)] pt-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{registered.length} registered{!registrationOpen ? " · Registration closed" : ""}</p>
-                  {registrationOpen && !hasSchedule && (myRegistration ? <button onClick={() => withdrawSelf(division.id)} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a]">Withdraw</button> : <button onClick={() => registerSelf(division.id)} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Register</button>)}
+                  <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{registered.length} registered{!registrationOpen ? " · Registration closed" : ""}</p>
+                  {registrationOpen && !hasSchedule && (myRegistration ? <button onClick={() => withdrawSelf(division.id)} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]">Withdraw</button> : <button onClick={() => registerSelf(division.id)} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Register</button>)}
                 </div>
                 {isOwner && !hasSchedule && (
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                     <input value={addEmailByDivision[division.id] ?? ""} onChange={(event) => setAddEmailByDivision((current) => ({ ...current, [division.id]: event.target.value }))} placeholder="player@email.com" type="email" className="h-11 flex-1 rounded-xl border border-[var(--line)] px-4 text-sm" />
-                    <button onClick={() => addRegistration(division.id)} disabled={busy || !addEmailByDivision[division.id]?.trim()} className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />Add player</button>
+                    <button onClick={() => addRegistration(division.id)} disabled={busy || !addEmailByDivision[division.id]?.trim()} className="flex h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60"><Plus size={14} />Add player</button>
                   </div>
                 )}
                 {isOwner && !hasSchedule && (
@@ -384,13 +384,13 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
                         <>
                           <div className="mt-2 grid max-h-56 gap-2 overflow-y-auto sm:grid-cols-2">
                             {candidates.map((player) => (
-                              <button key={player.id} onClick={() => togglePlayerSelected(division.id, player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                              <button key={player.id} onClick={() => togglePlayerSelected(division.id, player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-sm ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                                 <span><span className="font-bold">{player.name}</span><span className="ml-2 text-xs text-[var(--ink-soft)]">{player.skillRating}</span></span>
                                 {selected.includes(player.id) && <Check size={15} className="text-[var(--lime-deep)]" />}
                               </button>
                             ))}
                           </div>
-                          <button onClick={() => addSelectedPlayers(division.id)} disabled={busy || selected.length === 0} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{`Add ${selected.length || ""} to division`.trim()}</button>
+                          <button onClick={() => addSelectedPlayers(division.id)} disabled={busy || selected.length === 0} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{`Add ${selected.length || ""} to division`.trim()}</button>
                         </>
                       );
                     })()}
@@ -399,7 +399,7 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
                 <div className="mt-3 flex flex-wrap gap-2">
                   {registered.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No one registered yet.</p>}
                   {registered.map((registration) => (
-                    <span key={registration.id} className="flex items-center gap-1.5 rounded-full bg-[#1e2b17] px-3 py-1.5 text-xs font-bold text-[#c7e572]">
+                    <span key={registration.id} className="flex items-center gap-1.5 rounded-full bg-[var(--success-bg)] px-3 py-1.5 text-xs font-bold text-[var(--success-ink)]">
                       {registration.name}
                       {isOwner && !hasSchedule && <button onClick={() => removeRegistration(division.id, registration.id)} aria-label={`Remove ${registration.name}`}><X size={12} /></button>}
                     </span>
@@ -409,28 +409,28 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
 
               {isOwner && !isSingles && !hasSchedule && (
                 <div className="mt-4 border-t border-[var(--line)] pt-4">
-                  <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">{division.teams.length} team{division.teams.length === 1 ? "" : "s"} formed · {unpairedRegistrations.length} unpaired</p>
+                  <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{division.teams.length} team{division.teams.length === 1 ? "" : "s"} formed · {unpairedRegistrations.length} unpaired</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <button onClick={() => formTeams(division.id, "AUTO_BALANCED")} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">Auto: balanced</button>
-                    <button onClick={() => formTeams(division.id, "AUTO_RANDOM")} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[#1c2a1a] disabled:cursor-not-allowed disabled:opacity-60">Auto: random</button>
+                    <button onClick={() => formTeams(division.id, "AUTO_BALANCED")} disabled={busy} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">Auto: balanced</button>
+                    <button onClick={() => formTeams(division.id, "AUTO_RANDOM")} disabled={busy} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)] disabled:cursor-not-allowed disabled:opacity-60">Auto: random</button>
                   </div>
                   {unpairedRegistrations.length > 0 && (
                     <div className="mt-3 border-t border-[var(--line)] pt-3">
-                      <p className="text-[11px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Or pair manually -- tap two players</p>
+                      <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Or pair manually -- tap two players</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {unpairedRegistrations.map((registration) => {
                           const paired = manuallyPairedIds.has(registration.id);
                           const isPending = pendingPartner === registration.id;
-                          return <button key={registration.id} onClick={() => toggleManualPairing(division.id, registration.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[#0f1712]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>{registration.name}{isPending ? " · pick a partner" : ""}</button>;
+                          return <button key={registration.id} onClick={() => toggleManualPairing(division.id, registration.id)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--success-ink)]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[var(--on-lime)]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>{registration.name}{isPending ? " · pick a partner" : ""}</button>;
                         })}
                       </div>
                       {manualPairs.length > 0 && (
                         <div className="mt-3 space-y-2">
                           {manualPairs.map(([a, b]) => {
                             const nameOf = (id: string) => division.registrations.find((registration) => registration.id === id)?.name ?? "Unknown";
-                            return <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[#131f19] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]"><span>{nameOf(a)} &amp; {nameOf(b)}</span><button onClick={() => toggleManualPairing(division.id, a)} className="text-xs font-bold text-[var(--lime-deep)]">Unpair</button></div>;
+                            return <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]"><span>{nameOf(a)} &amp; {nameOf(b)}</span><button onClick={() => toggleManualPairing(division.id, a)} className="text-xs font-bold text-[var(--lime-deep)]">Unpair</button></div>;
                           })}
-                          <button onClick={() => formTeams(division.id, "MANUAL", manualPairs)} disabled={busy} className="mt-1 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Save {manualPairs.length} manual team{manualPairs.length === 1 ? "" : "s"}</button>
+                          <button onClick={() => formTeams(division.id, "MANUAL", manualPairs)} disabled={busy} className="mt-1 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Save {manualPairs.length} manual team{manualPairs.length === 1 ? "" : "s"}</button>
                         </div>
                       )}
                     </div>
@@ -447,7 +447,7 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
                         <button key={count} onClick={() => setMatchesPerPairingByDivision((current) => ({ ...current, [division.id]: count }))} className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${(matchesPerPairingByDivision[division.id] ?? 1) === count ? "bg-[var(--panel)] text-[var(--foreground)] shadow-sm" : "text-[var(--ink-soft)]"}`}>{count}&times;</button>
                       ))}
                     </div>
-                    <button onClick={() => generateSchedule(division.id, isSingles)} disabled={busy} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate matches"}</button>
+                    <button onClick={() => generateSchedule(division.id, isSingles)} disabled={busy} className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Working..." : "Generate matches"}</button>
                   </div>
                 </div>
               )}
@@ -459,7 +459,7 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
                     <div className="space-y-4">
                       {weekNumbers.map((weekNumber) => (
                         <div key={weekNumber}>
-                          <p className="mb-2 text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Week {weekNumber}</p>
+                          <p className="mb-2 text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Week {weekNumber}</p>
                           <div className="grid gap-3 sm:grid-cols-2">
                             {division.weeks.filter((week) => week.weekNumber === weekNumber).map((week) => {
                               const isPlaying = Boolean(myUserId) && week.players.some((player) => player.userId === myUserId);
@@ -471,8 +471,8 @@ export default function SeasonDetailPage({ params }: { params: Promise<{ seasonI
                       ))}
                     </div>
                     {divisionStandings && (
-                      <div className="h-fit rounded-[16px] bg-[#131f19] p-4">
-                        <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Standings</p>
+                      <div className="h-fit rounded-2xl bg-[var(--surface-2)] p-4">
+                        <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Standings</p>
                         <div className="mt-3 space-y-2">
                           {divisionStandings.standings.map((entry) => (
                             <div key={entry.teamId} className="flex items-center gap-2 rounded-xl bg-[var(--panel)] px-3 py-2.5">

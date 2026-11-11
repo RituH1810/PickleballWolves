@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { CHAT_MESSAGE_MAX, QUICK_MESSAGES } from "@/lib/chat";
+import { CardHeading } from "@/components/card-heading";
 
 type Message = { id: string; body: string; createdAt: string; author: { id: string; name: string; photoUrl: string | null }; isMine: boolean; canDelete: boolean };
 
@@ -61,18 +62,18 @@ export function GameChat({ roundRobinId }: { roundRobinId: string }) {
   if (!messages) return null;
   return (
     <section id="chat" className="mt-6 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-      <div className="flex items-center gap-2"><MessageCircle size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Game chat</h2></div>
+      <CardHeading icon={MessageCircle} title="Game chat" />
       <p className="mt-1 text-xs text-[var(--ink-soft)]">Running late, courts wet, can&apos;t make it? Everyone in the game gets a notification.</p>
 
       <div ref={listRef} className="mt-4 max-h-80 space-y-3 overflow-y-auto pr-1">
         {messages.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No messages yet.</p>}
         {messages.map((message) => (
           <div key={message.id} className={`group flex items-end gap-2 ${message.isMine ? "flex-row-reverse" : ""}`}>
-            {!message.isMine && <Avatar name={message.author.name} photoUrl={message.author.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[#22331f] text-[9px] font-black text-[var(--lime)]" />}
-            <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 ${message.isMine ? "rounded-br-md bg-[var(--lime)] text-[#0f1712]" : "rounded-bl-md bg-[#131f19]"}`}>
-              {!message.isMine && <p className="text-[11px] font-bold text-[var(--lime-deep)]">{message.author.name}</p>}
+            {!message.isMine && <Avatar name={message.author.name} photoUrl={message.author.photoUrl} className="h-7 w-7 shrink-0 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />}
+            <div className={`max-w-[80%] rounded-2xl px-3.5 py-2 ${message.isMine ? "rounded-br-md bg-[var(--lime)] text-[var(--on-lime)]" : "rounded-bl-md bg-[var(--surface-2)]"}`}>
+              {!message.isMine && <p className="text-xs font-bold text-[var(--lime-deep)]">{message.author.name}</p>}
               <p className="whitespace-pre-line break-words text-sm leading-5">{message.body}</p>
-              <p className={`mt-0.5 text-[10px] ${message.isMine ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>{timeLabel(message.createdAt)}</p>
+              <p className={`mt-0.5 text-xs ${message.isMine ? "text-[#3c4a1e]" : "text-[var(--ink-soft)]"}`}>{timeLabel(message.createdAt)}</p>
             </div>
             {message.canDelete && <button onClick={() => remove(message)} aria-label="Delete message" className="mb-1 grid h-6 w-6 shrink-0 place-items-center rounded-full text-[var(--ink-soft)] opacity-0 transition-opacity hover:text-[var(--coral)] focus:opacity-100 group-hover:opacity-100"><Trash2 size={12} /></button>}
           </div>
@@ -80,11 +81,11 @@ export function GameChat({ roundRobinId }: { roundRobinId: string }) {
       </div>
 
       <div className="mt-4 flex flex-wrap gap-1.5">
-        {QUICK_MESSAGES.map((quick) => <button key={quick} onClick={() => send(quick)} disabled={sending} className="rounded-full border border-[var(--line)] px-3 py-1.5 text-[11px] font-bold text-[var(--foreground)] hover:bg-[#1c2a1a] disabled:opacity-50">{quick}</button>)}
+        {QUICK_MESSAGES.map((quick) => <button key={quick} onClick={() => send(quick)} disabled={sending} className="rounded-full border border-[var(--line)] px-3 py-1.5 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)] disabled:opacity-50">{quick}</button>)}
       </div>
       <form onSubmit={(event) => { event.preventDefault(); send(draft); }} className="mt-3 flex gap-2">
-        <input value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={CHAT_MESSAGE_MAX} placeholder="Message everyone in this game" aria-label="Message" className="h-11 min-w-0 flex-1 rounded-full border border-[var(--line)] bg-[#0f1712] px-4 text-sm outline-none focus:border-[var(--lime-deep)]" />
-        <button type="submit" disabled={sending || !draft.trim()} aria-label="Send" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043] disabled:opacity-50"><Send size={16} /></button>
+        <input value={draft} onChange={(event) => setDraft(event.target.value)} maxLength={CHAT_MESSAGE_MAX} placeholder="Message everyone in this game" aria-label="Message" className="h-11 min-w-0 flex-1 rounded-full border border-[var(--line)] bg-[var(--background)] px-4 text-sm outline-none focus:border-[var(--lime-deep)]" />
+        <button type="submit" disabled={sending || !draft.trim()} aria-label="Send" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--lime)] text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:opacity-50"><Send size={16} /></button>
       </form>
       {error && <p role="alert" className="mt-2 text-xs font-bold text-[var(--coral)]">{error}</p>}
     </section>

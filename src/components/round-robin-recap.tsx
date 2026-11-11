@@ -15,8 +15,8 @@ function Names({ players }: { players: PlayerRef[] }) {
 
 function Highlight({ icon: Icon, label, children }: { icon: LucideIcon; label: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-[#131f19] p-4">
-      <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={13} className="text-[var(--lime-deep)]" />{label}</p>
+    <div className="rounded-2xl bg-[var(--surface-2)] p-4">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Icon size={13} className="text-[var(--lime-deep)]" />{label}</p>
       <div className="mt-2 text-sm font-bold leading-5 text-[var(--foreground)]">{children}</div>
     </div>
   );
@@ -43,11 +43,11 @@ export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundR
   }
 
   const [first] = recap.champions;
-  const shareButton = "flex h-10 items-center gap-2 rounded-full px-4 text-xs font-bold transition-colors";
+  const shareButton = "flex h-11 items-center gap-2 rounded-full px-4 text-xs font-bold transition-colors";
   return (
     <section className="mt-6 overflow-hidden rounded-[24px] border border-[var(--line)] bg-[var(--panel)]">
-      <div className="bg-[var(--lime)] p-6 text-[#0f1712] sm:p-8">
-        <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[.18em]"><Crown size={16} />{recap.wonPlayoffs ? (recap.champions.length > 1 ? "Playoff champions" : "Playoff champion") : recap.champions.length > 1 ? "Co-champions" : "Champion"}</p>
+      <div className="bg-[var(--lime)] p-6 text-[var(--on-lime)] sm:p-8">
+        <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[.14em]"><Crown size={16} />{recap.wonPlayoffs ? (recap.champions.length > 1 ? "Playoff champions" : "Playoff champion") : recap.champions.length > 1 ? "Co-champions" : "Champion"}</p>
         <h2 className="mt-2 text-3xl font-black tracking-[-.04em] sm:text-4xl">
           {recap.champions.map((entry, index) => <span key={entry.userId}>{index > 0 && ", "}<Link href={`/players/${entry.userId}`} className="hover:underline">{entry.name}</Link></span>)}
         </h2>
@@ -57,11 +57,11 @@ export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundR
       <div className="p-6 sm:p-8">
         <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr]">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Podium</h3>
+            <h3 className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Podium</h3>
             <ol className="mt-3 space-y-2">
               {recap.podium.map((entry) => (
-                <li key={entry.userId} className="flex items-center gap-3 rounded-xl bg-[#131f19] px-3 py-2.5">
-                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${entry.rank === 1 ? "bg-[var(--lime)] text-[#0f1712]" : entry.rank === 2 ? "bg-[#c7d0d8] text-[#1b211e]" : "bg-[#d69a63] text-[#1b211e]"}`}>{entry.rank}</span>
+                <li key={entry.userId} className="flex items-center gap-3 rounded-xl bg-[var(--surface-2)] px-3 py-2.5">
+                  <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${entry.rank === 1 ? "bg-[var(--lime)] text-[var(--on-lime)]" : entry.rank === 2 ? "bg-[#c7d0d8] text-[var(--ink-dark)]" : "bg-[#d69a63] text-[var(--ink-dark)]"}`}>{entry.rank}</span>
                   <Link href={`/players/${entry.userId}`} className="min-w-0 flex-1 truncate text-sm font-bold hover:text-[var(--lime-deep)] hover:underline">{entry.name}</Link>
                   <span className="shrink-0 text-xs font-bold text-[var(--ink-soft)]">{entry.wins}-{entry.losses} · {entry.differential > 0 ? "+" : ""}{entry.differential}</span>
                 </li>
@@ -81,7 +81,7 @@ export function RoundRobinRecap({ roundRobinId, name, played = false }: { roundR
 
         <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--line)] pt-5">
           <BragButton card={{ kind: "roundRobin", roundRobinId }} label="Share this recap as a picture" text="Share recap" align="left" />
-          <button onClick={copy} className={`${shareButton} border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]`}><Copy size={14} />{copied ? "Copied!" : "Copy recap"}</button>
+          <button onClick={copy} className={`${shareButton} border border-[var(--line)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]`}><Copy size={14} />{copied ? "Copied!" : "Copy recap"}</button>
           {played && <div className="ml-auto"><BragButton card={{ kind: "recap", roundRobinId }} label="Share my result as a picture" text="Share my result" /></div>}
         </div>
         <Reactions targetType="ROUND_ROBIN" targetId={roundRobinId} className="mt-4" />

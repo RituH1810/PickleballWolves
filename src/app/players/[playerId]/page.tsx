@@ -65,9 +65,9 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
 
         <section className="mt-8 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-9">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-            <Avatar name={player.name} photoUrl={player.photoUrl} className="h-24 w-24 shrink-0 rounded-[28px] bg-[#d8f24e] text-2xl font-black text-[#1b211e]" />
+            <Avatar name={player.name} photoUrl={player.photoUrl} className="h-24 w-24 shrink-0 rounded-[24px] bg-[var(--lime)] text-2xl font-black text-[var(--ink-dark)]" />
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">{player.isGuest ? "Guest player" : "Player"}</p>
+              <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{player.isGuest ? "Guest player" : "Player"}</p>
               <h1 className="mt-2 text-3xl font-black tracking-[-.04em] text-[var(--foreground)]">{player.name}</h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--ink-soft)]">
                 <span className="flex items-center gap-2">{signedIn && <><MapPin size={15} />{player.homeCourt || "No home court"}{player.homeCourt && <DirectionsLink address={player.homeCourt} />} &middot; </>}{player.preferredHand.toLowerCase()}-handed</span>
@@ -76,7 +76,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
               {groups.length > 0 && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <Users size={14} className="text-[var(--ink-soft)]" />
-                  {groups.map((group) => <Link key={group.id} href={`/groups/${group.id}`} className="rounded-full bg-[#1c2a1a] px-2.5 py-1 text-[11px] font-bold text-[var(--ink-soft)] hover:text-[var(--foreground)]">{group.name}</Link>)}
+                  {groups.map((group) => <Link key={group.id} href={`/groups/${group.id}`} className="rounded-full bg-[var(--surface-hover)] px-2.5 py-1 text-xs font-bold text-[var(--ink-soft)] hover:text-[var(--foreground)]">{group.name}</Link>)}
                 </div>
               )}
             </div>
@@ -84,12 +84,12 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
           </div>
 
           <div className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Skill rating</p><p className="mt-2 text-2xl font-black">{player.skillRating}</p></div>
-            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Record</p><p className="mt-2 text-2xl font-black">{player.record}</p></div>
-            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{player.winRate}</p><FormGuide userId={player.id} /></div>
-            <div className="rounded-2xl bg-[#1b211e] p-4 text-white">
+            <div className="rounded-2xl bg-[var(--surface-2)] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Skill rating</p><p className="mt-2 text-2xl font-black">{player.skillRating}</p></div>
+            <div className="rounded-2xl bg-[var(--surface-2)] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Record</p><p className="mt-2 text-2xl font-black">{player.record}</p></div>
+            <div className="rounded-2xl bg-[var(--surface-2)] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{player.winRate}</p><FormGuide userId={player.id} /></div>
+            <div className="rounded-2xl bg-[var(--ink-dark)] p-4 text-white">
               <p className="text-xs font-bold uppercase tracking-[.12em] text-[#a9b6a9]">Wolves rank</p>
-              {player.rank ? <p className="mt-2 text-2xl font-black">#{player.rank}</p> : <><p className="mt-2 text-2xl font-black text-[#a9b6a9]">—</p><p className="text-[10px] text-[#a9b6a9]">{player.matchesToQualify} more match{player.matchesToQualify === 1 ? "" : "es"} to qualify</p></>}
+              {player.rank ? <p className="mt-2 text-2xl font-black">#{player.rank}</p> : <><p className="mt-2 text-2xl font-black text-[#a9b6a9]">—</p><p className="text-xs text-[#a9b6a9]">{player.matchesToQualify} more match{player.matchesToQualify === 1 ? "" : "es"} to qualify</p></>}
             </div>
           </div>
         </section>
@@ -99,7 +99,7 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
             <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2"><Swords size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">You and {firstName}</h2></div><Link href={`/rivalry/me/${player.id}`} className="text-xs font-bold text-[var(--lime-deep)] hover:underline">Full rivalry →</Link></div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {([["Against each other", headToHead.against, `You're ${headToHead.against.wins}-${headToHead.against.losses} against ${firstName}`], ["As partners", headToHead.together, `${headToHead.together.wins}-${headToHead.together.losses} as a team`]] as const).map(([label, stat, line]) => (
-                <div key={label} className="rounded-2xl bg-[#131f19] p-4">
+                <div key={label} className="rounded-2xl bg-[var(--surface-2)] p-4">
                   <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{label}</p>
                   {stat.wins + stat.losses > 0 ? <><p className="mt-2 text-2xl font-black">{stat.wins} - {stat.losses}</p><p className="mt-1 text-xs text-[var(--ink-soft)]">{line}</p></> : <p className="mt-2 text-sm text-[var(--ink-soft)]">No matches yet</p>}
                 </div>
@@ -116,10 +116,10 @@ export default function PlayerPage({ params }: { params: Promise<{ playerId: str
           <div className="mt-4 space-y-3">
             {recent.length === 0 ? <p className="text-sm text-[var(--ink-soft)]">No matches recorded yet.</p> : recent.map((match) => (
               <div key={match.id} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 last:border-0 last:pb-0">
-                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[10px] font-black ${match.result === "W" ? "bg-[var(--lime)] text-[#0f1712]" : match.result === "L" ? "bg-[var(--coral)] text-[#2e1a16]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{match.result}</span>
+                <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${match.result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : match.result === "L" ? "bg-[var(--coral)] text-[var(--on-coral)]" : "bg-[var(--surface-hover)] text-[var(--ink-soft)]"}`}>{match.result}</span>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold">{match.partners.length > 0 && <>With <Names players={match.partners} /> </>}vs <Names players={match.opponents} /></p>
-                  <p className="truncate text-[11px] text-[var(--ink-soft)]">{match.event}{!match.event.includes(formatDay(match.playedAt)) && ` · ${formatDay(match.playedAt)}`}</p>
+                  <p className="truncate text-xs text-[var(--ink-soft)]">{match.event}{!match.event.includes(formatDay(match.playedAt)) && ` · ${formatDay(match.playedAt)}`}</p>
                 </div>
                 <span className={`shrink-0 text-xs font-bold ${match.result === "W" ? "text-[var(--lime-deep)]" : match.result === "L" ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{match.score || "No score"}</span>
               </div>

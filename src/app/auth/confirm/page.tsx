@@ -29,10 +29,10 @@ export default async function ConfirmPage({ searchParams }: { searchParams: Prom
             <input type="hidden" name="token_hash" value={tokenHash} />
             <input type="hidden" name="type" value={type} />
             <input type="hidden" name="next" value={value("next")} />
-            <p className="mb-2 text-xs font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">{copy.eyebrow}</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{copy.eyebrow}</p>
             <h1 className="text-3xl font-black tracking-[-.04em] text-[var(--foreground)]">{copy.title}</h1>
             <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">Tap the button to finish. This link works once and stays valid for 5 hours.</p>
-            <button type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]">{copy.button} <ArrowRight size={16} /></button>
+            <button type="submit" className="mt-7 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">{copy.button} <ArrowRight size={16} /></button>
           </form>
         ) : (
           <>

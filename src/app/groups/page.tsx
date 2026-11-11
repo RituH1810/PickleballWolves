@@ -48,14 +48,14 @@ export default function GroupsPage() {
         <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
           <div>
             <Link href="/" className="text-xs font-bold text-[var(--lime-deep)]">Back to dashboard</Link>
-            <p className="mt-7 text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Community</p>
+            <p className="mt-7 text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Community</p>
             <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Find your groups.</h1>
             <p className="mt-3 text-sm text-[var(--ink-soft)]">Play regularly with people who make the game better. Join as many as you like.</p>
           </div>
-          <button onClick={() => signedIn ? setCreating(!creating) : promptSignIn()} className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]">{creating ? <X size={17} /> : <Plus size={17} />}{creating ? "Close" : "Create group"}</button>
+          <button onClick={() => signedIn ? setCreating(!creating) : promptSignIn()} className="flex min-h-11 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-5 text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">{creating ? <X size={17} /> : <Plus size={17} />}{creating ? "Close" : "Create group"}</button>
         </div>
 
-        {notice && <p role="status" className={`mb-4 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}
+        {notice && <p role="status" className={`mb-4 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{notice.text}</p>}
 
         {creating && (
           <section className="mb-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
@@ -64,7 +64,7 @@ export default function GroupsPage() {
               <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Group name" className="h-11 rounded-xl border border-[var(--line)] px-3 text-sm" />
               <AddressInput value={form.location} onChange={(location) => setForm({ ...form, location })} placeholder="Location -- start typing to search" ariaLabel="Location" className="w-full h-11 rounded-xl border border-[var(--line)] px-3 text-sm" />
               <input value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="Short description" className="h-11 rounded-xl border border-[var(--line)] px-3 text-sm sm:col-span-2" />
-              <button onClick={createGroup} className="h-11 rounded-full bg-[#d8f24e] text-sm font-bold text-[#1b211e] sm:w-fit sm:px-6">Create group</button>
+              <button onClick={createGroup} className="h-11 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--ink-dark)] sm:w-fit sm:px-6">Create group</button>
             </div>
           </section>
         )}
@@ -79,7 +79,7 @@ export default function GroupsPage() {
           ) : groups.map((group) => (
             <Link key={group.id} href={`/groups/${group.id}`} className="block rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 transition-transform hover:-translate-y-1">
               <div className="flex items-start gap-4">
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[#d8f24e] text-sm font-black text-[#1b211e]">{group.mark}</div>
+                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[var(--lime)] text-sm font-black text-[var(--ink-dark)]">{group.mark}</div>
                 <div className="flex-1">
                   <h2 className="text-lg font-extrabold tracking-tight text-[var(--foreground)]">{group.name}</h2>
                   <p className="mt-1 flex items-center gap-1 text-xs text-[var(--ink-soft)]"><MapPin size={13} />{group.location}</p>
@@ -89,7 +89,7 @@ export default function GroupsPage() {
               <p className="mt-6 flex items-center gap-2 text-sm text-[var(--ink-soft)]"><Users size={16} />{group.members} members</p>
               <div className="mt-5 flex items-center justify-between border-t border-[var(--line)] pt-4">
                 <span className="text-xs font-semibold text-[var(--ink-soft)]">Next up <span className="ml-2 text-[var(--foreground)]">{group.next}</span></span>
-                <button onClick={(event) => toggleMembership(event, group)} className={`flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold transition-colors ${group.isMember ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]"}`}>
+                <button onClick={(event) => toggleMembership(event, group)} className={`flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold transition-colors ${group.isMember ? "bg-[var(--success-bg)] text-[var(--success-ink)]" : "bg-[var(--lime)] text-[var(--on-lime)] hover:bg-[var(--lime-hover)]"}`}>
                   {group.isMember && <Check size={13} />}
                   {group.isMember ? "Joined" : "Join"}
                 </button>

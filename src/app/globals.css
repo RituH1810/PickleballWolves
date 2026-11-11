@@ -12,6 +12,20 @@
   --coral: #f17e62;
   --blue: #8cc9df;
   --amber: #f5b942;
+
+  /* Named shades used across the app (they were hard-coded hex values before). */
+  --surface-2: #131f19;      /* inner tiles and wells inside a panel */
+  --surface-hover: #1c2a1a;  /* hover on outline buttons and rows */
+  --avatar-bg: #22331f;
+  --lime-hover: #c3e043;
+  --on-lime: #0f1712;        /* text and icons on lime */
+  --on-coral: #2e1a16;       /* text on coral */
+  --ink-muted: #c3d0c5;      /* form labels, secondary text a step brighter than --ink-soft */
+  --ink-dark: #1b211e;       /* dark text on light chips */
+  --success-bg: #1e2b17;
+  --success-ink: #c7e572;
+  --danger-bg: #2e1a16;
+  --danger-ink: #f2a08c;
 }
 
 @theme inline {
@@ -99,4 +113,10 @@ input::placeholder, textarea::placeholder {
 @keyframes bob {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
+}
+
+/* Respect "reduce motion": no floating, bobbing or fade-ins for people who asked for less movement. */
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .animate-float, .animate-bob, .skeleton { animation: none; }
+  a, button { transition: none; }
 }

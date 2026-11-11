@@ -112,9 +112,9 @@ export function RatingChart({ start, points }: { start: number; points: RatingPo
       )}
 
       {point && active !== null && (
-        <div className="pointer-events-none absolute top-0 w-[140px] rounded-xl border border-[var(--line)] bg-[#0f1712] px-3 py-2 shadow-lg" style={{ left: tooltipLeft }}>
+        <div className="pointer-events-none absolute top-0 w-[140px] rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 py-2 shadow-lg" style={{ left: tooltipLeft }}>
           <p className="text-lg font-black leading-none">{point.rating.toFixed(3)}</p>
-          <p className="mt-1 text-[11px] text-[var(--ink-soft)]">
+          <p className="mt-1 text-xs text-[var(--ink-soft)]">
             {active === 0 ? "Starting rating" : <>{active === peak && <span className="font-bold text-[#f5c542]">Peak · </span>}{formatDate(point.at)} · <span className={point.delta > 0 ? "text-[var(--lime-deep)]" : point.delta < 0 ? "text-[var(--coral)]" : ""}>{formatDelta(point.delta)}</span></>}
           </p>
         </div>

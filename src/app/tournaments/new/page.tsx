@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, Award, Check, Users } from "lucide-react";
 import { AddressInput } from "@/components/address-input";
+import { CardHeading } from "@/components/card-heading";
 
 type Player = { id: string; name: string; rank: number | null; skillRating: string; gender: "MALE" | "FEMALE" | "UNSPECIFIED" | null };
 
@@ -126,15 +127,15 @@ export default function NewTournamentPage() {
       <div className="mx-auto max-w-4xl">
         <Link href="/tournaments" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to tournaments</Link>
         <div className="mt-8">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Bracket play</p>
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Bracket play</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Create a tournament.</h1>
           <p className="mt-3 text-sm text-[var(--ink-soft)]">Open to any player -- pick a level, format, and how teams and groups come together.</p>
         </div>
-        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>}
+        {notice && <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{notice.text}</p>}
 
         <div className="mt-8 flex items-center gap-2 overflow-x-auto pb-1">
           {stepLabels.map((label, index) => (
-            <div key={label} className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${index === clampedStep ? "bg-[var(--lime)] text-[#0f1712]" : index < clampedStep ? "bg-[#1e2b17] text-[#c7e572]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>
+            <div key={label} className={`flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold ${index === clampedStep ? "bg-[var(--lime)] text-[var(--on-lime)]" : index < clampedStep ? "bg-[var(--success-bg)] text-[var(--success-ink)]" : "bg-[var(--surface-hover)] text-[var(--ink-soft)]"}`}>
               {index < clampedStep ? <Check size={12} /> : <span>{index + 1}</span>}{label}
             </div>
           ))}
@@ -144,22 +145,22 @@ export default function NewTournamentPage() {
           {clampedStep === 0 && (
             <div className="grid gap-5 sm:grid-cols-2">
               <h2 className="font-extrabold sm:col-span-2">1. Details</h2>
-              <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Tournament name
+              <label className="text-xs font-bold text-[var(--ink-muted)] sm:col-span-2">Tournament name
                 <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Fall Smash Tournament" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
               </label>
-              <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Description (optional)
+              <label className="text-xs font-bold text-[var(--ink-muted)] sm:col-span-2">Description (optional)
                 <textarea value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} rows={3} className="mt-2 w-full rounded-xl border border-[var(--line)] px-4 py-3 text-sm" />
               </label>
-              <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Location
+              <label className="text-xs font-bold text-[var(--ink-muted)] sm:col-span-2">Location
                 <AddressInput value={form.location} onChange={(location) => setForm({ ...form, location })} placeholder="Courts or venue -- start typing to search" ariaLabel="Location" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
               </label>
-              <label className="text-xs font-bold text-[#c3d0c5]">Courts available
+              <label className="text-xs font-bold text-[var(--ink-muted)]">Courts available
                 <input type="number" min="1" value={form.courtCount} onChange={(event) => setForm({ ...form, courtCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
               </label>
-              <label className="text-xs font-bold text-[#c3d0c5]">Start date
+              <label className="text-xs font-bold text-[var(--ink-muted)]">Start date
                 <input type="datetime-local" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
               </label>
-              <label className="text-xs font-bold text-[#c3d0c5]">End date (optional)
+              <label className="text-xs font-bold text-[var(--ink-muted)]">End date (optional)
                 <input type="date" value={form.endDate} onChange={(event) => setForm({ ...form, endDate: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
               </label>
             </div>
@@ -168,29 +169,29 @@ export default function NewTournamentPage() {
           {clampedStep === 1 && (
             <div>
               <h2 className="font-extrabold">2. Level & type</h2>
-              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Skill level</p>
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Skill level</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {skillLevels.map((level) => (
-                  <button key={level.id} onClick={() => setForm({ ...form, skillLevel: level.id })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.skillLevel === level.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                  <button key={level.id} onClick={() => setForm({ ...form, skillLevel: level.id })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.skillLevel === level.id ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                     <span className="block text-sm font-bold">{level.label}</span>
-                    <span className="block text-[11px] text-[var(--ink-soft)]">{level.detail}</span>
+                    <span className="block text-xs text-[var(--ink-soft)]">{level.detail}</span>
                   </button>
                 ))}
               </div>
 
-              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Event type</p>
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Event type</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {eventTypes.map((type) => (
-                  <button key={type.id} onClick={() => setForm({ ...form, eventType: type.id })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.eventType === type.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                  <button key={type.id} onClick={() => setForm({ ...form, eventType: type.id })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.eventType === type.id ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                     <span className="block text-sm font-bold">{type.label}</span>
-                    <span className="block text-[11px] text-[var(--ink-soft)]">{type.detail}</span>
+                    <span className="block text-xs text-[var(--ink-soft)]">{type.detail}</span>
                   </button>
                 ))}
               </div>
 
               <div className="mt-6 grid gap-5 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
-                <label className="text-xs font-bold text-[#c3d0c5]">Points to win
-                  <select value={form.pointsToWin} onChange={(event) => setForm({ ...form, pointsToWin: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm">
+                <label className="text-xs font-bold text-[var(--ink-muted)]">Points to win
+                  <select value={form.pointsToWin} onChange={(event) => setForm({ ...form, pointsToWin: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm">
                     <option value="11">11</option>
                     <option value="15">15</option>
                     <option value="21">21</option>
@@ -198,19 +199,19 @@ export default function NewTournamentPage() {
                 </label>
               </div>
 
-              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Registration</p>
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Registration</p>
               <div className="mt-2 flex gap-2">
-                <button onClick={() => setForm({ ...form, registrationMode: "ROSTER" })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${isRoster ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                <button onClick={() => setForm({ ...form, registrationMode: "ROSTER" })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${isRoster ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                   <span className="block text-sm font-bold">Pick players myself</span>
-                  <span className="block text-[11px] text-[var(--ink-soft)]">Choose from registered players now or add more later.</span>
+                  <span className="block text-xs text-[var(--ink-soft)]">Choose from registered players now or add more later.</span>
                 </button>
-                <button onClick={() => setForm({ ...form, registrationMode: "OPEN" })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${!isRoster ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                <button onClick={() => setForm({ ...form, registrationMode: "OPEN" })} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${!isRoster ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                   <span className="block text-sm font-bold">Open sign-up link</span>
-                  <span className="block text-[11px] text-[var(--ink-soft)]">Share a link; anyone can register until the deadline.</span>
+                  <span className="block text-xs text-[var(--ink-soft)]">Share a link; anyone can register until the deadline.</span>
                 </button>
               </div>
               {!isRoster && (
-                <label className="mt-4 block text-xs font-bold text-[#c3d0c5] sm:w-1/2">Registration deadline
+                <label className="mt-4 block text-xs font-bold text-[var(--ink-muted)] sm:w-1/2">Registration deadline
                   <input type="datetime-local" value={form.registrationDeadline} onChange={(event) => setForm({ ...form, registrationDeadline: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
                 </label>
               )}
@@ -220,7 +221,7 @@ export default function NewTournamentPage() {
           {clampedStep === 2 && (
             <div>
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">3. Players</h2></div>
+                <CardHeading icon={Users} title="3. Players" />
                 {isRoster && <span className="text-xs font-bold text-[var(--ink-soft)]">{selected.length} selected</span>}
               </div>
               {isRoster ? (
@@ -230,8 +231,8 @@ export default function NewTournamentPage() {
                     {players.map((player) => {
                       const mismatch = skillLevelForRating(Number(player.skillRating)) !== form.skillLevel;
                       return (
-                        <button key={player.id} onClick={() => togglePlayer(player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
-                          <span><span className="block text-sm font-bold">{player.name}</span><span className="flex items-center gap-1 text-[11px] text-[var(--ink-soft)]">Rating {player.skillRating}{mismatch && <span className="flex items-center gap-0.5 text-[#f2a08c]"><AlertTriangle size={10} />mismatch</span>}</span></span>
+                        <button key={player.id} onClick={() => togglePlayer(player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
+                          <span><span className="block text-sm font-bold">{player.name}</span><span className="flex items-center gap-1 text-xs text-[var(--ink-soft)]">Rating {player.skillRating}{mismatch && <span className="flex items-center gap-0.5 text-[var(--danger-ink)]"><AlertTriangle size={10} />mismatch</span>}</span></span>
                           {selected.includes(player.id) && <Check size={16} className="text-[var(--lime-deep)]" />}
                         </button>
                       );
@@ -239,7 +240,7 @@ export default function NewTournamentPage() {
                   </div>
                 </>
               ) : (
-                <div className="mt-4 flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[#131f19] p-4 text-sm text-[var(--ink-soft)]">
+                <div className="mt-4 flex items-center gap-3 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] p-4 text-sm text-[var(--ink-soft)]">
                   <Award size={18} className="shrink-0 text-[var(--lime-deep)]" />
                   <p>Registration is open -- once this tournament is created, you&apos;ll get a shareable link for players to sign themselves up until the deadline.</p>
                 </div>
@@ -254,18 +255,18 @@ export default function NewTournamentPage() {
                 <p className="mt-2 text-sm text-[var(--ink-soft)]">Singles has no team pairing -- every registered player is their own entry.</p>
               ) : (
                 <>
-                  <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">How should teams be formed?</p>
+                  <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">How should teams be formed?</p>
                   <div className="mt-2 grid gap-2">
                     {teamFormationOptions.map((option) => (
-                      <button key={option.id} onClick={() => setForm({ ...form, teamFormationMethod: option.id })} className={`rounded-xl border px-4 py-3 text-left transition-colors ${form.teamFormationMethod === option.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                      <button key={option.id} onClick={() => setForm({ ...form, teamFormationMethod: option.id })} className={`rounded-xl border px-4 py-3 text-left transition-colors ${form.teamFormationMethod === option.id ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                         <span className="block text-sm font-bold">{option.label}</span>
-                        <span className="block text-[11px] text-[var(--ink-soft)]">{option.detail}</span>
+                        <span className="block text-xs text-[var(--ink-soft)]">{option.detail}</span>
                       </button>
                     ))}
                   </div>
                 </>
               )}
-              <p className="mt-6 rounded-xl border border-[var(--line)] bg-[#131f19] px-4 py-3 text-xs text-[var(--ink-soft)]">Groups (A, B, C...) are set up later from the tournament page, once you can see how many players actually registered -- you&apos;ll pick how many groups to split into then.</p>
+              <p className="mt-6 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] px-4 py-3 text-xs text-[var(--ink-soft)]">Groups (A, B, C...) are set up later from the tournament page, once you can see how many players actually registered -- you&apos;ll pick how many groups to split into then.</p>
             </div>
           )}
 
@@ -281,16 +282,16 @@ export default function NewTournamentPage() {
                 <div className="flex justify-between pb-2"><span className="text-[var(--ink-soft)]">Team formation</span><span className="font-bold">{form.eventType === "SINGLES" ? "N/A (singles)" : teamFormationOptions.find((o) => o.id === form.teamFormationMethod)?.label}</span></div>
               </div>
               {isRoster && selected.length > 0 && selected.length >= minPlayers && form.teamFormationMethod !== "MANUAL" && (
-                <p className="mt-4 rounded-xl bg-[#1e2b17] px-4 py-3 text-xs font-semibold text-[#c7e572]">Teams will be formed automatically right after creating this tournament. You&apos;ll assign groups from the tournament page afterward.</p>
+                <p className="mt-4 rounded-xl bg-[var(--success-bg)] px-4 py-3 text-xs font-semibold text-[var(--success-ink)]">Teams will be formed automatically right after creating this tournament. You&apos;ll assign groups from the tournament page afterward.</p>
               )}
-              <button onClick={createTournament} disabled={creating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{creating ? "Creating..." : "Create tournament"} <ArrowRight size={16} /></button>
+              <button onClick={createTournament} disabled={creating} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{creating ? "Creating..." : "Create tournament"} <ArrowRight size={16} /></button>
             </div>
           )}
 
           {clampedStep < 4 && (
             <div className="mt-8 flex items-center justify-between border-t border-[var(--line)] pt-6">
               {clampedStep > 0 ? <button onClick={goBack} className="rounded-full border border-[var(--line)] px-5 py-2.5 text-xs font-bold text-[var(--foreground)]">Back</button> : <span />}
-              <button onClick={goNext} className="flex items-center gap-2 rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Next <ArrowRight size={14} /></button>
+              <button onClick={goNext} className="flex items-center gap-2 rounded-full bg-[var(--lime)] px-5 py-2.5 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Next <ArrowRight size={14} /></button>
             </div>
           )}
         </section>

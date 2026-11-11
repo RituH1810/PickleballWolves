@@ -31,18 +31,18 @@ export function InstallBanner() {
   if (!ready || installed || dismissed) return null;
   return (
     <div className="mt-6 flex flex-wrap items-center gap-3 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-4">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--lime)] text-xs font-black text-[#0f1712]">PW</span>
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[var(--lime)] text-xs font-black text-[var(--on-lime)]">PW</span>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-extrabold">Get the app</p>
         <p className="text-xs text-[var(--ink-soft)]">{androidOtherBrowser ? "Install from Google Chrome -- installs from other browsers can be blocked by Play Protect." : "Add Wolves to your home screen for one-tap access and game notifications."}</p>
       </div>
       <div className="flex items-center gap-2">
         {androidOtherBrowser
-          ? <a href={openInChromeUrl(`${window.location.origin}/install`)} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">Open in Chrome</a>
+          ? <a href={openInChromeUrl(`${window.location.origin}/install`)} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Open in Chrome</a>
           : canPrompt
-          ? <button onClick={() => install()} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]"><Download size={14} />Install</button>
-          : <Link href="/install" className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]">How to install</Link>}
-        <button onClick={dismiss} aria-label="Dismiss" className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[#1c2a1a]"><X size={15} /></button>
+          ? <button onClick={() => install()} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]"><Download size={14} />Install</button>
+          : <Link href="/install" className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">How to install</Link>}
+        <button onClick={dismiss} aria-label="Dismiss" className="grid h-8 w-8 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[var(--surface-hover)]"><X size={15} /></button>
       </div>
     </div>
   );

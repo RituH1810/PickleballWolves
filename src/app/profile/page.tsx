@@ -108,17 +108,17 @@ export default function ProfilePage() {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
             <div className="relative h-24 w-24 shrink-0">
               {profile.photoUrl ? (
-                <img src={profile.photoUrl} alt={profile.name} className="h-24 w-24 rounded-[28px] object-cover" />
+                <img src={profile.photoUrl} alt={profile.name} className="h-24 w-24 rounded-[24px] object-cover" />
               ) : (
-                <div className="grid h-24 w-24 place-items-center rounded-[28px] bg-[#d8f24e] text-2xl font-black text-[#1b211e]">{initials}</div>
+                <div className="grid h-24 w-24 place-items-center rounded-[24px] bg-[var(--lime)] text-2xl font-black text-[var(--ink-dark)]">{initials}</div>
               )}
               <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoSelected} className="hidden" />
-              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} aria-label="Change photo" className="absolute -bottom-2 -right-2 grid h-9 w-9 place-items-center rounded-full border-2 border-[var(--panel)] bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">
+              <button onClick={() => fileInputRef.current?.click()} disabled={uploadingPhoto} aria-label="Change photo" className="absolute -bottom-2 -right-2 grid h-9 w-9 place-items-center rounded-full border-2 border-[var(--panel)] bg-[var(--lime)] text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">
                 <Camera size={15} />
               </button>
             </div>
             <div className="flex-1">
-              <p className="text-xs font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">Player profile</p>
+              <p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Player profile</p>
               {editing ? (
                 <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="mt-2 h-11 w-full max-w-sm rounded-xl border border-[var(--line)] px-3 text-2xl font-black outline-none focus:border-[var(--lime-deep)]" />
               ) : (
@@ -131,7 +131,7 @@ export default function ProfilePage() {
             </div>
             {editing ? (
               <div className="flex gap-2">
-                <button onClick={saveProfile} className="rounded-full bg-[var(--lime)] px-4 py-2.5 text-xs font-bold text-[#0f1712]">Save</button>
+                <button onClick={saveProfile} className="rounded-full bg-[var(--lime)] px-4 py-2.5 text-xs font-bold text-[var(--on-lime)]">Save</button>
                 <button onClick={() => { setDraft({ name: profile.name, skillRating: profile.skillRating, homeCourt: profile.homeCourt ?? "", phone: profile.phone ?? "", preferredHand: profile.preferredHand }); setEditing(false); }} className="rounded-full border border-[var(--line)] px-4 py-2.5 text-xs font-bold">Cancel</button>
               </div>
             ) : (
@@ -141,18 +141,18 @@ export default function ProfilePage() {
 
           {editing && (
             <div className="mt-6 grid gap-4 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
-              <div className="text-xs font-bold text-[#c3d0c5]">Skill rating
+              <div className="text-xs font-bold text-[var(--ink-muted)]">Skill rating
                 <p className="mt-2 flex h-11 items-center rounded-xl border border-[var(--line)] px-3 text-sm font-semibold text-[var(--ink-soft)]">{Number(profile?.skillRating ?? 2.5).toFixed(3)}</p>
                 <span className="mt-1 block font-normal text-[var(--ink-soft)]">Everyone starts at 2.500 -- it moves with your match results, like DUPR.</span>
               </div>
-              <label className="text-xs font-bold text-[#c3d0c5]">Home court
+              <label className="text-xs font-bold text-[var(--ink-muted)]">Home court
                 <AddressInput value={draft.homeCourt} onChange={(homeCourt) => setDraft({ ...draft, homeCourt })} placeholder="Northside Courts -- start typing to search" ariaLabel="Home court" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
               </label>
-              <label className="text-xs font-bold text-[#c3d0c5]">Mobile number
+              <label className="text-xs font-bold text-[var(--ink-muted)]">Mobile number
                 <input type="tel" value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} placeholder="+1 555 123 4567" className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-3 text-sm" />
               </label>
-              <label className="text-xs font-bold text-[#c3d0c5]">Preferred hand
-                <select value={draft.preferredHand} onChange={(event) => setDraft({ ...draft, preferredHand: event.target.value as Profile["preferredHand"] })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-3 text-sm">
+              <label className="text-xs font-bold text-[var(--ink-muted)]">Preferred hand
+                <select value={draft.preferredHand} onChange={(event) => setDraft({ ...draft, preferredHand: event.target.value as Profile["preferredHand"] })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 text-sm">
                   <option value="RIGHT">Right</option>
                   <option value="LEFT">Left</option>
                   <option value="AMBIDEXTROUS">Ambidextrous</option>
@@ -164,9 +164,9 @@ export default function ProfilePage() {
           {notice && <p role="status" className="mt-4 text-xs font-bold text-[var(--lime-deep)]">{notice}</p>}
 
           <div className="mt-9 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Skill rating</p><p className="mt-2 text-2xl font-black">{profile.skillRating}</p></div>
-            <div className="rounded-2xl bg-[#131f19] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{profile.winRate}</p><FormGuide userId={profile.id} /></div>
-            <div className="rounded-2xl bg-[#1b211e] p-4 text-white"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#a9b6a9]">Wolves rank</p><p className="mt-2 flex items-center gap-2 text-2xl font-black">{profile.rank ? `#${profile.rank}` : "—"} <span className="text-xs text-[#d8f24e]"><ArrowUpRight size={15} className="inline" /></span></p>{!profile.rank && <p className="text-[10px] text-[#a9b6a9]">{profile.matchesToQualify} more match{profile.matchesToQualify === 1 ? "" : "es"} to qualify</p>}</div>
+            <div className="rounded-2xl bg-[var(--surface-2)] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Skill rating</p><p className="mt-2 text-2xl font-black">{profile.skillRating}</p></div>
+            <div className="rounded-2xl bg-[var(--surface-2)] p-4"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-2 text-2xl font-black">{profile.winRate}</p><FormGuide userId={profile.id} /></div>
+            <div className="rounded-2xl bg-[var(--ink-dark)] p-4 text-white"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#a9b6a9]">Wolves rank</p><p className="mt-2 flex items-center gap-2 text-2xl font-black">{profile.rank ? `#${profile.rank}` : "—"} <span className="text-xs text-[var(--lime)]"><ArrowUpRight size={15} className="inline" /></span></p>{!profile.rank && <p className="text-xs text-[#a9b6a9]">{profile.matchesToQualify} more match{profile.matchesToQualify === 1 ? "" : "es"} to qualify</p>}</div>
           </div>
         </section>
 
@@ -180,7 +180,7 @@ export default function ProfilePage() {
             <div className="mt-4 space-y-3">
               {recentResults.length === 0 ? <p className="text-sm text-[var(--ink-soft)]">No matches recorded yet.</p> : recentResults.map((result, index) => (
                 <div key={index} className="flex items-center gap-3 border-b border-[var(--line)] pb-3 last:border-0 last:pb-0">
-                  <span className={`grid h-7 w-7 place-items-center rounded-full text-[10px] font-black ${result.result === "W" ? "bg-[var(--lime)] text-[#0f1712]" : result.result === "L" ? "bg-[var(--coral)] text-[#2e1a16]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"}`}>{result.result}</span>
+                  <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-black ${result.result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : result.result === "L" ? "bg-[var(--coral)] text-[var(--on-coral)]" : "bg-[var(--surface-hover)] text-[var(--ink-soft)]"}`}>{result.result}</span>
                   <p className="flex-1 text-sm font-semibold">{result.opponent}</p>
                   <span className={`text-xs font-bold ${result.result === "W" ? "text-[var(--lime-deep)]" : result.result === "L" ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{result.score}</span>
                 </div>

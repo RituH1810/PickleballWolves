@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Crown, Dices, Layers, Shuffle, Swords, TrendingUp, Users, Waves } from "lucide-react";
+import { CardHeading } from "@/components/card-heading";
 
 type Player = { id: string; name: string; rank: number | null };
 type MatchPlayer = { userId: string; name: string; side: "A" | "B" };
@@ -220,58 +221,58 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
       <div className="mx-auto max-w-6xl">
         <Link href={`/round-robin/${roundRobinId}`} className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to room</Link>
         <div className="mt-8">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Edit round robin</p>
+          <p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Edit round robin</p>
           <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">{detail.name}</h1>
           <p className="mt-3 text-sm text-[var(--ink-soft)]">Change the format, players, or teams. Saving regenerates the schedule from scratch.</p>
         </div>
         {notice && (
-          <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1e2b17] text-[#c7e572]"}`}>{notice.text}</p>
+          <p role="status" className={`mt-5 rounded-xl px-4 py-3 text-xs font-bold ${notice.type === "error" ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--success-bg)] text-[var(--success-ink)]"}`}>{notice.text}</p>
         )}
 
         <div className="mt-8 flex items-center justify-between sm:hidden">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[var(--lime-deep)]">Step {clampedStep + 1} of {totalSteps}</p>
+            <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">Step {clampedStep + 1} of {totalSteps}</p>
             <p className="text-sm font-bold text-[var(--foreground)]">{stepLabels[clampedStep]}</p>
           </div>
           <div className="flex gap-2">
             {clampedStep > 0 && <button onClick={goToPrevStep} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold text-[var(--foreground)]">Back</button>}
-            {clampedStep < totalSteps - 1 && <button onClick={goToNextStep} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712]">Next</button>}
+            {clampedStep < totalSteps - 1 && <button onClick={goToNextStep} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)]">Next</button>}
           </div>
         </div>
 
         <section className={`${clampedStep === 0 ? "block" : "hidden"} sm:block mt-4 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:mt-8 sm:p-8`}>
           <h2 className="font-extrabold">1. Format</h2>
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Play format</p>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Play format</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {playFormats.map((option) => (
-              <button key={option.id} onClick={() => { setForm({ ...form, playFormat: option.id }); setTeams([]); setPendingPartner(null); }} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.playFormat === option.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+              <button key={option.id} onClick={() => { setForm({ ...form, playFormat: option.id }); setTeams([]); setPendingPartner(null); }} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.playFormat === option.id ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                 <span className="block text-sm font-bold">{option.label}</span>
-                <span className="block text-[11px] text-[var(--ink-soft)]">{option.detail}</span>
+                <span className="block text-xs text-[var(--ink-soft)]">{option.detail}</span>
               </button>
             ))}
           </div>
 
           {form.playFormat !== "SINGLES" && (
             <>
-              <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Partner format</p>
+              <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Partner format</p>
               <div className="mt-2 grid grid-cols-2 gap-2 sm:flex">
                 {partnerFormats.map((option) => (
-                  <button key={option.id} onClick={() => { setForm({ ...form, partnerFormat: option.id }); setTeams([]); setPendingPartner(null); }} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.partnerFormat === option.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                  <button key={option.id} onClick={() => { setForm({ ...form, partnerFormat: option.id }); setTeams([]); setPendingPartner(null); }} className={`flex-1 rounded-xl border px-4 py-3 text-left transition-colors sm:flex-none sm:px-6 ${form.partnerFormat === option.id ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                     <span className="block text-sm font-bold">{option.label}</span>
-                    <span className="block text-[11px] text-[var(--ink-soft)]">{option.detail}</span>
+                    <span className="block text-xs text-[var(--ink-soft)]">{option.detail}</span>
                   </button>
                 ))}
               </div>
             </>
           )}
 
-          <p className="mt-6 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Game format</p>
+          <p className="mt-6 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Game format</p>
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             {gameFormats.map((format) => {
               const Icon = format.icon;
               return (
-                <button key={format.id} onClick={() => setForm({ ...form, gameFormat: format.id })} className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${form.gameFormat === format.id ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
+                <button key={format.id} onClick={() => setForm({ ...form, gameFormat: format.id })} className={`flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${form.gameFormat === format.id ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
                   <Icon size={18} className="shrink-0 text-[var(--lime-deep)]" />
                   <span>
                     <span className="block text-sm font-bold">{format.label}</span>
@@ -283,27 +284,27 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
           </div>
 
           <div className="mt-8 grid gap-5 border-t border-[var(--line)] pt-6 sm:grid-cols-2">
-            <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">Event name
+            <label className="text-xs font-bold text-[var(--ink-muted)] sm:col-span-2">Event name
               <input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
             </label>
-            <label className="text-xs font-bold text-[#c3d0c5] sm:col-span-2">When{detail?.groupId ? "" : " (optional)"}
+            <label className="text-xs font-bold text-[var(--ink-muted)] sm:col-span-2">When{detail?.groupId ? "" : " (optional)"}
               <input type="datetime-local" required={Boolean(detail?.groupId)} value={form.scheduledAt} onChange={(event) => setForm({ ...form, scheduledAt: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
             </label>
-            <label className="text-xs font-bold text-[#c3d0c5]">Courts
+            <label className="text-xs font-bold text-[var(--ink-muted)]">Courts
               <input type="number" min="1" value={form.courtCount} onChange={(event) => setForm({ ...form, courtCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
             </label>
-            <label className="text-xs font-bold text-[#c3d0c5]">Rounds
+            <label className="text-xs font-bold text-[var(--ink-muted)]">Rounds
               <input type="number" min="1" value={form.roundCount} onChange={(event) => setForm({ ...form, roundCount: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] px-4 text-sm" />
             </label>
-            <label className="text-xs font-bold text-[#c3d0c5]">Points to win
-              <select value={form.pointsToWin} onChange={(event) => setForm({ ...form, pointsToWin: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm">
+            <label className="text-xs font-bold text-[var(--ink-muted)]">Points to win
+              <select value={form.pointsToWin} onChange={(event) => setForm({ ...form, pointsToWin: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm">
                 <option value="11">11</option>
                 <option value="15">15</option>
                 <option value="21">21</option>
               </select>
             </label>
-            <label className="text-xs font-bold text-[#c3d0c5]">Win by
-              <select value={form.winBy} onChange={(event) => setForm({ ...form, winBy: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[#0f1712] px-4 text-sm">
+            <label className="text-xs font-bold text-[var(--ink-muted)]">Win by
+              <select value={form.winBy} onChange={(event) => setForm({ ...form, winBy: event.target.value })} className="mt-2 h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-4 text-sm">
                 <option value="1">1 point</option>
                 <option value="2">2 points</option>
               </select>
@@ -314,34 +315,34 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
             Skill-balanced matchups
           </label>
           {isManual ? (
-            <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save changes"} <ArrowRight size={16} /></button>
+            <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save changes"} <ArrowRight size={16} /></button>
           ) : (
-            <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Players <ArrowRight size={16} /></button>
+            <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] sm:hidden">Next: Players <ArrowRight size={16} /></button>
           )}
         </section>
 
         {!isManual && (
         <section className={`${clampedStep === 1 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">2. Players</h2></div>
+            <CardHeading icon={Users} title="2. Players" />
             <span className="text-xs font-bold text-[var(--ink-soft)]">{selected.length} selected</span>
           </div>
           <div className="mt-4 grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2">
             {players.map((player) => (
-              <button key={player.id} onClick={() => togglePlayerSelected(player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[#1e2b17]" : "border-[var(--line)]"}`}>
-                <span><span className="block text-sm font-bold">{player.name}</span><span className="text-[11px] text-[var(--ink-soft)]">{player.rank ? `#${player.rank} rank` : "Unranked"}</span></span>
+              <button key={player.id} onClick={() => togglePlayerSelected(player.id)} className={`flex items-center justify-between rounded-xl border px-3 py-3 text-left ${selected.includes(player.id) ? "border-[var(--lime-deep)] bg-[var(--success-bg)]" : "border-[var(--line)]"}`}>
+                <span><span className="block text-sm font-bold">{player.name}</span><span className="text-xs text-[var(--ink-soft)]">{player.rank ? `#${player.rank} rank` : "Unranked"}</span></span>
                 {selected.includes(player.id) && <Check size={16} className="text-[var(--lime-deep)]" />}
               </button>
             ))}
           </div>
-          {!needsFixedTeams && <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save & regenerate schedule"} <ArrowRight size={16} /></button>}
-          {needsFixedTeams && <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] sm:hidden">Next: Teams <ArrowRight size={16} /></button>}
+          {!needsFixedTeams && <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save & regenerate schedule"} <ArrowRight size={16} /></button>}
+          {needsFixedTeams && <button onClick={goToNextStep} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] sm:hidden">Next: Teams <ArrowRight size={16} /></button>}
         </section>
         )}
 
         {needsFixedTeams && (
           <section className={`${clampedStep === 2 ? "block" : "hidden"} sm:block mt-6 rounded-[24px] border border-[var(--line)] bg-[var(--panel)] p-6`}>
-            <div className="flex items-center gap-2"><Users size={18} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">3. Teams</h2></div>
+            <CardHeading icon={Users} title="3. Teams" />
             <p className="mt-1 text-xs text-[var(--ink-soft)]">Tap two players to make them a fixed team for the whole event. Tap a paired player to undo it.</p>
             {selected.length === 0 ? (
               <p className="mt-4 text-sm text-[var(--ink-soft)]">Select players above first.</p>
@@ -352,7 +353,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
                     const paired = pairedPlayerIds.has(playerId);
                     const isPending = pendingPartner === playerId;
                     return (
-                      <button key={playerId} onClick={() => togglePairing(playerId)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[#c7e572]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[#0f1712]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
+                      <button key={playerId} onClick={() => togglePairing(playerId)} className={`rounded-full border px-4 py-2 text-xs font-bold transition-colors ${paired ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--success-ink)]" : isPending ? "border-[var(--lime)] bg-[var(--lime)] text-[var(--on-lime)]" : "border-[var(--line)] text-[var(--foreground)] hover:border-[var(--lime-deep)]"}`}>
                         {playerName(playerId)}{isPending ? " · pick a partner" : ""}
                       </button>
                     );
@@ -361,7 +362,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
                 <div className="mt-5 space-y-2">
                   {teams.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No teams yet.</p>}
                   {teams.map(([a, b], index) => (
-                    <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[#131f19] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]">
+                    <div key={`${a}-${b}`} className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] px-4 py-2.5 text-sm font-bold text-[var(--foreground)]">
                       <span>Team {index + 1}: {playerName(a)} &amp; {playerName(b)}</span>
                       <button onClick={() => togglePairing(a)} className="text-xs font-bold text-[var(--lime-deep)]">Unpair</button>
                     </div>
@@ -370,7 +371,7 @@ export default function EditRoundRobinPage({ params }: { params: Promise<{ round
                 {selected.filter((id) => !pairedPlayerIds.has(id)).length > 0 && <p className="mt-3 text-xs font-semibold text-[var(--ink-soft)]">{selected.filter((id) => !pairedPlayerIds.has(id)).length} player{selected.filter((id) => !pairedPlayerIds.has(id)).length === 1 ? "" : "s"} not yet paired.</p>}
               </>
             )}
-            <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save & regenerate schedule"} <ArrowRight size={16} /></button>
+            <button onClick={saveAndRegenerate} disabled={saving} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-60">{saving ? "Saving..." : "Save & regenerate schedule"} <ArrowRight size={16} /></button>
           </section>
         )}
       </div>

@@ -23,7 +23,7 @@ function RelationshipTable({ title, subtitle, firstColumn, rows, loading, emptyT
         ) : (
           <table className="w-full text-left text-sm">
             <thead>
-              <tr className="border-b border-[var(--line)] text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">
+              <tr className="border-b border-[var(--line)] text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">
                 <th className="pb-3">{firstColumn}</th>
                 <th className="hidden pb-3 text-center sm:table-cell">Matches</th>
                 <th className="w-8 pb-3 text-center sm:w-14">W</th>
@@ -58,7 +58,7 @@ function PlayerRatingChip({ player, isMe, onExplain, explaining }: { player: Mat
     <span className="inline-flex items-center gap-1.5">
       {isMe ? <span className="font-bold text-[var(--foreground)]">You</span> : <Link href={`/players/${player.id}`} className="font-semibold text-[var(--ink-soft)] hover:text-[var(--lime-deep)] hover:underline">{player.name}</Link>}
       {player.ratingDelta != null && player.ratingAfter != null && (
-        <button type="button" onClick={onExplain} disabled={!onExplain} aria-expanded={explaining} title={onExplain ? "Why did this rating change?" : undefined} className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-bold ${onExplain ? "hover:bg-[#1c2a1a]" : ""} ${explaining ? "bg-[#1c2a1a]" : ""} ${player.ratingDelta > 0 ? "text-[var(--lime-deep)]" : player.ratingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>
+        <button type="button" onClick={onExplain} disabled={!onExplain} aria-expanded={explaining} title={onExplain ? "Why did this rating change?" : undefined} className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-xs font-bold ${onExplain ? "hover:bg-[var(--surface-hover)]" : ""} ${explaining ? "bg-[var(--surface-hover)]" : ""} ${player.ratingDelta > 0 ? "text-[var(--lime-deep)]" : player.ratingDelta < 0 ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>
           {player.ratingAfter.toFixed(3)} ({signed(player.ratingDelta)}){onExplain && <HelpCircle size={11} className="opacity-70" />}
         </button>
       )}
@@ -79,10 +79,10 @@ function RatingWhy({ match, player, isMe, onClose }: { match: Match; player: Mat
   const delta = player.ratingDelta ?? 0;
   const gap = why.actualShare - why.expectedShare;
   return (
-    <div className="mt-3 rounded-2xl bg-[#131f19] p-4 text-xs leading-5 text-[var(--ink-soft)]">
+    <div className="mt-3 rounded-2xl bg-[var(--surface-2)] p-4 text-xs leading-5 text-[var(--ink-soft)]">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-extrabold text-[var(--foreground)]">Why {who} rating {delta > 0 ? "went up" : delta < 0 ? "went down" : "didn't change"} <span className={delta > 0 ? "text-[var(--lime-deep)]" : delta < 0 ? "text-[var(--coral)]" : ""}>{signed(delta)}</span></p>
-        <button type="button" onClick={onClose} aria-label="Close" className="grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-[#1c2a1a]"><X size={13} /></button>
+        <button type="button" onClick={onClose} aria-label="Close" className="grid h-6 w-6 shrink-0 place-items-center rounded-full hover:bg-[var(--surface-hover)]"><X size={13} /></button>
       </div>
       <ol className="mt-2 space-y-1.5">
         <li><strong className="text-[var(--foreground)]">Going in:</strong> {isMe ? "your team" : team} averaged {why.teamRating.toFixed(3)}, the opponents {why.opponentRating.toFixed(3)}.</li>
@@ -90,7 +90,7 @@ function RatingWhy({ match, player, isMe, onClose }: { match: Match; player: Mat
         <li><strong className="text-[var(--foreground)]">So:</strong> {Math.abs(gap) < 1 ? "about as expected, so the rating barely moves." : gap > 0 ? `${Math.round(gap)} points better than expected, so the rating goes up.` : `${Math.round(-gap)} points worse than expected, so the rating goes down.`}{mine > theirs && delta < 0 ? " A win by less than expected costs a little, like DUPR." : ""}{mine < theirs && delta > 0 ? " A close loss to a stronger side still earns a little." : ""}</li>
         <li><strong className="text-[var(--foreground)]">Step size:</strong> {why.atFloor ? `already at the ${RATING_MIN.toFixed(3)} floor, so it can't go lower.` : why.calibrating ? "still calibrating -- a player's first matches move more, so they can reach their level quickly." : "established player -- small, DUPR-size steps."}</li>
       </ol>
-      <p className="mt-2 text-[11px]">Ratings use the share of points won, not just wins and losses, and every score is re-checked against all matches when one changes.</p>
+      <p className="mt-2 text-xs">Ratings use the share of points won, not just wins and losses, and every score is re-checked against all matches when one changes.</p>
     </div>
   );
 }
@@ -112,15 +112,15 @@ export default function MatchesPage() {
 
   return <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10"><div className="mx-auto max-w-5xl">
     <Link href="/" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to dashboard</Link>
-    <p className="mt-8 text-xs font-bold uppercase tracking-[.18em] text-[var(--lime-deep)]">Your record</p>
+    <p className="mt-8 text-xs font-bold uppercase tracking-[.14em] text-[var(--lime-deep)]">Your record</p>
     <h1 className="mt-2 text-4xl font-black tracking-[-.04em] text-[var(--foreground)]">Match history.</h1>
     <p className="mt-3 text-sm text-[var(--ink-soft)]">Every result, score, and opponent in one place.</p>
 
     {profile && (
       <section className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Overall record</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profile.record}</p></div>
-        <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Win rate</p><p className="mt-3 text-3xl font-black tracking-[-.04em] text-[var(--lime-deep)]">{profile.winRate}</p></div>
-        <div className="panel rounded-2xl p-5"><p className="text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profile.rank ? `#${profile.rank}` : "—"}</p></div>
+        <div className="panel rounded-[20px] p-5"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Overall record</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profile.record}</p></div>
+        <div className="panel rounded-[20px] p-5"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Win rate</p><p className="mt-3 text-3xl font-black tracking-[-.04em] text-[var(--lime-deep)]">{profile.winRate}</p></div>
+        <div className="panel rounded-[20px] p-5"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profile.rank ? `#${profile.rank}` : "—"}</p></div>
       </section>
     )}
 
@@ -152,9 +152,9 @@ export default function MatchesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex flex-wrap gap-2">
-                  {match.scores.map((score, index) => <span key={index} className={`rounded-lg px-3 py-2 text-sm font-black ${result === "W" ? "bg-[var(--lime)] text-[#0f1712]" : result === "L" ? "bg-[var(--coral)] text-[#2e1a16]" : "bg-[#1c2a1a] text-[var(--foreground)]"}`}>{mine?.side === "A" ? score.sideAScore : score.sideBScore} - {mine?.side === "A" ? score.sideBScore : score.sideAScore}</span>)}
+                  {match.scores.map((score, index) => <span key={index} className={`rounded-lg px-3 py-2 text-sm font-black ${result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : result === "L" ? "bg-[var(--coral)] text-[var(--on-coral)]" : "bg-[var(--surface-hover)] text-[var(--foreground)]"}`}>{mine?.side === "A" ? score.sideAScore : score.sideBScore} - {mine?.side === "A" ? score.sideBScore : score.sideAScore}</span>)}
                 </div>
-                {result !== "-" && <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${result === "W" ? "bg-[var(--lime)] text-[#0f1712]" : "bg-[var(--coral)] text-[#2e1a16]"}`}>{result}</span>}
+                {result !== "-" && <span className={`rounded-full px-2.5 py-1 text-xs font-black ${result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : "bg-[var(--coral)] text-[var(--on-coral)]"}`}>{result}</span>}
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-[var(--line)] pt-3 text-xs">

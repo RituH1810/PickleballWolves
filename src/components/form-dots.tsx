@@ -10,7 +10,7 @@ export function FormDots({ results, size = "md" }: { results: FormResult[]; size
   return (
     <span className="inline-flex items-center gap-1" title={`Last ${results.length}, newest first: ${results.join(" ")}`} aria-label={`Last ${results.length} results, newest first: ${results.map((result) => (result === "W" ? "win" : "loss")).join(", ")}`}>
       {results.map((result, index) => (
-        <span key={index} aria-hidden className={`grid place-items-center rounded-full font-black ${dot} ${result === "W" ? "bg-[var(--lime)] text-[#0f1712]" : "bg-[var(--coral)] text-[#2e1a16]"}`}>{result}</span>
+        <span key={index} aria-hidden className={`grid place-items-center rounded-full font-black ${dot} ${result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : "bg-[var(--coral)] text-[var(--on-coral)]"}`}>{result}</span>
       ))}
     </span>
   );
@@ -35,7 +35,7 @@ export function FormGuide({ userId }: { userId: string }) {
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
       <FormDots results={form.results} size="sm" />
-      {run && <span className={`text-[11px] font-bold ${form.streak!.result === "W" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{run}</span>}
+      {run && <span className={`text-xs font-bold ${form.streak!.result === "W" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{run}</span>}
     </div>
   );
 }

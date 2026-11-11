@@ -25,17 +25,17 @@ export function RivalryOfTheMonth({ groupId }: { groupId: string }) {
   const leader = rivalry.aWins > rivalry.bWins ? playerA : playerB;
   const side = (person: Person, wins: number) => (
     <Link href={`/players/${person.userId}`} className="flex min-w-0 flex-1 flex-col items-center gap-2 text-center hover:opacity-90">
-      <Avatar name={person.name} photoUrl={person.photoUrl} className="h-14 w-14 rounded-2xl bg-[#22331f] text-lg font-black text-[var(--lime)]" />
+      <Avatar name={person.name} photoUrl={person.photoUrl} className="h-14 w-14 rounded-2xl bg-[var(--avatar-bg)] text-lg font-black text-[var(--lime)]" />
       <span className="w-full truncate text-sm font-extrabold">{person.name}</span>
       <span className="text-3xl font-black tracking-[-.04em] text-[var(--lime)]">{wins}</span>
     </Link>
   );
   return (
     <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
-      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><Swords size={15} className="text-[var(--coral)]" />Rivalry of the month · {rivalry.month}</p>
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><Swords size={15} className="text-[var(--coral)]" />Rivalry of the month · {rivalry.month}</p>
       <div className="mt-4 flex items-center gap-3">
         {side(playerA, rivalry.aWins)}
-        <span className="text-xs font-black uppercase tracking-[.14em] text-[var(--ink-soft)]">vs</span>
+        <span className="text-xs font-black uppercase tracking-[.12em] text-[var(--ink-soft)]">vs</span>
         {side(playerB, rivalry.bWins)}
       </div>
       <p className="mt-4 text-center text-sm text-[var(--ink-soft)]">

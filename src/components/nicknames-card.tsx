@@ -18,10 +18,10 @@ export function NicknamesCard({ userId, isMe = true }: { userId: string; isMe?: 
   const open = nicknames.find((nickname) => nickname.key === openKey) ?? nicknames[0];
   return (
     <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
-      <p className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]"><BadgeCheck size={15} className="text-[var(--lime-deep)]" />{isMe ? "You're known as" : "Known as"}</p>
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><BadgeCheck size={15} className="text-[var(--lime-deep)]" />{isMe ? "You're known as" : "Known as"}</p>
       <div className="mt-3 flex flex-wrap gap-2">
         {nicknames.map((nickname) => (
-          <button key={nickname.key} type="button" onClick={() => setOpenKey(nickname.key)} aria-pressed={open.key === nickname.key} className={`rounded-full border px-3.5 py-2 text-sm font-extrabold transition-colors ${open.key === nickname.key ? "border-[var(--lime-deep)] bg-[#1e2b17] text-[var(--lime)]" : "border-[var(--line)] bg-[#131f19] hover:border-[var(--lime-deep)]"}`}>
+          <button key={nickname.key} type="button" onClick={() => setOpenKey(nickname.key)} aria-pressed={open.key === nickname.key} className={`rounded-full border px-3.5 py-2 text-sm font-extrabold transition-colors ${open.key === nickname.key ? "border-[var(--lime-deep)] bg-[var(--success-bg)] text-[var(--lime)]" : "border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--lime-deep)]"}`}>
             <span className="mr-1.5">{nickname.emoji}</span>{nickname.label}
           </button>
         ))}

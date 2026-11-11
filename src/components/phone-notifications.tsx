@@ -61,15 +61,15 @@ export function PhoneNotifications() {
   const button = "rounded-full px-4 py-2 text-xs font-bold transition-colors disabled:opacity-50";
   return (
     <section id="phone" className="mt-6 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-2">
-      <h2 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Phone</h2>
+      <h2 className="px-4 pb-1 pt-3 text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Phone</h2>
       <div className="flex items-start gap-4 px-4 pb-4 pt-2">
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#131f19] text-[var(--lime-deep)]"><Smartphone size={18} /></span>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--lime-deep)]"><Smartphone size={18} /></span>
         <div className="min-w-0 flex-1">
           <p className="text-sm font-extrabold text-[var(--foreground)]">Phone notifications</p>
           <p className="mt-0.5 text-xs leading-5 text-[var(--ink-soft)]">Get invites, reminders, game chat, and recaps as real notifications on this device. Your choices above still apply. <Link href="/install" className="font-bold text-[var(--lime-deep)]">How to install the app</Link></p>
 
           {state === "install-first" && (
-            <div className="mt-3 rounded-xl bg-[#131f19] p-3 text-xs leading-5 text-[var(--foreground)]">
+            <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3 text-xs leading-5 text-[var(--foreground)]">
               <p className="font-bold">First, add PickleballWolves to your home screen:</p>
               <p className="mt-1 text-[var(--ink-soft)]">In Safari, tap <Share size={12} className="inline align-[-2px]" /> <strong className="text-[var(--foreground)]">Share</strong>, then <strong className="text-[var(--foreground)]">Add to Home Screen</strong>. Open Wolves from your home screen and come back here to turn notifications on. <Link href="/install" className="font-bold text-[var(--lime-deep)]">Step-by-step guide</Link></p>
             </div>
@@ -78,10 +78,10 @@ export function PhoneNotifications() {
           {(state === "off" || state === "on") && (
             <div className="mt-3 flex flex-wrap gap-2">
               {state === "off"
-                ? <button onClick={turnOn} disabled={busy} className={`${button} bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]`}>{busy ? "Turning on..." : "Turn on for this device"}</button>
+                ? <button onClick={turnOn} disabled={busy} className={`${button} bg-[var(--lime)] text-[var(--on-lime)] hover:bg-[var(--lime-hover)]`}>{busy ? "Turning on..." : "Turn on for this device"}</button>
                 : <>
-                    <button onClick={test} className={`${button} bg-[var(--lime)] text-[#0f1712] hover:bg-[#c3e043]`}>Send a test</button>
-                    <button onClick={turnOff} disabled={busy} className={`${button} border border-[var(--line)] text-[var(--foreground)] hover:bg-[#1c2a1a]`}>Turn off</button>
+                    <button onClick={test} className={`${button} bg-[var(--lime)] text-[var(--on-lime)] hover:bg-[var(--lime-hover)]`}>Send a test</button>
+                    <button onClick={turnOff} disabled={busy} className={`${button} border border-[var(--line)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]`}>Turn off</button>
                   </>}
             </div>
           )}

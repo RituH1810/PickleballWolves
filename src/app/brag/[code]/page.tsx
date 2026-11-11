@@ -43,16 +43,16 @@ export default async function BragPage({ params }: { params: Promise<{ code: str
 
   return (
     <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-4 py-10">
-      <p className="text-xs font-black uppercase tracking-[.16em] text-[var(--lime-deep)]">PickleballWolves</p>
+      <p className="text-xs font-black uppercase tracking-[.12em] text-[var(--lime-deep)]">PickleballWolves</p>
       <h1 className="mt-2 text-2xl font-black tracking-[-.03em] sm:text-3xl">{bragHeadline(loaded.view)}</h1>
       {/* eslint-disable-next-line @next/next/no-img-element -- generated PNG, already the right size */}
       <img src={`/brag/${code}/image`} alt={bragHeadline(loaded.view)} width={1200} height={630} className="mt-6 h-auto w-full rounded-[20px] border border-[var(--line)]" />
       <div className="mt-6 flex flex-wrap items-center gap-3">
-        <a href={`/brag/${code}/image?download`} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2.5 text-sm font-bold hover:bg-[#1c2a1a]"><Download size={15} />Download image</a>
+        <a href={`/brag/${code}/image?download`} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2.5 text-sm font-bold hover:bg-[var(--surface-hover)]"><Download size={15} />Download image</a>
         {user ? (
-          <Link href={destination.href} className="rounded-full bg-[var(--lime)] px-4 py-2.5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]">{destination.label}</Link>
+          <Link href={destination.href} className="rounded-full bg-[var(--lime)] px-4 py-2.5 text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">{destination.label}</Link>
         ) : (
-          <Link href="/signup" className="rounded-full bg-[var(--lime)] px-4 py-2.5 text-sm font-bold text-[#0f1712] hover:bg-[#c3e043]">Join PickleballWolves</Link>
+          <Link href="/signup" className="rounded-full bg-[var(--lime)] px-4 py-2.5 text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]">Join PickleballWolves</Link>
         )}
         <InstagramLink withHandle className="px-2 text-sm font-bold text-[var(--ink-soft)] hover:text-[var(--foreground)]" />
       </div>

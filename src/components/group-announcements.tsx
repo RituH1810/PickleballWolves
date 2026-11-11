@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Megaphone, Plus, Trash2, X } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { ANNOUNCEMENT_BODY_MAX, ANNOUNCEMENT_TITLE_MAX } from "@/lib/announcements";
+import { CardHeading } from "@/components/card-heading";
 
 type Announcement = { id: string; title: string; body: string; createdAt: string; author: { id: string; name: string; photoUrl: string | null }; canDelete: boolean };
 
@@ -70,19 +71,19 @@ export function GroupAnnouncements({ groupId }: { groupId: string }) {
   return (
     <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2"><Megaphone size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Announcements</h2></div>
-        {canPost && !composing && <button onClick={() => setComposing(true)} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-3.5 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]"><Plus size={14} />New</button>}
+        <CardHeading icon={Megaphone} title="Announcements" />
+        {canPost && !composing && <button onClick={() => setComposing(true)} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-3.5 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]"><Plus size={14} />New</button>}
       </div>
 
       {composing && (
-        <div className="mt-4 space-y-3 rounded-2xl border border-[var(--line)] bg-[#131f19] p-4">
+        <div className="mt-4 space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
           <input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} maxLength={ANNOUNCEMENT_TITLE_MAX} placeholder="Title, e.g. Courts 3-4 closed Saturday" aria-label="Announcement title" className="h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 text-sm font-bold outline-none focus:border-[var(--lime-deep)]" />
           <textarea value={draft.body} onChange={(event) => setDraft({ ...draft, body: event.target.value })} maxLength={ANNOUNCEMENT_BODY_MAX} rows={4} placeholder="What should the group know?" aria-label="Announcement message" className="w-full resize-y rounded-xl border border-[var(--line)] bg-[var(--background)] px-3 py-2.5 text-sm leading-6 outline-none focus:border-[var(--lime-deep)]" />
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[11px] text-[var(--ink-soft)]">Every member gets a notification.</p>
+            <p className="text-xs text-[var(--ink-soft)]">Every member gets a notification.</p>
             <div className="flex gap-2">
               <button onClick={() => { setComposing(false); setError(""); }} className="flex items-center gap-1.5 rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold"><X size={14} />Cancel</button>
-              <button onClick={post} disabled={posting || !draft.title.trim() || !draft.body.trim()} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-50">{posting ? "Posting..." : "Post"}</button>
+              <button onClick={post} disabled={posting || !draft.title.trim() || !draft.body.trim()} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-50">{posting ? "Posting..." : "Post"}</button>
             </div>
           </div>
         </div>
@@ -98,11 +99,11 @@ export function GroupAnnouncements({ groupId }: { groupId: string }) {
             <article key={announcement.id} className="py-4 first:pt-0 last:pb-0">
               <div className="flex items-start justify-between gap-3">
                 <h3 className="text-sm font-extrabold text-[var(--foreground)]">{announcement.title}</h3>
-                {announcement.canDelete && <button onClick={() => remove(announcement)} aria-label={`Delete ${announcement.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[#1c2a1a] hover:text-[var(--coral)]"><Trash2 size={14} /></button>}
+                {announcement.canDelete && <button onClick={() => remove(announcement)} aria-label={`Delete ${announcement.title}`} className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[var(--surface-hover)] hover:text-[var(--coral)]"><Trash2 size={14} /></button>}
               </div>
               <p className="mt-1.5 whitespace-pre-line break-words text-sm leading-6 text-[var(--ink-soft)]">{announcement.body}</p>
-              <p className="mt-2 flex items-center gap-2 text-[11px] text-[var(--ink-soft)]">
-                <Avatar name={announcement.author.name} photoUrl={announcement.author.photoUrl} className="h-5 w-5 rounded-full bg-[#22331f] text-[8px] font-black text-[var(--lime)]" />
+              <p className="mt-2 flex items-center gap-2 text-xs text-[var(--ink-soft)]">
+                <Avatar name={announcement.author.name} photoUrl={announcement.author.photoUrl} className="h-5 w-5 rounded-full bg-[var(--avatar-bg)] text-[8px] font-black text-[var(--lime)]" />
                 <Link href={`/players/${announcement.author.id}`} className="font-bold hover:text-[var(--lime-deep)] hover:underline">{announcement.author.name}</Link>
                 <span>·</span>
                 <time dateTime={announcement.createdAt} title={new Date(announcement.createdAt).toLocaleString()}>{timeAgo(announcement.createdAt)}</time>

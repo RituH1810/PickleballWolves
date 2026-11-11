@@ -10,6 +10,7 @@ import { countdown } from "@/lib/dashboard-insights";
 import type { FormResult } from "@/lib/form";
 import type { FeedKind } from "@/lib/group-feed";
 import type { ReactionSummary } from "@/lib/reactions";
+import { CardHeading } from "@/components/card-heading";
 
 /** Loads one dashboard card's data; null until it arrives (or if it fails). */
 function useCard<T>(path: string, key: string) {
@@ -20,7 +21,7 @@ function useCard<T>(path: string, key: string) {
   return data;
 }
 
-const heading = (Icon: LucideIcon, title: string) => <div className="flex items-center gap-2"><Icon size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">{title}</h2></div>;
+const heading = (icon: LucideIcon, title: string) => <CardHeading icon={icon} title={title} />;
 
 type Week = { rating: number; weekChange: number; form: FormResult[]; streak: { result: FormResult; length: number } | null; nextGame: { id: string; name: string; scheduledAt: string | null; groupName: string | null; location: string | null } | null };
 
@@ -32,21 +33,21 @@ export function MyWeekCard() {
   const change = week.weekChange;
   const game = week.nextGame;
   return (
-    <section className="panel mt-6 grid gap-4 rounded-2xl p-5 sm:grid-cols-3">
+    <section className="panel mt-6 grid gap-4 rounded-[20px] p-5 sm:grid-cols-3">
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Rating</p>
+        <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Rating</p>
         <p className="mt-1 flex items-baseline gap-2"><span className="text-3xl font-black tracking-[-.04em]">{week.rating.toFixed(3)}</span>
           {change !== 0 && <span className={`flex items-center gap-0.5 text-xs font-black ${change > 0 ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{change > 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}{change > 0 ? "+" : ""}{change.toFixed(3)}</span>}
         </p>
-        <p className="text-[11px] text-[var(--ink-soft)]">{change === 0 ? "No change this week" : "this week"}</p>
+        <p className="text-xs text-[var(--ink-soft)]">{change === 0 ? "No change this week" : "this week"}</p>
       </div>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Form</p>
+        <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Form</p>
         <div className="mt-2">{week.form.length ? <FormDots results={week.form} /> : <span className="text-xs text-[var(--ink-soft)]">No results yet</span>}</div>
-        {run && <p className={`mt-1 text-[11px] font-bold ${week.streak!.result === "W" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{run}</p>}
+        {run && <p className={`mt-1 text-xs font-bold ${week.streak!.result === "W" ? "text-[var(--lime-deep)]" : "text-[var(--coral)]"}`}>{run}</p>}
       </div>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[var(--ink-soft)]">Next game</p>
+        <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Next game</p>
         {game ? (
           <Link href={`/round-robin/${game.id}`} className="mt-1 block hover:opacity-90">
             <p className="truncate text-sm font-extrabold">{game.name}</p>
@@ -65,13 +66,13 @@ export function TodoCard() {
   const items = useCard<Todo[]>("/api/dashboard/todo", "items");
   if (!items?.length) return null;
   return (
-    <section className="panel mt-6 rounded-2xl p-5">
+    <section className="panel mt-6 rounded-[20px] p-5">
       {heading(ClipboardList, "To do")}
       <ul className="mt-3 divide-y divide-[var(--line)]">
         {items.map((item) => (
           <li key={item.id}>
             <Link href={item.href} className="flex items-center gap-3 py-3 hover:opacity-90">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#131f19] text-[var(--lime-deep)]">{item.kind === "vote" ? <PawPrint size={15} /> : <CheckCircle2 size={15} />}</span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--surface-2)] text-[var(--lime-deep)]">{item.kind === "vote" ? <PawPrint size={15} /> : <CheckCircle2 size={15} />}</span>
               <span className="min-w-0 flex-1"><span className="block text-sm font-bold">{item.label}</span><span className="block truncate text-xs text-[var(--ink-soft)]">{item.detail}</span></span>
             </Link>
           </li>
@@ -87,7 +88,7 @@ export function RivalWatchCard() {
   if (!lines?.length) return null;
   const icons: Record<string, LucideIcon> = { rating: TrendingUp, monthly: Trophy, rival: Swords };
   return (
-    <section className="panel mt-6 rounded-2xl p-5">
+    <section className="panel mt-6 rounded-[20px] p-5">
       {heading(Swords, "Rival watch")}
       <ul className="mt-3 space-y-2.5">
         {lines.map((line) => {
@@ -108,7 +109,7 @@ export function GroupPulseCard() {
   const items = useCard<PulseItem[]>("/api/dashboard/group-pulse", "items");
   if (!items?.length) return null;
   return (
-    <section className="panel mt-6 rounded-2xl p-5">
+    <section className="panel mt-6 rounded-[20px] p-5">
       {heading(Activity, "Group pulse")}
       <ol className="mt-3 divide-y divide-[var(--line)]">
         {items.map((item) => {
@@ -117,8 +118,8 @@ export function GroupPulseCard() {
           return (
             <li key={`${item.groupId}:${item.id}`} className="flex gap-3 py-3">
               <div className="relative h-9 w-9 shrink-0">
-                {first && <Avatar name={first.name} photoUrl={first.photoUrl} className="h-9 w-9 rounded-full bg-[#22331f] text-[10px] font-black text-[var(--lime)]" />}
-                <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--panel)] bg-[var(--lime)] text-[#0f1712]"><Icon size={10} /></span>
+                {first && <Avatar name={first.name} photoUrl={first.photoUrl} className="h-9 w-9 rounded-full bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />}
+                <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border-2 border-[var(--panel)] bg-[var(--lime)] text-[var(--on-lime)]"><Icon size={10} /></span>
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold leading-5">{item.href ? <Link href={item.href} className="hover:text-[var(--lime-deep)] hover:underline">{item.text}</Link> : item.text}</p>

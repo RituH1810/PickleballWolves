@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Check, ChevronRight, Plus, Vote, X } from "lucide-react";
 import { POLL_MAX_OPTIONS, POLL_MIN_OPTIONS } from "@/lib/poll-limits";
+import { CardHeading } from "@/components/card-heading";
 
 type PollOption = { id: string; startsAt: string; votes: number; voters: string[]; mine: boolean; leading: boolean };
 type Poll = { id: string; question: string; status: "OPEN" | "SCHEDULED" | "CLOSED"; createdByName: string; scheduledRoundRobinId: string | null; voterCount: number; options: PollOption[] };
@@ -97,27 +98,27 @@ export function AvailabilityPolls({ groupId, onScheduled }: { groupId: string; o
   return (
     <section id="polls" className="mt-5 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2"><Vote size={17} className="text-[var(--lime-deep)]" /><h2 className="font-extrabold">Availability</h2></div>
-        {canCreate && !composing && <button onClick={() => { setComposing(true); setMessage(null); }} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-3.5 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043]"><Plus size={14} />Ask availability</button>}
+        <CardHeading icon={Vote} title="Availability" />
+        {canCreate && !composing && <button onClick={() => { setComposing(true); setMessage(null); }} className="flex items-center gap-1.5 rounded-full bg-[var(--lime)] px-3.5 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)]"><Plus size={14} />Ask availability</button>}
       </div>
 
       {composing && (
-        <div className="mt-4 space-y-3 rounded-2xl border border-[var(--line)] bg-[#131f19] p-4">
+        <div className="mt-4 space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4">
           <input value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={120} placeholder="When can you play this weekend?" aria-label="Question" className={field} />
           {times.map((value, index) => (
             <div key={index} className="flex items-center gap-2">
               <input type="datetime-local" value={value} onChange={(event) => setTimes((current) => current.map((entry, position) => (position === index ? event.target.value : entry)))} aria-label={`Option ${index + 1}`} className={field} />
-              {times.length > POLL_MIN_OPTIONS && <button onClick={() => setTimes((current) => current.filter((_, position) => position !== index))} aria-label={`Remove option ${index + 1}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[#1c2a1a] hover:text-[var(--coral)]"><X size={15} /></button>}
+              {times.length > POLL_MIN_OPTIONS && <button onClick={() => setTimes((current) => current.filter((_, position) => position !== index))} aria-label={`Remove option ${index + 1}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full text-[var(--ink-soft)] hover:bg-[var(--surface-hover)] hover:text-[var(--coral)]"><X size={15} /></button>}
             </div>
           ))}
           <div className="flex flex-wrap items-center justify-between gap-2">
             {times.length < POLL_MAX_OPTIONS ? <button onClick={() => setTimes((current) => [...current, ""])} className="text-xs font-bold text-[var(--lime-deep)]">+ Add a time</button> : <span />}
             <div className="flex gap-2">
               <button onClick={() => setComposing(false)} className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-bold">Cancel</button>
-              <button onClick={create} disabled={busy || times.filter(Boolean).length < POLL_MIN_OPTIONS} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[#0f1712] hover:bg-[#c3e043] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Sending..." : "Send poll"}</button>
+              <button onClick={create} disabled={busy || times.filter(Boolean).length < POLL_MIN_OPTIONS} className="rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-50">{busy ? "Sending..." : "Send poll"}</button>
             </div>
           </div>
-          <p className="text-[11px] text-[var(--ink-soft)]">Every member gets a notification. Pick {POLL_MIN_OPTIONS}-{POLL_MAX_OPTIONS} times.</p>
+          <p className="text-xs text-[var(--ink-soft)]">Every member gets a notification. Pick {POLL_MIN_OPTIONS}-{POLL_MAX_OPTIONS} times.</p>
         </div>
       )}
 
@@ -130,45 +131,45 @@ export function AvailabilityPolls({ groupId, onScheduled }: { groupId: string; o
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <h3 className="text-sm font-extrabold">{poll.question}</h3>
-                <p className="mt-0.5 text-[11px] text-[var(--ink-soft)]">Asked by {poll.createdByName} · {poll.voterCount} {poll.voterCount === 1 ? "person has" : "people have"} answered{poll.status === "OPEN" ? " · tap every time you can make" : ""}</p>
+                <p className="mt-0.5 text-xs text-[var(--ink-soft)]">Asked by {poll.createdByName} · {poll.voterCount} {poll.voterCount === 1 ? "person has" : "people have"} answered{poll.status === "OPEN" ? " · tap every time you can make" : ""}</p>
               </div>
-              {poll.status === "SCHEDULED" && poll.scheduledRoundRobinId && <Link href={`/round-robin/${poll.scheduledRoundRobinId}`} className="flex items-center gap-1 rounded-full bg-[#1e2b17] px-3 py-1.5 text-[11px] font-bold text-[#c7e572]">Scheduled<ChevronRight size={13} /></Link>}
-              {poll.status === "CLOSED" && <span className="rounded-full bg-[#1c2a1a] px-3 py-1.5 text-[11px] font-bold text-[var(--ink-soft)]">Closed</span>}
+              {poll.status === "SCHEDULED" && poll.scheduledRoundRobinId && <Link href={`/round-robin/${poll.scheduledRoundRobinId}`} className="flex items-center gap-1 rounded-full bg-[var(--success-bg)] px-3 py-1.5 text-xs font-bold text-[var(--success-ink)]">Scheduled<ChevronRight size={13} /></Link>}
+              {poll.status === "CLOSED" && <span className="rounded-full bg-[var(--surface-hover)] px-3 py-1.5 text-xs font-bold text-[var(--ink-soft)]">Closed</span>}
             </div>
             <div className="mt-3 space-y-2">
               {poll.options.map((option) => {
                 const share = poll.voterCount ? option.votes / poll.voterCount : 0;
                 return (
                   <div key={option.id}>
-                    <button onClick={() => toggle(poll, option)} disabled={poll.status !== "OPEN"} aria-pressed={option.mine} className={`relative flex w-full items-center gap-3 overflow-hidden rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-default ${option.mine ? "border-[var(--lime-deep)]" : "border-[var(--line)] hover:bg-[#1c2a1a]"}`}>
-                      <span className="absolute inset-y-0 left-0 bg-[#1e2b17]" style={{ width: `${Math.round(share * 100)}%` }} aria-hidden />
-                      <span className={`relative grid h-5 w-5 shrink-0 place-items-center rounded-md border ${option.mine ? "border-[var(--lime)] bg-[var(--lime)] text-[#0f1712]" : "border-[var(--line)]"}`}>{option.mine && <Check size={13} />}</span>
+                    <button onClick={() => toggle(poll, option)} disabled={poll.status !== "OPEN"} aria-pressed={option.mine} className={`relative flex w-full items-center gap-3 overflow-hidden rounded-xl border px-3 py-2.5 text-left transition-colors disabled:cursor-default ${option.mine ? "border-[var(--lime-deep)]" : "border-[var(--line)] hover:bg-[var(--surface-hover)]"}`}>
+                      <span className="absolute inset-y-0 left-0 bg-[var(--success-bg)]" style={{ width: `${Math.round(share * 100)}%` }} aria-hidden />
+                      <span className={`relative grid h-5 w-5 shrink-0 place-items-center rounded-md border ${option.mine ? "border-[var(--lime)] bg-[var(--lime)] text-[var(--on-lime)]" : "border-[var(--line)]"}`}>{option.mine && <Check size={13} />}</span>
                       <span className="relative min-w-0 flex-1">
-                        <span className="block text-sm font-bold">{when(option.startsAt)}{option.leading && poll.status === "OPEN" && <span className="ml-2 rounded-full bg-[var(--lime)] px-2 py-0.5 text-[9px] font-black uppercase text-[#0f1712]">Most popular</span>}</span>
-                        {option.voters.length > 0 && <span className="block truncate text-[11px] text-[var(--ink-soft)]">{option.voters.join(", ")}</span>}
+                        <span className="block text-sm font-bold">{when(option.startsAt)}{option.leading && poll.status === "OPEN" && <span className="ml-2 rounded-full bg-[var(--lime)] px-2 py-0.5 text-[11px] font-black uppercase text-[var(--on-lime)]">Most popular</span>}</span>
+                        {option.voters.length > 0 && <span className="block truncate text-xs text-[var(--ink-soft)]">{option.voters.join(", ")}</span>}
                       </span>
                       <span className="relative shrink-0 text-sm font-black">{option.votes}</span>
                     </button>
                     {canCreate && poll.status === "OPEN" && option.votes > 0 && scheduling?.optionId !== option.id && (
-                      <button onClick={() => setScheduling({ pollId: poll.id, optionId: option.id, playFormat: "DOUBLES", partnerFormat: "MANUAL", courtCount: String(Math.max(1, Math.floor(option.votes / 4))) })} className="mt-1 text-[11px] font-bold text-[var(--lime-deep)] hover:underline">Schedule this time</button>
+                      <button onClick={() => setScheduling({ pollId: poll.id, optionId: option.id, playFormat: "DOUBLES", partnerFormat: "MANUAL", courtCount: String(Math.max(1, Math.floor(option.votes / 4))) })} className="mt-1 text-xs font-bold text-[var(--lime-deep)] hover:underline">Schedule this time</button>
                     )}
                     {scheduling?.optionId === option.id && (
-                      <div className="mt-2 grid gap-2 rounded-xl bg-[#131f19] p-3 sm:grid-cols-4">
+                      <div className="mt-2 grid gap-2 rounded-xl bg-[var(--surface-2)] p-3 sm:grid-cols-4">
                         <select value={scheduling.playFormat} onChange={(event) => setScheduling({ ...scheduling, playFormat: event.target.value })} aria-label="Format" className={field}>{Object.entries(playFormatLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
                         <select value={scheduling.partnerFormat} onChange={(event) => setScheduling({ ...scheduling, partnerFormat: event.target.value })} aria-label="Partners" className={field}>{Object.entries(partnerFormatLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select>
                         <input type="number" min="1" max="20" value={scheduling.courtCount} onChange={(event) => setScheduling({ ...scheduling, courtCount: event.target.value })} aria-label="Courts" className={field} />
                         <div className="flex gap-2">
                           <button onClick={() => setScheduling(null)} className="h-10 flex-1 rounded-full border border-[var(--line)] text-xs font-bold">Cancel</button>
-                          <button onClick={schedule} disabled={busy} className="h-10 flex-1 rounded-full bg-[var(--lime)] text-xs font-bold text-[#0f1712] disabled:opacity-50">{busy ? "..." : "Create"}</button>
+                          <button onClick={schedule} disabled={busy} className="h-10 flex-1 rounded-full bg-[var(--lime)] text-xs font-bold text-[var(--on-lime)] disabled:opacity-50">{busy ? "..." : "Create"}</button>
                         </div>
-                        <p className="text-[11px] text-[var(--ink-soft)] sm:col-span-4">Creates the round robin, joins the {option.votes} who said yes, invites everyone else, and closes the poll. Courts: {scheduling.courtCount}.</p>
+                        <p className="text-xs text-[var(--ink-soft)] sm:col-span-4">Creates the round robin, joins the {option.votes} who said yes, invites everyone else, and closes the poll. Courts: {scheduling.courtCount}.</p>
                       </div>
                     )}
                   </div>
                 );
               })}
             </div>
-            {canCreate && poll.status === "OPEN" && <button onClick={() => close(poll)} className="mt-3 text-[11px] font-bold text-[var(--ink-soft)] hover:text-[var(--coral)]">Close poll without scheduling</button>}
+            {canCreate && poll.status === "OPEN" && <button onClick={() => close(poll)} className="mt-3 text-xs font-bold text-[var(--ink-soft)] hover:text-[var(--coral)]">Close poll without scheduling</button>}
           </article>
         ))}
       </div>

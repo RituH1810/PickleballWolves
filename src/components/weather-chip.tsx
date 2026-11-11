@@ -12,7 +12,7 @@ export function WeatherChip({ weather, className = "" }: { weather: GameWeather;
   const Icon = ICONS[weather.icon];
   const warn = weather.warnings.length > 0;
   return (
-    <span title={warn ? weather.warnings.join("\n") : "Forecast for game time"} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${warn ? "bg-[#2e1a16] text-[#f2a08c]" : "bg-[#1c2a1a] text-[var(--ink-soft)]"} ${className}`}>
+    <span title={warn ? weather.warnings.join("\n") : "Forecast for game time"} className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${warn ? "bg-[var(--danger-bg)] text-[var(--danger-ink)]" : "bg-[var(--surface-hover)] text-[var(--ink-soft)]"} ${className}`}>
       <Icon size={13} className="shrink-0" />{weather.summary}{warn && <span className="font-semibold">· {weather.warnings[0]}</span>}
     </span>
   );
