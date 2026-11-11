@@ -54,4 +54,8 @@ describe("computeClutch", () => {
     ], "ann", new Map());
     expect(stats.comebacks).toEqual({ wins: 1, chances: 2 });
   });
+
+  it("counts a comeback that's behind on points as a win", () => {
+    expect(computeClutch([match(["ann"], ["x"], [4, 11], [11, 9], [11, 9])], "ann", new Map()).comebacks).toEqual({ wins: 1, chances: 1 });
+  });
 });

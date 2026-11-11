@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeAchievements, type AchievementInput, type AchievementMatch } from "./achievements";
+import { computeAchievements, type AchievementInput, type AchievementMatch, winningSide } from "./achievements";
 
 const ME = "me";
 let clock = 0;
@@ -110,5 +110,31 @@ describe("computeAchievements", () => {
     expect(result["rr-five-time"].unlockedAt).toEqual(new Date(2026, 5, 5));
     expect(result["rr-dynasty"].unlocked).toBe(false);
     expect(result["rr-dynasty"].progress).toEqual({ current: 5, target: 10 });
+  });
+});
+
+describe("Bounce Back", () => {
+  it("counts a win right after a loss on the same night, not across nights", () => {
+    const night = (id: string, ...results: boolean[]) => results.map((won) => match(won, { roundRobinId: id }));
+    const result = compute([
+      ...night("a", false, true, true, false, true), // 2 bounce-backs
+      ...night("b", false), // a loss to end the night...
+      ...night("c", true), // ...doesn't set up a bounce-back the next night
+      ...night("d", false, true, false, true, false), // 2 more
+      match(false), match(true), // not in a round robin
+    ]);
+    expect(result["bounce-back"].progress.current).toBe(4);
+    expect(result["bounce-back"].unlocked).toBe(false);
+    expect(compute([...night("e", false, true), ...night("f", false, true, false, true, false, true, false, true)])["bounce-back"].unlocked).toBe(true);
+  });
+});
+
+describe("winningSide", () => {
+  const scores = (...games: [number, number][]) => games.map(([sideAScore, sideBScore], index) => ({ gameNumber: index + 1, sideAScore, sideBScore }));
+  it("goes by games won before points, so a comeback behind on points is still a win", () => {
+    expect(winningSide({ winnerSide: null, scores: scores([4, 11], [11, 9], [11, 9]) })).toBe("A");
+    expect(winningSide({ winnerSide: null, scores: scores([11, 7]) })).toBe("A");
+    expect(winningSide({ winnerSide: null, scores: scores([11, 5], [7, 11]) })).toBe("A"); // 1-1 in games, ahead on points
+    expect(winningSide({ winnerSide: "B", scores: scores([11, 5]) })).toBe("B");
   });
 });

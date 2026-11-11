@@ -42,6 +42,8 @@ export const GIANT_SLAYER_GAP = 0.5;
 export const RISING_STAR_GAIN = 0.5;
 // Upsets (wins with UPSET_MAX_CHANCE% or less going in) needed for Upset Artist.
 export const UPSET_ARTIST_UPSETS = 5;
+/** Bounce-backs (a win in the very next game after a loss, the same night) for the Bounce Back badge. */
+export const BOUNCE_BACK_TIMES = 5;
 
 type Definition = Omit<Achievement, "unlocked" | "unlockedAt" | "progress"> & { target: number };
 
@@ -57,6 +59,7 @@ const DEFINITIONS: Definition[] = [
   { id: "unstoppable", name: "Unstoppable", description: "Win 10 matches in a row.", icon: "flame", tier: "gold", target: 10 },
   { id: "bagel", name: "Bagel", description: "Win a game without giving up a point.", icon: "circle-dot", tier: "silver", target: 1 },
   { id: "comeback", name: "Comeback", description: "Lose the first game, then win the match.", icon: "rotate-ccw", tier: "silver", target: 1 },
+  { id: "bounce-back", name: "Bounce Back", description: `Win your very next game right after a loss, on the same night -- ${BOUNCE_BACK_TIMES} times.`, icon: "rotate-ccw", tier: "bronze", target: BOUNCE_BACK_TIMES },
   { id: "giant-slayer", name: "Giant Slayer", description: `Beat a side rated ${GIANT_SLAYER_GAP.toFixed(1)}+ higher than yours.`, icon: "swords", tier: "gold", target: 1 },
   { id: "upset-artist", name: "Upset Artist", description: `Pull off ${UPSET_ARTIST_UPSETS} upsets -- win with a ${UPSET_MAX_CHANCE}% chance or less.`, icon: "dices", tier: "gold", target: UPSET_ARTIST_UPSETS },
   { id: "mixer", name: "Mixer", description: "Partner with 10 different players.", icon: "handshake", tier: "silver", target: 10 },
@@ -69,9 +72,15 @@ const DEFINITIONS: Definition[] = [
   { id: "champion", name: "Champion", description: "Win a tournament final.", icon: "trophy", tier: "gold", target: 1 },
 ];
 
-/** Same rule as the rest of the app: trust winnerSide when it's set, otherwise total points decide. */
-export function winningSide(match: Pick<AchievementMatch, "winnerSide" | "scores">): "A" | "B" | null {
+/**
+ * Who won a match: winnerSide when it's set, otherwise whoever won more games, then total points.
+ * Games come first so a comeback (lose 4-11, win 11-9, 11-9) counts as the 2-1 win it is, even
+ * though it's behind on points. For a single game the two rules agree.
+ */
+export function winningSide(match: { winnerSide?: "A" | "B" | null; scores: { sideAScore: number; sideBScore: number }[] }): "A" | "B" | null {
   if (match.winnerSide) return match.winnerSide;
+  const gameMargin = match.scores.reduce((total, score) => total + Math.sign(score.sideAScore - score.sideBScore), 0);
+  if (gameMargin) return gameMargin > 0 ? "A" : "B";
   const margin = match.scores.reduce((total, score) => total + score.sideAScore - score.sideBScore, 0);
   return margin > 0 ? "A" : margin < 0 ? "B" : null;
 }
@@ -108,6 +117,9 @@ export function computeAchievements(input: AchievementInput): Achievement[] {
   const partners = new Set<string>();
   let upsets = 0;
   const roundRobins = new Set<string>();
+  // Last result in each round robin, so a win straight after a loss that night is a bounce-back.
+  const lastResult = new Map<string, boolean>();
+  let bounceBacks = 0;
 
   const matches = [...input.matches].sort((a, b) => a.playedAt.getTime() - b.playedAt.getTime());
   for (const match of matches) {
@@ -132,6 +144,10 @@ export function computeAchievements(input: AchievementInput): Achievement[] {
     const games = [...match.scores].sort((a, b) => a.gameNumber - b.gameNumber).map((score) => ({ mine: mine.side === "A" ? score.sideAScore : score.sideBScore, theirs: mine.side === "A" ? score.sideBScore : score.sideAScore }));
     if (games.some((game) => game.mine > 0 && game.theirs === 0)) bump("bagel", 1, at);
     if (won && games.length >= 2 && games[0].mine < games[0].theirs) bump("comeback", 1, at);
+    if (match.roundRobinId && winningSide(match)) {
+      if (won && lastResult.get(match.roundRobinId) === false) bump("bounce-back", ++bounceBacks, at);
+      lastResult.set(match.roundRobinId, won);
+    }
 
     if (won) {
       const myRating = averageRating(match, mine.side, input.ratingBefore);

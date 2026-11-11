@@ -1,5 +1,6 @@
 import { isUpset, predictMatch } from "./match-prediction";
-import { sideTotals, type RivalryMatch } from "./rivalry";
+import { winningSide } from "./achievements";
+import type { RivalryMatch } from "./rivalry";
 
 /** A game won or lost by this many points or fewer is a close game. */
 export const CLOSE_GAME_MARGIN = 2;
@@ -25,7 +26,7 @@ const pct = (record: Record) => (record.wins + record.losses ? Math.round((recor
 /**
  * How a player does when it's tight: close games (by game), matches as the underdog and upsets
  * (from the ratings everyone had going in, keyed "matchId:userId"; unrated matches are left out),
- * and comebacks after dropping the first game. Matches are won on total points, like leaderboards.
+ * and comebacks after dropping the first game. A match goes to whoever won more games, then points.
  */
 export function computeClutch(matches: RivalryMatch[], userId: string, ratingBefore: Map<string, number>): ClutchStats {
   const overall = { wins: 0, losses: 0 }, close = { wins: 0, losses: 0 }, underdog = { wins: 0, losses: 0 };
@@ -43,10 +44,10 @@ export function computeClutch(matches: RivalryMatch[], userId: string, ratingBef
       if (Math.abs(mine - theirs) <= CLOSE_GAME_MARGIN) close[record] += 1;
     }
 
-    const mineTotal = sideTotals(match, side);
-    const theirTotal = sideTotals(match, side === "A" ? "B" : "A");
-    if (mineTotal === theirTotal) continue;
-    const won = mineTotal > theirTotal;
+    // Games won first, then points -- so a comeback that's behind on points still counts as a win.
+    const winner = winningSide(match);
+    if (!winner) continue;
+    const won = winner === side;
 
     const ratings = (letter: "A" | "B") => match.players.filter((player) => player.side === letter).map((player) => ratingBefore.get(`${match.id}:${player.userId}`));
     const [sideA, sideB] = [ratings("A"), ratings("B")];
