@@ -4,6 +4,7 @@ import { getResend, REMINDER_FROM_EMAIL } from "@/lib/resend";
 import { notify } from "@/lib/notifications";
 import { formatGameTime } from "@/lib/app-time";
 import { siteUrl } from "@/lib/site-url";
+import { sendGameDayHype } from "@/lib/send-game-day-hype";
 
 const REMINDER_WINDOW_MS = 60 * 60 * 1000;
 
@@ -85,5 +86,7 @@ export async function GET(request: Request) {
     roundRobinsReminded += 1;
   }
 
-  return NextResponse.json({ resendConfigured: Boolean(resend), eventsReminded, roundRobinsReminded, emailsSent, inAppSent });
+  // The morning-of game-day push; a failure here mustn't hold up the reminders above.
+  const hype = await sendGameDayHype(now).catch((error) => { console.error("Failed to send game-day messages", error); return { hypeSent: 0 }; });
+  return NextResponse.json({ resendConfigured: Boolean(resend), eventsReminded, roundRobinsReminded, emailsSent, inAppSent, ...hype });
 }
