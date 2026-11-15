@@ -14,8 +14,9 @@ export async function GET() {
   // Matches within the same round robin all share its scheduled date/time, so sorting by
   // scheduledAt can't tell which one was actually played/scored most recently. updatedAt is
   // touched every time a score is saved (see matches/[matchId]/score), so it reflects that.
-  const matches = await prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null }, orderBy: { updatedAt: "desc" }, take: 50, include: { scores: true, players: { include: { user: { select: { id: true, name: true } } } }, event: { select: { title: true, location: true } } } });
-  const visible = matches.filter((match) => match.players.some((player) => player.userId === user.id));
+  // Filter to this player's matches in the query itself. Taking the latest 50 site-wide and
+  // filtering afterwards hid everyone's history once other people's matches filled those 50.
+  const visible = await prisma.match.findMany({ where: { status: MatchStatus.COMPLETED, deletedAt: null, players: { some: { userId: user.id } } }, orderBy: { updatedAt: "desc" }, take: 50, include: { scores: true, players: { include: { user: { select: { id: true, name: true } } } }, event: { select: { title: true, location: true } } } });
   // Each player's own skill-rating change for the match (before/after), so the page can show and
   // explain it per person. Ladder ratings are a separate scale and aren't included.
   const ratingByKey = new Map<string, { delta: number; after: number; before: number }>();
