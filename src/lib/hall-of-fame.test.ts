@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeHallOfFame, topDuoStreaks, topWinStreaks, type HallOfFameRoundRobin } from "./hall-of-fame";
+import { computeHallOfFame, topDuoStreaks, topPickleDuos, topWinStreaks, type HallOfFameRoundRobin } from "./hall-of-fame";
 
 let minute = 0;
 function game(a: string[], b: string[], sideAScore: number, sideBScore: number) {
@@ -111,5 +111,18 @@ describe("topWinStreaks", () => {
       ),
     ]);
     expect(streaks.map(({ players, streak, rank, ongoing }) => [players[0].userId, streak, rank, ongoing])).toEqual([["ann", 3, 1, false]]);
+  });
+});
+
+describe("topPickleDuos", () => {
+  it("ranks partners by pickles served together, ties sharing a place, guests left out", () => {
+    const nights = [
+      night("p1", 1, game(["ann", "bo"], ["cy", "dee"], 11, 0), game(["cy", "dee"], ["ann", "bo"], 11, 0), game(["ann", "bo"], ["cy", "dee"], 11, 0)),
+      night("p2", 8, game(["ann", "cy"], ["bo", "dee"], 11, 0), game(["eve", "fay"], ["ann", "bo"], 11, 0), game(["gus", "ann"], ["bo", "cy"], 11, 0), game(["bo", "cy"], ["ann", "dee"], 11, 3)),
+    ];
+    const places = topPickleDuos(nights, new Set(["gus"]));
+    expect(places.map((place) => [place.players.map((player) => player.userId).join("+"), place.pickles, place.rank])).toEqual([["ann+bo", 2, 1], ["cy+dee", 1, 2], ["ann+cy", 1, 2], ["eve+fay", 1, 2]]);
+    expect(places[0]).toMatchObject({ roundRobin: { id: "p1" } });
+    expect(topPickleDuos([night("q", 1, game(["ann"], ["bo"], 11, 0))])).toEqual([]);
   });
 });

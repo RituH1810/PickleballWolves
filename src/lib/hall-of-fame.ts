@@ -96,6 +96,32 @@ export function topWinStreaks(roundRobins: HallOfFameRoundRobin[], guestIds = ne
   return topStreaks(roundRobins, guestIds, (side) => side.map((player) => [player]));
 }
 
+export type PickleDuoPlace = { players: PlayerRef[]; pickles: number; at: Date; roundRobin: { id: string; name: string }; rank: number };
+
+/**
+ * The Pickle Jar for pairs: partners ranked by pickles (games won 11-0) served together. Top
+ * STREAK_PLACES places with ties sharing a place; on a tie, whoever got there first is listed
+ * first. `at` and `roundRobin` are their latest pickle. Pairs with a guest can't place.
+ */
+export function topPickleDuos(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): PickleDuoPlace[] {
+  const jars = new Map<string, PickleDuoPlace>();
+  for (const game of groupGames(roundRobins)) {
+    if (game.loserScore !== 0 || game.winners.length !== 2 || game.winners.some((player) => guestIds.has(player.userId))) continue;
+    const players = [...game.winners].sort((a, b) => a.userId.localeCompare(b.userId));
+    const key = players.map((player) => player.userId).join(":");
+    const jar = jars.get(key) ?? { players, pickles: 0, at: game.playedAt, roundRobin: { id: game.roundRobin.id, name: game.roundRobin.name }, rank: 0 };
+    jar.pickles += 1;
+    jar.at = game.playedAt;
+    jar.roundRobin = { id: game.roundRobin.id, name: game.roundRobin.name };
+    jars.set(key, jar);
+  }
+  // Games are oldest first, so a pair's latest pickle is when it reached its count.
+  const sorted = [...jars.values()].sort((a, b) => b.pickles - a.pickles || a.at.getTime() - b.at.getTime());
+  return sorted
+    .map((jar) => ({ ...jar, rank: 1 + sorted.filter((other) => other.pickles > jar.pickles).length }))
+    .filter((jar) => jar.rank <= STREAK_PLACES);
+}
+
 /**
  * A group's all-time records from its ended round robins. Each scored game is a win or loss, like
  * round robin standings (tied games are skipped). Guests can't hold records, but their games still

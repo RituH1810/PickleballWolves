@@ -19,7 +19,8 @@ type Club = { key: string; label: string; members: (Ref & { joinedAt: string })[
 type Grit = { key: string; label: string; value: string; holders: Ref[]; detail: string };
 type WallMonth = { key: string; label: string; champions: { roundRobin: { id: string; name: string }; players: Ref[] }[]; playersOfTheWeek: { weekStart: string; players: Ref[] }[]; awards: { title: string; players: Ref[]; detail: string }[] };
 type StreakPlace = { players: Holder[]; streak: number; at: string; roundRobin: { id: string; name: string }; ongoing: boolean; rank: number };
-type HallData = { groupName: string | null; monthLabel: string; records: HallRecord[]; winners: Winner[]; duoStreaks?: StreakPlace[]; winStreaks?: StreakPlace[]; history?: Record<string, Reign[]>; chases?: Chase[]; place?: Placing[]; clubs?: Club[]; grit?: Grit[]; wall?: WallMonth[]; error: string | null };
+type PickleDuo = { players: Holder[]; pickles: number; at: string; roundRobin: { id: string; name: string }; rank: number };
+type HallData = { groupName: string | null; monthLabel: string; records: HallRecord[]; winners: Winner[]; duoStreaks?: StreakPlace[]; pickleDuos?: PickleDuo[]; winStreaks?: StreakPlace[]; history?: Record<string, Reign[]>; chases?: Chase[]; place?: Placing[]; clubs?: Club[]; grit?: Grit[]; wall?: WallMonth[]; error: string | null };
 
 const MEDALS: Record<number, { label: string; color: string; ring: string }> = {
   1: { label: "1st", color: "#f5c542", ring: "border-[#f5c542]" },
@@ -80,6 +81,36 @@ function StreakPodium({ title, hint, icon: Icon, entries }: { title: string; hin
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--ink-soft)]">{duo.ongoing ? <span className="font-bold text-[var(--lime-deep)]">🔥 Still going</span> : <>Set {shortDate(duo.at)}</>} · <Link href={`/round-robin/${duo.roundRobin.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{duo.roundRobin.name}</Link></p>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/** The Pickle Jar for pairs: the top 3 partners by pickles (11-0 games) served together. */
+function PickleDuoPodium({ entries }: { entries: PickleDuo[] }) {
+  return (
+    <section className="mt-4 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+      <p className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]"><PickleIcon size={15} className="text-[var(--lime-deep)]" />Pickle Jar: top duos</p>
+      <p className="mt-1 text-xs text-[var(--ink-soft)]">Most pickles served together -- games two partners won 11-0.</p>
+      <ol className="mt-4 grid gap-3 sm:grid-cols-3">
+        {entries.map((duo) => {
+          const medal = MEDALS[duo.rank] ?? MEDALS[3];
+          return (
+            <li key={duo.players.map((player) => player.userId).join(":")} className={`rounded-2xl border-2 ${medal.ring} bg-[var(--surface-2)] p-3`}>
+              <div className="flex items-center gap-3">
+                <div className="relative flex shrink-0 -space-x-3">
+                  {duo.players.map((player) => <Avatar key={player.userId} name={player.name} photoUrl={player.photoUrl} className="h-10 w-10 rounded-full border-2 border-[var(--surface-2)] bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />)}
+                  <span className="absolute -bottom-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[9px] font-black text-[var(--on-lime)]" style={{ backgroundColor: medal.color }}>{medal.label}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-extrabold"><PlayerLinks players={duo.players} /></p>
+                  <p className="flex items-center gap-0.5 text-xs font-bold" style={{ color: medal.color }}>{Array.from({ length: Math.min(duo.pickles, 5) }).map((_, index) => <PickleIcon key={index} size={12} />)}<span className="ml-1">{duo.pickles} pickle{duo.pickles === 1 ? "" : "s"}</span></p>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-[var(--ink-soft)]">Latest {shortDate(duo.at)} · <Link href={`/round-robin/${duo.roundRobin.id}`} className="hover:text-[var(--lime-deep)] hover:underline">{duo.roundRobin.name}</Link></p>
             </li>
           );
         })}
@@ -183,6 +214,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
             {data.winners.length > 0 && <WinnersPodium winners={data.winners} />}
             {(data.winStreaks?.length ?? 0) > 0 && <StreakPodium title="Top win streaks" hint="Most wins in a row by one player, with any partner." icon={Flame} entries={data.winStreaks!} />}
             {(data.duoStreaks?.length ?? 0) > 0 && <StreakPodium title="Top duo win streaks" hint="Most wins in a row by the same two partners, counting only games they play together." icon={Handshake} entries={data.duoStreaks!} />}
+            {(data.pickleDuos?.length ?? 0) > 0 && <PickleDuoPodium entries={data.pickleDuos!} />}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {/* The podium above already shows the most titles. */}
               {data.records.filter((record) => !(record.key === "titles" && data.winners.length)).map((record) => {
