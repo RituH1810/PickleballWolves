@@ -11,7 +11,7 @@ export type HallOfFameRoundRobin = { id: string; name: string; endedAt: Date; ma
 
 type PlayerRef = { userId: string; name: string };
 export type HallOfFameRecord = {
-  key: "titles" | "streak" | "biggestWin" | "bestNight" | "undefeated" | "duo" | "clutch" | "games";
+  key: "titles" | "streak" | "biggestWin" | "pickles" | "bestNight" | "undefeated" | "duo" | "clutch" | "games";
   label: string;
   value: string;
   holders: PlayerRef[];
@@ -128,6 +128,19 @@ export function computeHallOfFame(roundRobins: HallOfFameRoundRobin[], guestIds 
   // The first game to reach the biggest margin holds the record.
   const blowout = games.filter((game) => game.winners.some(isMember)).reduce<Game | null>((best, game) => !best || game.winnerScore - game.loserScore > best.winnerScore - best.loserScore ? game : best, null);
   if (blowout) records.push({ key: "biggestWin", label: "Biggest win", value: `+${blowout.winnerScore - blowout.loserScore}`, holders: blowout.winners.filter(isMember), detail: `${blowout.winnerScore}-${blowout.loserScore} over ${names(blowout.losers)}`, roundRobin: { id: blowout.roundRobin.id, name: blowout.roundRobin.name }, at: blowout.playedAt });
+
+  // The Pickle Jar: most pickles (games won 11-0) served. The first to reach the top count leads.
+  const jar = new Map<string, PlayerRef & { value: number; at: Date }>();
+  for (const game of games.filter((entry) => entry.loserScore === 0)) {
+    for (const player of game.winners.filter(isMember)) {
+      const entry = jar.get(player.userId) ?? { ...player, value: 0, at: game.playedAt };
+      entry.value += 1;
+      entry.at = game.playedAt;
+      jar.set(player.userId, entry);
+    }
+  }
+  const pickleLeaders = leaders([...jar.values()]);
+  if (pickleLeaders.length) records.push({ key: "pickles", label: "Pickle Jar", value: plural(pickleLeaders[0].value, "pickle"), holders: pickleLeaders, detail: "Most games won without giving up a point (11-0)", roundRobin: null, at: pickleLeaders[0].at });
 
   // Per player per night: wins, losses and differential.
   const nights = new Map<string, PlayerRef & { roundRobin: HallOfFameRoundRobin; wins: number; losses: number; differential: number }>();

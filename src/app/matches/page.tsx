@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowLeft, CalendarDays, HelpCircle, MapPin, PawPrint, X } from "lucide-react";
 import { explainRatingChange, RATING_MIN } from "@/lib/rating";
+import { PickleIcon } from "@/components/pickle-icon";
+import { isPickle } from "@/lib/pickle";
 
 type MatchPlayer = { id: string; name: string; side: "A" | "B"; ratingDelta: number | null; ratingAfter: number | null; ratingBefore: number | null };
 type Match = { id: string; event: string; location: string; scheduledAt: string | null; scores: { sideAScore: number; sideBScore: number }[]; players: MatchPlayer[] };
@@ -49,6 +51,19 @@ function RelationshipTable({ title, subtitle, firstColumn, rows, loading, emptyT
       </div>
     </section>
   );
+}
+
+/** "served" when your side won a game 11-0, "taken" when you lost one 0-11, else null. */
+function pickleOf(scores: Match["scores"], side: "A" | "B" | undefined): "served" | "taken" | null {
+  if (!side) return null;
+  const games = scores.map((score) => side === "A" ? [score.sideAScore, score.sideBScore] : [score.sideBScore, score.sideAScore]);
+  if (games.some(([mine, theirs]) => isPickle(mine, theirs))) return "served";
+  if (games.some(([mine, theirs]) => isPickle(theirs, mine))) return "taken";
+  return null;
+}
+
+function PickleTag({ pickle }: { pickle: "served" | "taken" }) {
+  return <span title={pickle === "served" ? "You won a game 11-0 -- a pickle!" : "Lost a game 0-11 -- pickled"} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-black ${pickle === "served" ? "bg-[var(--success-bg)] text-[var(--lime-deep)]" : "bg-[var(--surface-hover)] text-[var(--ink-soft)]"}`}><PickleIcon size={13} />{pickle === "served" ? "Pickle!" : "Pickled"}</span>;
 }
 
 const signed = (value: number) => `${value > 0 ? "+" : ""}${value.toFixed(3)}`;
@@ -139,6 +154,7 @@ export default function MatchesPage() {
         const myScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideAScore : score.sideBScore), 0);
         const theirScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideBScore : score.sideAScore), 0);
         const result: "W" | "L" | "-" = match.scores.length ? (myScore > theirScore ? "W" : myScore < theirScore ? "L" : "-") : "-";
+        const pickle = pickleOf(match.scores, mine?.side);
         // Explanations need everyone's rating going in.
         const explainable = match.players.every((player) => player.ratingBefore != null);
         const chip = (player: MatchPlayer) => <PlayerRatingChip player={player} isMe={player.id === myUserId} explaining={explained?.matchId === match.id && explained.playerId === player.id} onExplain={explainable ? () => setExplained(explained?.matchId === match.id && explained.playerId === player.id ? null : { matchId: match.id, playerId: player.id }) : undefined} />;
@@ -155,6 +171,7 @@ export default function MatchesPage() {
                   {match.scores.map((score, index) => <span key={index} className={`rounded-lg px-3 py-2 text-sm font-black ${result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : result === "L" ? "bg-[var(--coral)] text-[var(--on-coral)]" : "bg-[var(--surface-hover)] text-[var(--foreground)]"}`}>{mine?.side === "A" ? score.sideAScore : score.sideBScore} - {mine?.side === "A" ? score.sideBScore : score.sideAScore}</span>)}
                 </div>
                 {result !== "-" && <span className={`rounded-full px-2.5 py-1 text-xs font-black ${result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : "bg-[var(--coral)] text-[var(--on-coral)]"}`}>{result}</span>}
+                {pickle && <PickleTag pickle={pickle} />}
               </div>
             </div>
             <div className="mt-4 flex flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-[var(--line)] pt-3 text-xs">

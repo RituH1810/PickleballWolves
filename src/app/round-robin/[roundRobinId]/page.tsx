@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Copy, Mail, MapPin, MessageCircle, Search, Share2, Sparkles, Trash2, Trophy, Users, X } from "lucide-react";
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
@@ -21,6 +21,8 @@ import { PREVIEW_SCORE } from "@/lib/rating";
 import { suggestMatches, type Suggestion } from "@/lib/suggest-match";
 import { DirectionsLink } from "@/components/directions-link";
 import { CardHeading } from "@/components/card-heading";
+import { PickleCelebration, type PickleMoment } from "@/components/pickle-celebration";
+import { pickleWinner } from "@/lib/pickle";
 
 type Match = { prediction?: Prediction | null; myStakes?: { win: number; lose: number } | null; id: string; createdAt: string; courtNumber: number | null; players: { userId: string; name: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
 type Round = { id: string; roundNumber: number; stage: "SEMIFINAL" | "FINAL" | null; matches: Match[] };
@@ -60,6 +62,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
   const [rosterCandidates, setRosterCandidates] = useState<{ id: string; name: string }[]>([]);
   const [addingPlayerId, setAddingPlayerId] = useState<string | null>(null);
   const [removingPlayerId, setRemovingPlayerId] = useState<string | null>(null);
+  const [pickleMoment, setPickleMoment] = useState<PickleMoment | null>(null);
+  const closePickle = useCallback(() => setPickleMoment(null), []);
 
   function showNotice(text: string, type: "success" | "error") {
     setNotice({ text, type });
@@ -162,7 +166,18 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
     const ratingChanges: { userId: string; ratingDelta: number; ratingAfter: number }[] = data.ratingChanges ?? [];
     const mine = ratingChanges.find((change) => change.userId === room?.myUserId);
     const ratingText = mine ? ` Your rating: ${mine.ratingDelta > 0 ? "+" : ""}${mine.ratingDelta.toFixed(3)} (now ${mine.ratingAfter.toFixed(3)}).` : "";
-    showNotice(`Score saved and standings updated.${ratingText}`, "success");
+    // An 11-0 game gets the "PICKLED!" splash -- once, not again when the same score is re-saved.
+    const a = Number(sideAScore);
+    const b = Number(sideBScore);
+    const pickledBy = pickleWinner({ sideAScore: a, sideBScore: b });
+    const match = [...rounds.flatMap((round) => round.matches), ...manualMatches].find((entry) => entry.id === matchId);
+    const before = match?.scores.find((score) => score.gameNumber === 1);
+    if (pickledBy && match && !(before && pickleWinner(before) === pickledBy)) {
+      const sideNames = (side: "A" | "B") => match.players.filter((player) => player.side === side).map((player) => player.userId === room?.myUserId ? "You" : player.name);
+      const mySide = match.players.find((player) => player.userId === room?.myUserId)?.side;
+      setPickleMoment({ winners: sideNames(pickledBy), losers: sideNames(pickledBy === "A" ? "B" : "A"), winnerScore: Math.max(a, b), iServed: mySide ? mySide === pickledBy : null });
+    }
+    showNotice(`${pickledBy ? "Pickle! " : ""}Score saved and standings updated.${ratingText}`, "success");
     loadRoom();
   }
 
@@ -379,6 +394,7 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
 
   return (
     <main className="min-h-screen bg-[var(--background)] px-5 py-8 noise sm:px-10">
+      {pickleMoment && <PickleCelebration moment={pickleMoment} onClose={closePickle} />}
       <div className="mx-auto max-w-6xl">
         <Link href="/round-robin" className="flex items-center gap-2 text-xs font-bold text-[var(--lime-deep)]"><ArrowLeft size={14} />Back to round robin builder</Link>
         <div className="mt-8 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">

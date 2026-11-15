@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { use, useEffect, useState, type ReactNode } from "react";
+import { use, useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { ArrowLeft, BadgeCheck, Crown, Dumbbell, Flame, Gauge, Handshake, History, Lock, Medal, ShieldCheck, Target, Timer, Trophy, UserRound, Zap } from "lucide-react";
 import { Avatar } from "@/components/avatar";
+import { PickleIcon } from "@/components/pickle-icon";
 import { Reactions } from "@/components/reactions";
 import { recordTarget } from "@/lib/reactions";
 
@@ -124,7 +125,7 @@ function RecordHistory({ reigns }: { reigns: Reign[] }) {
   );
 }
 
-const ICONS: Record<string, typeof Trophy> = { titles: Crown, streak: Flame, biggestWin: Zap, bestNight: Trophy, undefeated: ShieldCheck, duo: Handshake, clutch: Timer, games: Gauge };
+const ICONS: Record<string, ComponentType<{ size?: number; className?: string }>> = { titles: Crown, streak: Flame, biggestWin: Zap, pickles: PickleIcon, bestNight: Trophy, undefeated: ShieldCheck, duo: Handshake, clutch: Timer, games: Gauge };
 
 /** A group's Hall of Fame, all time or this month; all time adds record histories, chases, your place, clubs, grit and the champions wall. */
 export default function HallOfFamePage({ params }: { params: Promise<{ groupId: string }> }) {

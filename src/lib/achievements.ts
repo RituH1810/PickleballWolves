@@ -1,5 +1,6 @@
 export type AchievementTier = "bronze" | "silver" | "gold";
 import { isUpset, predictMatch, UPSET_MAX_CHANCE } from "./match-prediction";
+import { isPickle, PICKLE_JAR_TARGET } from "./pickle";
 
 export type AchievementIcon = "sparkles" | "star" | "repeat" | "target" | "medal" | "award" | "zap" | "flame" | "circle-dot" | "rotate-ccw" | "swords" | "handshake" | "users" | "trending-up" | "crown" | "trophy" | "dices";
 
@@ -57,7 +58,9 @@ const DEFINITIONS: Definition[] = [
   { id: "hot-hand", name: "Hot Hand", description: "Win 3 matches in a row.", icon: "zap", tier: "bronze", target: 3 },
   { id: "on-fire", name: "On Fire", description: "Win 5 matches in a row.", icon: "flame", tier: "silver", target: 5 },
   { id: "unstoppable", name: "Unstoppable", description: "Win 10 matches in a row.", icon: "flame", tier: "gold", target: 10 },
-  { id: "bagel", name: "Bagel", description: "Win a game without giving up a point.", icon: "circle-dot", tier: "silver", target: 1 },
+  // Kept as "bagel" so badges already earned stay earned; players know an 11-0 game as a pickle.
+  { id: "bagel", name: "Pickle", description: "Win a game 11-0 -- serve a pickle.", icon: "circle-dot", tier: "silver", target: 1 },
+  { id: "pickle-jar", name: "Pickle Jar", description: `Serve ${PICKLE_JAR_TARGET} pickles (games won 11-0).`, icon: "circle-dot", tier: "gold", target: PICKLE_JAR_TARGET },
   { id: "comeback", name: "Comeback", description: "Lose the first game, then win the match.", icon: "rotate-ccw", tier: "silver", target: 1 },
   { id: "bounce-back", name: "Bounce Back", description: `Win your very next game right after a loss, on the same night -- ${BOUNCE_BACK_TIMES} times.`, icon: "rotate-ccw", tier: "bronze", target: BOUNCE_BACK_TIMES },
   { id: "giant-slayer", name: "Giant Slayer", description: `Beat a side rated ${GIANT_SLAYER_GAP.toFixed(1)}+ higher than yours.`, icon: "swords", tier: "gold", target: 1 },
@@ -120,6 +123,7 @@ export function computeAchievements(input: AchievementInput): Achievement[] {
   // Last result in each round robin, so a win straight after a loss that night is a bounce-back.
   const lastResult = new Map<string, boolean>();
   let bounceBacks = 0;
+  let pickles = 0;
 
   const matches = [...input.matches].sort((a, b) => a.playedAt.getTime() - b.playedAt.getTime());
   for (const match of matches) {
@@ -142,7 +146,12 @@ export function computeAchievements(input: AchievementInput): Achievement[] {
     for (const id of ["hot-hand", "on-fire", "unstoppable"]) bump(id, streak, at);
 
     const games = [...match.scores].sort((a, b) => a.gameNumber - b.gameNumber).map((score) => ({ mine: mine.side === "A" ? score.sideAScore : score.sideBScore, theirs: mine.side === "A" ? score.sideBScore : score.sideAScore }));
-    if (games.some((game) => game.mine > 0 && game.theirs === 0)) bump("bagel", 1, at);
+    const servedHere = games.filter((game) => isPickle(game.mine, game.theirs)).length;
+    if (servedHere) {
+      pickles += servedHere;
+      bump("bagel", 1, at);
+      bump("pickle-jar", pickles, at);
+    }
     if (won && games.length >= 2 && games[0].mine < games[0].theirs) bump("comeback", 1, at);
     if (match.roundRobinId && winningSide(match)) {
       if (won && lastResult.get(match.roundRobinId) === false) bump("bounce-back", ++bounceBacks, at);

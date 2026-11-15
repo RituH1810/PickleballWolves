@@ -8,6 +8,7 @@ import { canRunRoundRobin } from "@/lib/round-robin-access";
 import { recomputeAllRatings } from "@/lib/recompute-ratings";
 import { THIRD_PLACE_POSITION, thirdPlaceSlot } from "@/lib/tournament";
 import { advancePlayoffs } from "@/lib/load-playoffs";
+import { pickleWinner } from "@/lib/pickle";
 
 export async function POST(request: Request, context: { params: Promise<{ matchId: string }> }) {
   const supabase = await createClient();
@@ -60,8 +61,19 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
   await prisma.auditLog.create({ data: { actorId: user.id, entityType: "GameScore", entityId: score.id, action: "SCORE_ENTERED", afterData: { matchId, gameNumber: score.gameNumber, sideAScore, sideBScore }, matchId } });
 
   const enteredByName = match.players.find((player) => player.userId === user.id)?.user.name ?? (await prisma.user.findUnique({ where: { id: user.id }, select: { name: true } }))?.name ?? "Someone";
+  // An 11-0 game is a pickle -- it gets its own, more fun, message.
+  const pickledBy = pickleWinner({ sideAScore, sideBScore });
+  const sideNames = (side: Side) => match.players.filter((player) => player.side === side).map((player) => player.user.name).join(" & ");
   await Promise.all(match.players.filter((player) => player.userId !== user.id).map((player) => {
     const won = player.side === winnerSide;
+    if (pickledBy) {
+      const winners = sideNames(pickledBy);
+      const losers = sideNames(pickledBy === Side.A ? Side.B : Side.A);
+      const top = Math.max(sideAScore, sideBScore);
+      return won
+        ? notify(player.userId, "general", "SCORE_ADDED", "You served a pickle!", `${top}-0 over ${losers}. Not a single point given up -- that one's going in the Pickle Jar.`)
+        : notify(player.userId, "general", "SCORE_ADDED", "You got pickled", `${winners} won ${top}-0. It happens to everyone -- shake it off and get the next one.`);
+    }
     return notify(player.userId, "general", "SCORE_ADDED", "Score added to your match", `${enteredByName} recorded a score of ${sideAScore}-${sideBScore}. You ${won ? "won" : "lost"} this game.`);
   }));
 
@@ -122,7 +134,7 @@ export async function POST(request: Request, context: { params: Promise<{ matchI
     }
   }
 
-  // A score can complete a badge (first win, a streak, a bagel...) -- tell whoever just earned one.
+  // A score can complete a badge (first win, a streak, a pickle...) -- tell whoever just earned one.
   // A semifinal result can complete the playoff final's lineup (a no-op outside playoffs).
   if (match.roundRobinId && match.roundId) await advancePlayoffs(match.roundRobinId);
   await announceNewAchievements(match.players.map((player) => player.userId));

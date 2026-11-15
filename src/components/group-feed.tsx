@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Activity, Crown, Flame, Gauge, Medal, PawPrint, Star, TrendingUp, Trophy, UserPlus, type LucideIcon } from "lucide-react";
+import type { ComponentType } from "react";
+import { Activity, Crown, Flame, Gauge, Medal, PawPrint, Star, TrendingUp, Trophy, UserPlus } from "lucide-react";
+import { PickleIcon } from "@/components/pickle-icon";
 import { Avatar } from "@/components/avatar";
 import { Reactions } from "@/components/reactions";
 import type { FeedKind } from "@/lib/group-feed";
@@ -11,7 +13,7 @@ import { CardHeading } from "@/components/card-heading";
 
 type Item = { id: string; kind: FeedKind; at: string; players: { userId: string; name: string; photoUrl: string | null }[]; text: string; href: string | null };
 
-const ICONS: Record<FeedKind, LucideIcon> = { champion: Crown, rating: TrendingUp, streak: Flame, games: Gauge, record: Trophy, badge: Medal, potw: Star, joined: UserPlus, goodWolf: PawPrint };
+const ICONS: Record<FeedKind, ComponentType<{ size?: number }>> = { champion: Crown, rating: TrendingUp, streak: Flame, games: Gauge, record: Trophy, badge: Medal, potw: Star, joined: UserPlus, goodWolf: PawPrint, pickle: PickleIcon };
 const FIRST_SHOWN = 6;
 
 // Calendar days in the viewer's time zone, like the insights page.
@@ -39,7 +41,7 @@ export function GroupFeed({ groupId }: { groupId: string }) {
   return (
     <section id="group-activity" className="mt-5 scroll-mt-6 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-6 sm:p-8">
       <CardHeading icon={Activity} title="Group activity" />
-      <p className="mt-1 text-xs text-[var(--ink-soft)]">The last 30 days: champions, milestones, streaks, records and new faces.</p>
+      <p className="mt-1 text-xs text-[var(--ink-soft)]">The last 30 days: champions, milestones, streaks, pickles, records and new faces.</p>
       <ol className="mt-4 divide-y divide-[var(--line)]">
         {shown.map((item) => {
           const Icon = ICONS[item.kind];

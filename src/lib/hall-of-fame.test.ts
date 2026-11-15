@@ -37,6 +37,13 @@ describe("computeHallOfFame", () => {
     expect(records.biggestWin).toMatchObject({ value: "+9", detail: "11-2 over CY & DEE", roundRobin: { id: "1" } });
   });
 
+  it("has no Pickle Jar until someone wins 11-0, then fills it", () => {
+    expect(records.pickles).toBeUndefined();
+    const pickled = Object.fromEntries(computeHallOfFame([...history, night("3", 15, game(["ann", "cy"], ["bo", "dee"], 11, 0), game(["ann", "dee"], ["bo", "cy"], 11, 0))]).map((record) => [record.key, record]));
+    expect(pickled.pickles).toMatchObject({ label: "Pickle Jar", value: "2 pickles" });
+    expect(pickled.pickles.holders.map((player) => player.userId)).toEqual(["ann"]);
+  });
+
   it("picks the best single night, then the undefeated nights and the best duo", () => {
     expect(records.bestNight).toMatchObject({ value: "3 wins", detail: "3-0, +17", roundRobin: { id: "1" } });
     expect(records.undefeated).toMatchObject({ value: "1 night" });

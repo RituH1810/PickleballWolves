@@ -115,8 +115,31 @@ input::placeholder, textarea::placeholder {
   50% { transform: translateY(-5px); }
 }
 
+/* The "PICKLED!" splash for an 11-0 game: pickles rain down while the card pops in and wobbles. */
+.pickle-backdrop { animation: fade-up .25s ease-out both; }
+.pickle-pop { animation: pickle-pop .55s cubic-bezier(.2, 1.4, .4, 1) both; }
+.pickle-wobble { animation: pickle-wobble 1.1s ease-in-out .4s 2; }
+.pickle-drop { animation-name: pickle-fall; animation-timing-function: linear; animation-iteration-count: infinite; }
+
+@keyframes pickle-pop {
+  from { opacity: 0; transform: scale(.4) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+@keyframes pickle-wobble {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-14deg) scale(1.08); }
+  75% { transform: rotate(14deg) scale(1.08); }
+}
+
+@keyframes pickle-fall {
+  from { transform: translateY(0) rotate(0); opacity: 1; }
+  to { transform: translateY(115vh) rotate(calc(var(--spin, 1) * 540deg)); opacity: .7; }
+}
+
 /* Respect "reduce motion": no floating, bobbing or fade-ins for people who asked for less movement. */
 @media (prefers-reduced-motion: reduce) {
-  .fade-up, .animate-float, .animate-bob, .skeleton { animation: none; }
+  .fade-up, .animate-float, .animate-bob, .skeleton, .pickle-backdrop, .pickle-pop, .pickle-wobble { animation: none; }
+  .pickle-drop { display: none; }
   a, button { transition: none; }
 }

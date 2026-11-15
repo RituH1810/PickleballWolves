@@ -1,6 +1,7 @@
 import { achievementInfo } from "./achievements";
 import { groupGames, type HallOfFameRoundRobin } from "./hall-of-fame";
 import { computeRecap } from "./round-robin-recap";
+import { pickleLine } from "./pickle";
 
 /** How far back the feed goes. */
 export const FEED_DAYS = 30;
@@ -16,7 +17,7 @@ export const STREAK_STEP = 5;
 const RECORD_MIN_GAMES = 10;
 
 type PlayerRef = { userId: string; name: string };
-export type FeedKind = "champion" | "rating" | "streak" | "games" | "record" | "badge" | "potw" | "joined" | "goodWolf";
+export type FeedKind = "champion" | "rating" | "streak" | "games" | "record" | "badge" | "potw" | "joined" | "goodWolf" | "pickle";
 export type FeedItem = { id: string; kind: FeedKind; at: Date; players: PlayerRef[]; text: string; href: string | null };
 
 export type FeedInput = {
@@ -38,8 +39,8 @@ const ordinal = (value: number) => `${value}${value % 100 >= 11 && value % 100 <
 
 /**
  * The group's recent moments worth cheering, newest first: round robin champions, rating and
- * games milestones, win streaks, new group records, silver and gold badges, Players of the Week and
- * new members. Worked out from existing results, so nothing extra is stored; ids are stable so
+ * games milestones, win streaks, new group records, pickles (11-0 games), silver and gold badges,
+ * Players of the Week and new members. Worked out from existing results, so nothing extra is stored; ids are stable so
  * reactions stay attached.
  */
 export function computeGroupFeed(input: FeedInput): FeedItem[] {
@@ -88,6 +89,8 @@ export function computeGroupFeed(input: FeedInput): FeedItem[] {
     const winners = game.winners.map((player) => member(player.userId)).filter((entry): entry is PlayerRef => entry !== null);
     if (margin > bestMargin && index >= RECORD_MIN_GAMES && winners.length) items.push({ id: `record:biggestWin:${game.matchId}:${game.order}`, kind: "record", at: game.playedAt, players: winners, text: `New group record: biggest win, ${game.winnerScore}-${game.loserScore} by ${names(winners)}`, href });
     bestMargin = Math.max(bestMargin, margin);
+    // Every pickle (an 11-0 game) makes the feed, credited to the members who served it.
+    if (game.loserScore === 0 && winners.length) items.push({ id: `pickle:${game.matchId}:${game.order}`, kind: "pickle", at: game.playedAt, players: winners, text: pickleLine(winners, game.losers, game.winnerScore), href });
   });
 
   // The first time a player's rating reaches each milestone.

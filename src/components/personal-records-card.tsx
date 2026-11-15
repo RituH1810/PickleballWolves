@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Gauge, Medal, Moon, TrendingUp, Zap, type LucideIcon } from "lucide-react";
+import { useEffect, useState, type ComponentType } from "react";
+import { Gauge, Medal, Moon, TrendingUp, Zap } from "lucide-react";
+import { PickleIcon } from "@/components/pickle-icon";
 import { MatchDetailRow, type MatchDetailItem } from "@/components/match-detail-row";
 
 type PersonalRecord = { key: string; label: string; value: string; detail: string; at: string; matches: MatchDetailItem[] };
 
-const ICONS: Record<string, LucideIcon> = { biggestWin: Zap, bestNight: Moon, longestMatch: Gauge, ratingJump: TrendingUp };
+const ICONS: Record<string, ComponentType<{ size?: number; className?: string }>> = { biggestWin: Zap, pickles: PickleIcon, bestNight: Moon, longestMatch: Gauge, ratingJump: TrendingUp };
 
 /** Personal bests; tap one to see the match (or night) behind it. Hidden until the player has a scored match. */
 export function PersonalRecordsCard({ userId, isMe = true }: { userId: string; isMe?: boolean }) {
@@ -22,7 +23,7 @@ export function PersonalRecordsCard({ userId, isMe = true }: { userId: string; i
   return (
     <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5">
       <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">{isMe ? "Your personal records" : "Personal records"}</p>
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {records.map((record) => {
           const Icon = ICONS[record.key] ?? Medal;
           const canOpen = record.matches.length > 0;

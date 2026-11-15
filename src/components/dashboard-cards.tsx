@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import { Activity, CalendarDays, CheckCircle2, ClipboardList, Crown, PawPrint, Flame, Gauge, Medal, Star, Swords, TrendingDown, TrendingUp, Trophy, UserPlus, type LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { FormDots, streakText } from "@/components/form-dots";
@@ -11,6 +11,7 @@ import type { FormResult } from "@/lib/form";
 import type { FeedKind } from "@/lib/group-feed";
 import type { ReactionSummary } from "@/lib/reactions";
 import { CardHeading } from "@/components/card-heading";
+import { PickleIcon } from "@/components/pickle-icon";
 
 /** Loads one dashboard card's data; null until it arrives (or if it fails). */
 function useCard<T>(path: string, key: string) {
@@ -102,7 +103,7 @@ export function RivalWatchCard() {
 }
 
 type PulseItem = { id: string; kind: FeedKind; at: string; text: string; href: string | null; groupId: string; groupName: string; players: { userId: string; name: string; photoUrl: string | null }[]; reactions: ReactionSummary | null };
-const PULSE_ICONS: Record<FeedKind, LucideIcon> = { champion: Crown, rating: TrendingUp, streak: Flame, games: Gauge, record: Trophy, badge: Medal, potw: Star, joined: UserPlus, goodWolf: PawPrint };
+const PULSE_ICONS: Record<FeedKind, ComponentType<{ size?: number; className?: string }>> = { champion: Crown, rating: TrendingUp, streak: Flame, games: Gauge, record: Trophy, badge: Medal, potw: Star, joined: UserPlus, goodWolf: PawPrint, pickle: PickleIcon };
 
 /** "Group pulse": the newest moments from all your groups' activity feeds, with reactions. */
 export function GroupPulseCard() {

@@ -57,6 +57,13 @@ describe("computeAchievements", () => {
     expect(compute([match(true, { games: [[11, 1]] })]).bagel.unlocked).toBe(false);
   });
 
+  it("fills the Pickle Jar one 11-0 game at a time", () => {
+    const fourPickles = [match(true, { games: [[11, 0], [11, 0]] }), match(true, { games: [[11, 0]] }), match(false, { games: [[0, 11]] }), match(true, { games: [[11, 0]] })];
+    expect(compute(fourPickles)["pickle-jar"]).toMatchObject({ unlocked: false, progress: { current: 4, target: 5 } });
+    const five = [...fourPickles, match(true, { games: [[15, 0]] })];
+    expect(compute(five)["pickle-jar"]).toMatchObject({ unlocked: true, unlockedAt: five[4].playedAt });
+  });
+
   it("counts distinct partners and round robins", () => {
     const matches = [match(true, { partner: "p1", roundRobinId: "rr1" }), match(true, { partner: "p1", roundRobinId: "rr1" }), match(true, { partner: "p2", roundRobinId: "rr2" })];
     const result = compute(matches);

@@ -1,7 +1,8 @@
 import { winningSide } from "./achievements";
+import { pickleTally } from "./pickle";
 
 export type RecordMatch = { id: string; playedAt: Date; roundRobin: { id: string; name: string } | null; winnerSide: "A" | "B" | null; players: { userId: string; side: "A" | "B" }[]; scores: { gameNumber: number; sideAScore: number; sideBScore: number }[] };
-export type PersonalRecord = { key: "biggestWin" | "bestNight" | "longestMatch" | "ratingJump"; label: string; value: string; detail: string; at: Date; matchIds: string[]; roundRobin: { id: string; name: string } | null };
+export type PersonalRecord = { key: "biggestWin" | "pickles" | "bestNight" | "longestMatch" | "ratingJump"; label: string; value: string; detail: string; at: Date; matchIds: string[]; roundRobin: { id: string; name: string } | null };
 
 /**
  * A player's personal bests: biggest win (by total points), most wins in one round robin, longest
@@ -41,6 +42,9 @@ export function computePersonalRecords(matches: RecordMatch[], userId: string, r
   const records: PersonalRecord[] = [];
   const score = (match: RecordMatch) => match.scores.length === 1 ? "" : ` over ${match.scores.length} games`;
   if (biggest) records.push({ key: "biggestWin", label: "Biggest win", value: `+${biggest.mine - biggest.theirs}`, detail: `${biggest.mine}-${biggest.theirs}${score(biggest.match)}`, at: biggest.match.playedAt, matchIds: [biggest.match.id], roundRobin: null });
+  // The Pickle Jar: games won 11-0. Tapping it shows the matches behind them.
+  const pickles = pickleTally(played, userId);
+  if (pickles.served && pickles.lastServedAt) records.push({ key: "pickles", label: "Pickle Jar", value: String(pickles.served), detail: `${pickles.served === 1 ? "Pickle" : "Pickles"} served (11-0)${pickles.taken ? ` · pickled ${pickles.taken}x` : ""}`, at: pickles.lastServedAt, matchIds: pickles.servedMatchIds, roundRobin: null });
   const best = [...nights.values()].sort((a, b) => b.wins - a.wins || a.losses - b.losses || a.at.getTime() - b.at.getTime())[0];
   if (best?.wins) records.push({ key: "bestNight", label: "Most wins in a night", value: String(best.wins), detail: `${best.wins}-${best.losses} at ${best.roundRobin.name}`, at: best.at, matchIds: best.matchIds, roundRobin: best.roundRobin });
   if (longest) records.push({ key: "longestMatch", label: "Longest match", value: `${longest.total} pts`, detail: `${longest.total} points played${longest.games > 1 ? ` over ${longest.games} games` : ""}`, at: longest.match.playedAt, matchIds: [longest.match.id], roundRobin: null });

@@ -6,10 +6,12 @@ import { CalendarDays, ChevronRight, MapPin, PawPrint, Plus, Repeat, X } from "l
 import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { AddressInput } from "@/components/address-input";
+import { PickleIcon } from "@/components/pickle-icon";
+import { isPickle } from "@/lib/pickle";
 
 type LiveEvent = { id: string; title: string; startsAt: string; location: string; format: string; playerCap: number; going: number; group: string };
 type MyRoundRobin = { id: string; name: string; groupName: string | null; playFormat: string; partnerFormat: string; status: string; scheduledAt: string | null; location: string | null; isOrganizer: boolean; myRsvpStatus: "JOINED" | "DECLINED" | null };
-type RecentResult = { id: string; opponent: string; score: string; result: "W" | "L" | "-"; date: string };
+type RecentResult = { id: string; opponent: string; score: string; result: "W" | "L" | "-"; date: string; pickle: "served" | "taken" | null };
 type RawMatch = { id: string; players: { id: string; name: string; side: "A" | "B" }[]; event: string; scores: { sideAScore: number; sideBScore: number }[]; scheduledAt: string | null };
 
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
@@ -52,7 +54,9 @@ export default function EventsPage() {
     const theirScore = match.scores.reduce((total, score) => total + (mine?.side === "A" ? score.sideBScore : score.sideAScore), 0);
     const margin = myScore - theirScore;
     const scoreText = match.scores.map((score) => `${mine?.side === "A" ? score.sideAScore : score.sideBScore} - ${mine?.side === "A" ? score.sideBScore : score.sideAScore}`).join(", ") || "No score";
-    return { id: match.id, opponent: `${myLabel} vs ${theirLabel}`, score: scoreText, result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
+    const games = match.scores.map((score) => mine?.side === "A" ? [score.sideAScore, score.sideBScore] : [score.sideBScore, score.sideAScore]);
+    const pickle = !mine ? null : games.some(([me, them]) => isPickle(me, them)) ? "served" as const : games.some(([me, them]) => isPickle(them, me)) ? "taken" as const : null;
+    return { pickle, id: match.id, opponent: `${myLabel} vs ${theirLabel}`, score: scoreText, result: match.scores.length ? (margin > 0 ? "W" : margin < 0 ? "L" : "-") : "-", date: match.scheduledAt ? new Date(match.scheduledAt).toLocaleDateString() : "Recently" };
   });
 
   async function createGame() {
@@ -123,6 +127,7 @@ export default function EventsPage() {
               <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{result.date}</p>
             </div>
             <div className="flex items-center gap-3">
+              {result.pickle && <span title={result.pickle === "served" ? "Won a game 11-0 -- a pickle!" : "Lost a game 0-11"} className={`inline-flex items-center gap-1 text-xs font-black ${result.pickle === "served" ? "text-[var(--lime-deep)]" : "text-[var(--ink-soft)]"}`}><PickleIcon size={13} />{result.pickle === "served" ? "Pickle!" : "Pickled"}</span>}
               <span className={`text-xs font-semibold ${result.result === "W" ? "text-[var(--lime-deep)]" : result.result === "L" ? "text-[var(--coral)]" : "text-[var(--ink-soft)]"}`}>{result.score}</span>
               <span className={`rounded-full px-2.5 py-1 text-xs font-black ${result.result === "W" ? "bg-[var(--lime)] text-[var(--on-lime)]" : result.result === "L" ? "bg-[var(--coral)] text-[var(--on-coral)]" : "bg-[var(--surface-hover)] text-[var(--ink-soft)]"}`}>{result.result}</span>
             </div>
