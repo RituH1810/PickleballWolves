@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarClock, Check, ChevronRight, Pencil, Plus, X } from "lucide-react";
+import { CalendarClock, Check, Pencil, Plus, X } from "lucide-react";
 import { DAY_LABELS, GENERATE_AHEAD_DAYS } from "@/lib/recurring";
 import { CardHeading } from "@/components/card-heading";
 
-type Schedule = { id: string; description: string; daysOfWeek: number[]; timeOfDay: string; timeZone: string; playFormat: string; partnerFormat: string; courtCount: number; pointsToWin: number; winBy: number; alwaysInCount: number; amAlwaysIn: boolean; createdByName: string; nextGame: { id: string; name: string; scheduledAt: string } | null };
+type Schedule = { id: string; description: string; daysOfWeek: number[]; timeOfDay: string; timeZone: string; playFormat: string; partnerFormat: string; courtCount: number; pointsToWin: number; winBy: number; alwaysInCount: number; amAlwaysIn: boolean; createdByName: string; nextAt: string | null; nextGame: { id: string; name: string; scheduledAt: string } | null };
 
 const playFormatLabels: Record<string, string> = { SINGLES: "Singles", DOUBLES: "Doubles", MIXED: "Mixed doubles" };
 const partnerFormatLabels: Record<string, string> = { ROTATE: "Rotating partners", MIXER: "Mixer", FIXED: "Fixed partners", MANUAL: "Dink Draft" };
@@ -163,13 +163,27 @@ export function RecurringSchedules({ groupId, onGamesCreated }: { groupId: strin
         <div className="mt-4 divide-y divide-[var(--line)]">
           {schedules.map((schedule) => (
             <div key={schedule.id} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+              {/* The next game's date comes first, as a calendar tile linking to it. */}
+              {schedule.nextAt && (() => {
+                const at = new Date(schedule.nextAt);
+                const part = (options: Intl.DateTimeFormatOptions) => at.toLocaleDateString(undefined, { ...options, timeZone: schedule.timeZone });
+                const tile = (
+                  <span className="flex w-14 shrink-0 flex-col items-center rounded-xl border border-[var(--line)] bg-[var(--surface-2)] py-1.5 leading-none">
+                    <span className="text-[11px] font-black uppercase tracking-[.12em] text-[var(--lime-deep)]">{part({ weekday: "short" })}</span>
+                    <span className="mt-1 text-xl font-black">{part({ day: "numeric" })}</span>
+                    <span className="mt-0.5 text-[11px] font-bold uppercase text-[var(--ink-soft)]">{part({ month: "short" })}</span>
+                  </span>
+                );
+                return schedule.nextGame ? <Link href={`/round-robin/${schedule.nextGame.id}`} aria-label={`Next game: ${part({ weekday: "long", month: "long", day: "numeric" })}`} className="rounded-xl hover:opacity-90">{tile}</Link> : tile;
+              })()}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-extrabold">{schedule.description}</p>
                 <p className="mt-0.5 text-xs text-[var(--ink-soft)]">{playFormatLabels[schedule.playFormat] ?? schedule.playFormat} · {partnerFormatLabels[schedule.partnerFormat] ?? schedule.partnerFormat} · {schedule.courtCount} court{schedule.courtCount === 1 ? "" : "s"} · to {schedule.pointsToWin}{schedule.timeZone !== browserTimeZone && ` · ${schedule.timeZone}`}</p>
                 <p className="mt-0.5 text-xs text-[var(--ink-soft)]">Set up by {schedule.createdByName}{schedule.alwaysInCount > 0 && ` · ${schedule.alwaysInCount} always in`}</p>
               </div>
+              </div>
               <div className="flex shrink-0 flex-wrap items-center gap-2">
-                {schedule.nextGame && <Link href={`/round-robin/${schedule.nextGame.id}`} className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-3 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]">Next: {new Date(schedule.nextGame.scheduledAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}<ChevronRight size={14} /></Link>}
                 <button onClick={() => toggleAlwaysIn(schedule)} disabled={togglingId === schedule.id} aria-pressed={schedule.amAlwaysIn} title={schedule.amAlwaysIn ? "You're joined to every game automatically. Tap to turn off." : "Join every game from this schedule automatically."} className={`flex items-center gap-1 rounded-full px-3 py-2 text-xs font-bold transition-colors disabled:opacity-50 ${schedule.amAlwaysIn ? "bg-[var(--lime)] text-[var(--on-lime)]" : "border border-[var(--line)] text-[var(--foreground)] hover:bg-[var(--surface-hover)]"}`}>{schedule.amAlwaysIn && <Check size={13} />}Always in</button>
                 {canManage && <button onClick={() => startEditing(schedule)} aria-label={`Edit ${schedule.description}`} className="flex items-center gap-1 rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-hover)]"><Pencil size={13} />Edit</button>}
                 {canManage && <button onClick={() => stop(schedule)} className="rounded-full border border-[var(--line)] px-3 py-2 text-xs font-bold text-[var(--coral)] hover:bg-[var(--surface-hover)]">Stop</button>}

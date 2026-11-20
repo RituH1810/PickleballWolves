@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { MembershipRole, MembershipStatus } from "@prisma/client";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/prisma";
-import { describeSchedule, parseScheduleBody } from "@/lib/recurring";
+import { describeSchedule, occurrencesBetween, parseScheduleBody } from "@/lib/recurring";
 import { generateRecurringGames } from "@/lib/generate-recurring";
 
 async function getMembership(groupId: string) {
@@ -28,6 +28,9 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       alwaysIn: { select: { userId: true } },
     },
   });
+  // Soonest first: by the next game already created, or else the schedule's next slot on the calendar.
+  const nextAt = (schedule: (typeof schedules)[number]) => schedule.roundRobins[0]?.scheduledAt ?? occurrencesBetween(schedule, now, new Date(now.getTime() + 8 * 86_400_000))[0] ?? null;
+  schedules.sort((a, b) => (nextAt(a)?.getTime() ?? Number.MAX_SAFE_INTEGER) - (nextAt(b)?.getTime() ?? Number.MAX_SAFE_INTEGER));
   const creators = await prisma.user.findMany({ where: { id: { in: schedules.map((schedule) => schedule.createdById) } }, select: { id: true, name: true } });
   const creatorById = new Map(creators.map((creator) => [creator.id, creator.name]));
 
@@ -48,6 +51,7 @@ export async function GET(_request: Request, context: { params: Promise<{ groupI
       pointsToWin: schedule.pointsToWin,
       createdByName: creatorById.get(schedule.createdById) ?? "Former organizer",
       nextGame: schedule.roundRobins[0] ?? null,
+      nextAt: nextAt(schedule),
     })),
   });
 }
