@@ -55,4 +55,17 @@ describe("computePartners", () => {
   it("has no best partner until someone reaches the minimum", () => {
     expect(computePartners([match(["ann", "bo"], ["x", "y"], [11, 5])], "ann")).toMatchObject({ best: null, partners: [{ userId: "bo", played: 1 }] });
   });
+
+  it("tracks each partnership's best and current run of wins together", () => {
+    const runs = [
+      match(["ann", "bo"], ["x", "y"], [11, 2]),
+      match(["ann", "bo"], ["x", "y"], [11, 4]),
+      match(["ann", "cy"], ["x", "y"], [3, 11]), // a match apart doesn't break ann+bo's run
+      match(["ann", "bo"], ["x", "y"], [11, 9]), // 3 in a row
+      match(["ann", "bo"], ["x", "y"], [5, 11]), // run ends
+      match(["ann", "bo"], ["x", "y"], [11, 8]), // a new run of 1
+    ];
+    expect(computePartners(runs, "ann").partners.find((partner) => partner.userId === "bo")).toMatchObject({ bestStreak: 3, currentStreak: 1 });
+    expect(computePartners(runs, "ann").partners.find((partner) => partner.userId === "cy")).toMatchObject({ bestStreak: 0, currentStreak: 0 });
+  });
 });
