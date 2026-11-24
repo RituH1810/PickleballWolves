@@ -70,7 +70,7 @@ function StreakPodium({ title, hint, icon: Icon, entries }: { title: string; hin
         {entries.map((duo) => {
           const medal = MEDALS[duo.rank] ?? MEDALS[3];
           return (
-            <li key={duo.players.map((player) => player.userId).join(":")} className={`rounded-2xl border-2 ${medal.ring} bg-[var(--surface-2)] p-3`}>
+            <li key={`${duo.players.map((player) => player.userId).join(":")}@${duo.at}`} className={`rounded-2xl border-2 ${medal.ring} bg-[var(--surface-2)] p-3`}>
               <div className="flex items-center gap-3">
                 <div className="relative flex shrink-0 -space-x-3">
                   {duo.players.map((player) => <Avatar key={player.userId} name={player.name} photoUrl={player.photoUrl} className="h-10 w-10 rounded-full border-2 border-[var(--surface-2)] bg-[var(--avatar-bg)] text-xs font-black text-[var(--lime)]" />)}
@@ -228,7 +228,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
               </section>
             )}
             {data.winners.length > 0 && <WinnersPodium winners={data.winners} />}
-            {(data.winStreaks?.length ?? 0) > 0 && <StreakPodium title="Top win streaks" hint="Most wins in a row by one player, with any partner." icon={Flame} entries={data.winStreaks!} />}
+            {(data.winStreaks?.length ?? 0) > 0 && <StreakPodium title="Top win streaks" hint="The longest runs of wins by one player, with any partner -- a player can place more than once." icon={Flame} entries={data.winStreaks!} />}
             {(data.duoStreaks?.length ?? 0) > 0 && <StreakPodium title="Top duo win streaks" hint="Most wins in a row by the same two partners, counting only games they play together." icon={Handshake} entries={data.duoStreaks!} />}
             {(data.pickleDuos?.length ?? 0) > 0 && <PickleDuoPodium entries={data.pickleDuos!} />}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">

@@ -65,24 +65,35 @@ export type StreakPlace = { players: PlayerRef[]; streak: number; at: Date; roun
  * unit plays; a loss ends the run. Each unit's best run, top STREAK_PLACES places with ties
  * sharing a place, the earliest to set it first. Units with a guest can't place.
  */
-function topStreaks(roundRobins: HallOfFameRoundRobin[], guestIds: Set<string>, unitsOf: (side: PlayerRef[]) => PlayerRef[][]): StreakPlace[] {
-  const running = new Map<string, number>();
-  const best = new Map<string, Omit<StreakPlace, "ongoing" | "rank">>();
+function topStreaks(roundRobins: HallOfFameRoundRobin[], guestIds: Set<string>, unitsOf: (side: PlayerRef[]) => PlayerRef[][], { separateRuns = false } = {}): StreakPlace[] {
+  type Run = Omit<StreakPlace, "ongoing" | "rank">;
+  const running = new Map<string, Run>();
+  // Best run per unit, or (separateRuns) every finished run, so one unit can place more than once.
+  const best = new Map<string, Run>();
+  const finished: Run[] = [];
   for (const game of groupGames(roundRobins)) {
     for (const [side, won] of [[game.winners, true], [game.losers, false]] as const) {
       for (const unit of unitsOf(side)) {
         if (unit.some((player) => guestIds.has(player.userId))) continue;
         const players = [...unit].sort((a, b) => a.userId.localeCompare(b.userId));
         const key = players.map((player) => player.userId).join(":");
-        const run = won ? (running.get(key) ?? 0) + 1 : 0;
+        if (!won) {
+          const ended = running.get(key);
+          if (ended && separateRuns) finished.push(ended);
+          running.delete(key);
+          continue;
+        }
+        const run = { players, streak: (running.get(key)?.streak ?? 0) + 1, at: game.playedAt, roundRobin: { id: game.roundRobin.id, name: game.roundRobin.name } };
         running.set(key, run);
-        if (run > (best.get(key)?.streak ?? 0)) best.set(key, { players, streak: run, at: game.playedAt, roundRobin: { id: game.roundRobin.id, name: game.roundRobin.name } });
+        if (run.streak > (best.get(key)?.streak ?? 0)) best.set(key, run);
       }
     }
   }
-  const sorted = [...best].filter(([, entry]) => entry.streak >= STREAK_MIN).sort(([, a], [, b]) => b.streak - a.streak || a.at.getTime() - b.at.getTime());
+  const stillGoing = new Set(running.values());
+  const entries = separateRuns ? [...finished, ...running.values()] : [...best.values()];
+  const sorted = entries.filter((entry) => entry.streak >= STREAK_MIN).sort((a, b) => b.streak - a.streak || a.at.getTime() - b.at.getTime());
   return sorted
-    .map(([key, entry]) => ({ ...entry, ongoing: running.get(key) === entry.streak, rank: 1 + sorted.filter(([, other]) => other.streak > entry.streak).length }))
+    .map((entry) => ({ ...entry, ongoing: stillGoing.has(entry), rank: 1 + sorted.filter((other) => other.streak > entry.streak).length }))
     .filter((entry) => entry.rank <= STREAK_PLACES);
 }
 
@@ -91,9 +102,10 @@ export function topDuoStreaks(roundRobins: HallOfFameRoundRobin[], guestIds = ne
   return topStreaks(roundRobins, guestIds, (side) => (side.length === 2 ? [side] : []));
 }
 
-/** The longest runs of wins by individual players, with any partner -- the top 3 behind the "Longest win streak" record. */
+/** The longest separate runs of wins by individual players, with any partner; a player can place more than once. */
 export function topWinStreaks(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): StreakPlace[] {
-  return topStreaks(roundRobins, guestIds, (side) => side.map((player) => [player]));
+  // Separate runs, so a player's second-best streak can place too (Rakesh's 13 and his 10).
+  return topStreaks(roundRobins, guestIds, (side) => side.map((player) => [player]), { separateRuns: true });
 }
 
 export type PickleDuoPlace = { players: PlayerRef[]; pickles: number; at: Date; roundRobin: { id: string; name: string }; rank: number };

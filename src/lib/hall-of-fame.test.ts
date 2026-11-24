@@ -126,3 +126,16 @@ describe("topPickleDuos", () => {
     expect(topPickleDuos([night("q", 1, game(["ann"], ["bo"], 11, 0))])).toEqual([]);
   });
 });
+
+describe("topWinStreaks with separate runs", () => {
+  it("lets a player's second-best streak place too", () => {
+    const wins = (count: number) => Array.from({ length: count }, () => game(["ann", "bo"], ["cy", "dee"], 11, 5));
+    const streaks = topWinStreaks([night("s", 1, ...wins(5), game(["cy", "dee"], ["ann", "bo"], 11, 5), ...wins(4), game(["cy", "ann"], ["bo", "dee"], 11, 5))]);
+    // ann: 5, then 5 more (the last game she wins too); bo: 5, then 4
+    expect(streaks.map(({ players, streak, rank, ongoing }) => [players[0].userId, streak, rank, ongoing])).toEqual([
+      ["ann", 5, 1, false],
+      ["bo", 5, 1, false],
+      ["ann", 5, 1, true],
+    ]);
+  });
+});
