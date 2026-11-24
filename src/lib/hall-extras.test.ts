@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeHallOfFame, type HallOfFameRoundRobin } from "./hall-of-fame";
-import { hallOfGrit, milestoneClubs, playerHallStats, recordChases, recordHistory, yourPlace } from "./hall-extras";
+import { hallOfGrit, milestoneClubs, playerHallStats, recordChases, recordHistory, streakRecordHistory, yourPlace } from "./hall-extras";
 
 let hour = 0;
 const names: Record<string, string> = { a: "Arpit P", b: "Bina Q", c: "Chen R", d: "Dev S", g: "Guest" };
@@ -69,5 +69,23 @@ describe("milestoneClubs and hallOfGrit", () => {
     const games = clubs.find((club) => club.key === "games100")!;
     expect(games.members.map((member) => member.userId)).toEqual(["a"]);
     expect(games.members[0].joinedAt).toEqual(many.matches[99].playedAt);
+  });
+});
+
+describe("streakRecordHistory", () => {
+  it("lists a streak that runs across nights once, at its full length", () => {
+    // a wins 2; d wins 3 on night x and 2 more on night y (5 in a row), then loses to c
+    const history = streakRecordHistory([
+      night("x", 10, [game("a", "b", 11, 5), game("a", "c", 11, 5), game("d", "a", 11, 5), game("d", "b", 11, 5), game("d", "c", 11, 5)]),
+      night("y", 11, [game("d", "a", 11, 5), game("d", "b", 11, 5), game("c", "d", 11, 5)]),
+    ]);
+    expect(history.map((reign) => [reign.value, reign.holders.map((holder) => holder.userId).join("+"), reign.roundRobin.id])).toEqual([
+      ["2 games", "a", "x"],
+      ["5 games", "d", "y"], // one entry for d's run, not "3 games" after night x and "5 games" after night y
+    ]);
+  });
+
+  it("is what recordHistory uses for the win streak record", () => {
+    expect(recordHistory(nights).streak.map((reign) => reign.value)).toEqual(streakRecordHistory(nights).map((reign) => reign.value));
   });
 });

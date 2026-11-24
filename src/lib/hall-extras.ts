@@ -89,8 +89,51 @@ export function recordHistory(roundRobins: HallOfFameRoundRobin[], guestIds = ne
       reigns.push({ value: record.value, holders: record.holders.map(({ userId, name }) => ({ userId, name })), at: night.endedAt, roundRobin: { id: night.id, name: night.name } });
     }
   }
+  // A win streak can run across nights, so night-by-night snapshots split one streak into several
+  // "records" (7 after one night, 13 the next). List each record-setting streak once instead.
+  history.streak = streakRecordHistory(ordered, guestIds);
   return history;
 }
+
+/**
+ * The win streak record's history by streak: each player's separate runs of wins, in the order
+ * they ended, kept when one beat the record so far (or tied it, joining the holders), at its full
+ * length. A run still going counts at its current length.
+ */
+export function streakRecordHistory(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): RecordReign[] {
+  type Run = { player: PlayerRef; length: number; at: Date; order: number; roundRobin: { id: string; name: string } };
+  const running = new Map<string, Run>();
+  const runs: Run[] = [];
+  groupGames(roundRobins).forEach((game, order) => {
+    for (const player of game.losers) {
+      const ended = running.get(player.userId);
+      if (ended) runs.push(ended);
+      running.delete(player.userId);
+    }
+    for (const player of game.winners) {
+      if (guestIds.has(player.userId)) continue;
+      const run = running.get(player.userId);
+      running.set(player.userId, { player: { userId: player.userId, name: player.name }, length: (run?.length ?? 0) + 1, at: game.playedAt, order, roundRobin: { id: game.roundRobin.id, name: game.roundRobin.name } });
+    }
+  });
+  runs.push(...running.values());
+  const reigns: RecordReign[] = [];
+  let best = 0;
+  for (const run of runs.sort((a, b) => a.order - b.order || a.player.name.localeCompare(b.player.name))) {
+    const value = `${run.length} game${run.length === 1 ? "" : "s"}`;
+    if (run.length > best) {
+      best = run.length;
+      reigns.push({ value, holders: [run.player], at: run.at, roundRobin: run.roundRobin });
+    } else if (run.length === best && best > 0 && !reigns.at(-1)!.holders.some((holder) => holder.userId === run.player.userId)) {
+      const last = reigns.at(-1)!;
+      // Tied in the same game (partners): share the entry; tied later: a new entry with both holders.
+      if (last.at.getTime() === run.at.getTime()) last.holders.push(run.player);
+      else reigns.push({ value, holders: [...last.holders, run.player], at: run.at, roundRobin: run.roundRobin });
+    }
+  }
+  return reigns;
+}
+
 
 export type Chase = { userId: string; name: string; key: HallOfFameRecord["key"]; text: string; gap: number };
 
