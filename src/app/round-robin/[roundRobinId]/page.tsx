@@ -8,6 +8,7 @@ import { LivePulse } from "@/components/pickleball-art";
 import { AddToCalendar } from "@/components/add-to-calendar";
 import { RoundRobinRecap } from "@/components/round-robin-recap";
 import { ScoutPanel } from "@/components/scout-panel";
+import { PointsTable } from "@/components/points-table";
 import { GoodWolfVote } from "@/components/good-wolf-vote";
 import { playoffSpots, type PlayoffSize } from "@/lib/playoffs";
 import { gameBalance } from "@/lib/game-balance";
@@ -593,6 +594,14 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
         )}
 
         {room.status === "COMPLETED" && <RoundRobinRecap roundRobinId={roundRobinId} name={room.name} played={[...rounds.flatMap((round) => round.matches), ...manualMatches].some((match) => match.scores.length > 0 && match.players.some((player) => player.userId === room.myUserId))} />}
+        {/* Finished nights: the full points table, visible without switching tabs on a phone. */}
+        {room.status === "COMPLETED" && standings.length > 0 && (
+          <section className="mt-5 rounded-[20px] border border-[var(--line)] bg-[var(--panel)] p-5 sm:p-6">
+            <CardHeading icon={Trophy} title="Points table" />
+            <p className="mt-1 text-xs text-[var(--ink-soft)]">Ranked by wins, then point difference{rounds.some((round) => round.stage) ? ". Playoff games aren't included" : ""}.</p>
+            <div className="mt-4"><PointsTable rows={standings} highlightUserId={room.myUserId} /></div>
+          </section>
+        )}
         {room.status === "COMPLETED" && <GoodWolfVote roundRobinId={roundRobinId} />}
         {(room.canRun || room.isGroupMember || room.myRsvpStatus === "JOINED") && <GameChat roundRobinId={roundRobinId} />}
 
@@ -653,25 +662,8 @@ export default function RoundRobinRoomPage({ params }: { params: Promise<{ round
                 </div>
               );
             })()}
-            <div className="mt-4 space-y-2">
-              {standings.length === 0 && <p className="text-sm text-[var(--ink-soft)]">No results yet.</p>}
-              {standings.map((player) => (
-                <div key={player.name} className="rounded-xl bg-[var(--surface-2)] px-3 py-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-5 text-xs font-black text-[var(--lime-deep)]">{player.rank}</span>
-                    <span className="flex-1 truncate text-xs font-bold">{player.name}</span>
-                    <span className="text-xs font-black text-[var(--lime-deep)]">{player.winPct}%</span>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between text-xs font-semibold text-[var(--ink-soft)]">
-                    <span>{player.matches} match{player.matches === 1 ? "" : "es"}</span>
-                    <span>{player.wins}W &ndash; {player.losses}L</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between text-xs font-semibold text-[var(--ink-soft)]">
-                    <span>{player.scored} earned</span>
-                    <span>{player.conceded} against</span>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-4">
+              <PointsTable rows={standings} compact highlightUserId={room.myUserId} />
             </div>
             {/* Optional night-end playoffs: the top of the standings play for the night. */}
             {room.canRun && room.status !== "COMPLETED" && standings.length > 0 && (() => {
