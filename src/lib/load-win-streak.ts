@@ -16,6 +16,7 @@ export async function loadWinStreak(userId: string, viewerId: string | null) {
   return {
     best: streaks.best.length,
     current: streaks.current,
+    top: streaks.top,
     matches: viewerId ? await loadMatchDetails(streaks.best.matchIds, userId, viewerId) : [],
   };
 }

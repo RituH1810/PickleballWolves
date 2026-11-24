@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, Flame } from "lucide-react";
 import { MatchDetailRow, type MatchDetailItem } from "@/components/match-detail-row";
 
-type Streak = { best: number; current: number; matches: MatchDetailItem[] };
+type Streak = { best: number; current: number; top?: { length: number; start: string; end: string; ongoing: boolean }[]; matches: MatchDetailItem[] };
 
 const day = (iso: string, withYear = false) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", ...(withYear ? { year: "numeric" } : {}) });
 
@@ -34,6 +34,17 @@ export function WinStreakCard({ userId }: { userId: string }) {
         </div>
         {canOpen && <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--lime-deep)]">{open ? "Hide" : "See matches"}<ChevronDown size={14} className={`transition-transform ${open ? "rotate-180" : ""}`} /></span>}
       </button>
+      {/* The other big runs too, not just the best one. */}
+      {(streak.top?.length ?? 0) > 1 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="font-bold text-[var(--ink-soft)]">Top streaks:</span>
+          {streak.top!.map((run, index) => (
+            <span key={`${run.start}-${index}`} title={`${run.length} wins in a row, ${day(run.start)}${run.start === run.end ? "" : ` – ${day(run.end)}`}${run.ongoing ? " (still going)" : ""}`} className={`rounded-full px-2.5 py-1 font-bold ${index === 0 ? "bg-[#2e1f12] text-[#ff9a3c]" : "bg-[var(--surface-2)] text-[var(--foreground)]"}`}>
+              {run.length}{run.ongoing && " 🔥"} <span className="font-semibold text-[var(--ink-soft)]">{day(run.start) === day(run.end) ? day(run.start) : `${day(run.start)}–${day(run.end)}`}</span>
+            </span>
+          ))}
+        </div>
+      )}
       {open && (
         <ol className="mt-4 divide-y divide-[var(--line)] rounded-2xl bg-[var(--surface-2)] px-4">
           {streak.matches.map((match, index) => (

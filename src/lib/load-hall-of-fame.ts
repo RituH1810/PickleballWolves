@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { computeHallOfFame, topDuoStreaks, topPickleDuos, topRoundRobinWinners, topWinStreaks, type HallOfFameRoundRobin } from "@/lib/hall-of-fame";
+import { computeHallOfFame, groupGames, topDuoStreaks, topPickleDuos, topRoundRobinWinners, topWinStreaks, type HallOfFameRoundRobin } from "@/lib/hall-of-fame";
+import { topStreakRuns } from "@/lib/win-streak";
 import { hallOfGrit, milestoneClubs, playerHallStats, recordChases, recordHistory, yourPlace } from "@/lib/hall-extras";
 import { LEADERBOARD_TIME_ZONE, recentMonths } from "@/lib/monthly-leaderboard";
 import { AWARD_LABELS, type AwardKind } from "@/lib/monthly-awards";
@@ -103,6 +104,8 @@ export async function loadHallOfFame(groupId: string, { period = "all", viewerId
     history: recordHistory(roundRobins, guestIds),
     chases: recordChases(stats, records),
     place: viewerId ? yourPlace(stats, viewerId) : [],
+    // The viewer's five longest separate win streaks in this group's games, not just their best.
+    myStreaks: viewerId ? topStreakRuns(groupGames(roundRobins).filter((game) => [...game.winners, ...game.losers].some((player) => player.userId === viewerId)).map((game) => ({ won: game.winners.some((player) => player.userId === viewerId), at: game.playedAt }))) : [],
     clubs: milestoneClubs(roundRobins, guestIds),
     grit: hallOfGrit(roundRobins, stats),
     wall: await loadWallOfChampions(groupId, roundRobins, guestIds),

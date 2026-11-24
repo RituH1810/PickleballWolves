@@ -14,13 +14,14 @@ type HallRecord = { key: string; label: string; value: string; holders: Holder[]
 type Ref = { userId: string; name: string };
 type Reign = { value: string; holders: Ref[]; at: string; roundRobin: { id: string; name: string } };
 type Chase = { userId: string; key: string; text: string };
+type StreakRunData = { length: number; start: string; end: string; ongoing: boolean };
 type Placing = { key: string; label: string; rank: number; of: number; tied: number; value: string };
 type Club = { key: string; label: string; members: (Ref & { joinedAt: string })[] };
 type Grit = { key: string; label: string; value: string; holders: Ref[]; detail: string };
 type WallMonth = { key: string; label: string; champions: { roundRobin: { id: string; name: string }; players: Ref[] }[]; playersOfTheWeek: { weekStart: string; players: Ref[] }[]; awards: { title: string; players: Ref[]; detail: string }[] };
 type StreakPlace = { players: Holder[]; streak: number; at: string; roundRobin: { id: string; name: string }; ongoing: boolean; rank: number };
 type PickleDuo = { players: Holder[]; pickles: number; at: string; roundRobin: { id: string; name: string }; rank: number };
-type HallData = { groupName: string | null; monthLabel: string; records: HallRecord[]; winners: Winner[]; duoStreaks?: StreakPlace[]; pickleDuos?: PickleDuo[]; winStreaks?: StreakPlace[]; history?: Record<string, Reign[]>; chases?: Chase[]; place?: Placing[]; clubs?: Club[]; grit?: Grit[]; wall?: WallMonth[]; error: string | null };
+type HallData = { groupName: string | null; monthLabel: string; records: HallRecord[]; winners: Winner[]; duoStreaks?: StreakPlace[]; pickleDuos?: PickleDuo[]; winStreaks?: StreakPlace[]; history?: Record<string, Reign[]>; chases?: Chase[]; place?: Placing[]; myStreaks?: StreakRunData[]; clubs?: Club[]; grit?: Grit[]; wall?: WallMonth[]; error: string | null };
 
 const MEDALS: Record<number, { label: string; color: string; ring: string }> = {
   1: { label: "1st", color: "#f5c542", ring: "border-[#f5c542]" },
@@ -116,6 +117,21 @@ function PickleDuoPodium({ entries }: { entries: PickleDuo[] }) {
         })}
       </ol>
     </section>
+  );
+}
+
+/** A player's top separate win streaks: length, dates, and a flame on one still going. */
+function TopStreakList({ runs }: { runs: StreakRunData[] }) {
+  const range = (run: StreakRunData) => (shortDate(run.start) === shortDate(run.end) ? shortDate(run.start) : `${shortDate(run.start)} – ${shortDate(run.end)}`);
+  return (
+    <ol className="grid gap-2 sm:grid-cols-5">
+      {runs.map((run, index) => (
+        <li key={`${run.start}-${index}`} className={`rounded-xl bg-[var(--surface-2)] px-3 py-2.5 ${index === 0 ? "border border-[var(--lime-deep)]" : ""}`}>
+          <p className="text-xl font-black tracking-[-.03em]">{run.length}<span className="ml-1 text-xs font-bold text-[var(--ink-soft)]">in a row</span>{run.ongoing && " 🔥"}</p>
+          <p className="text-xs text-[var(--ink-soft)]">{range(run)}{run.ongoing && " · still going"}</p>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -262,6 +278,12 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
                     </li>
                   ))}
                 </ul>
+              </Section>
+            )}
+
+            {allTime && !!data.myStreaks?.length && (
+              <Section icon={Flame} title="Your top streaks" hint="Your longest separate runs of wins in this group's games, not just your best.">
+                <TopStreakList runs={data.myStreaks} />
               </Section>
             )}
 
