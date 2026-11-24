@@ -53,8 +53,9 @@ export function topRoundRobinWinners(roundRobins: HallOfFameRoundRobin[], guestI
   return rankRoundRobinWinners(roundRobins.map((roundRobin) => ({ endedAt: roundRobin.endedAt, champions: (computeRecap(roundRobin.matches)?.champions ?? []).filter((player) => !guestIds.has(player.userId)) })));
 }
 
-/** Places the streak podiums show (more when there are ties for the last place). */
+/** Places the streak podiums show (more when there are ties for the last place): duos, and the individual top win streaks. */
 export const STREAK_PLACES = 3;
+export const WIN_STREAK_PLACES = 5;
 /** Wins in a row needed before a run counts as a streak. */
 export const STREAK_MIN = 2;
 
@@ -65,7 +66,7 @@ export type StreakPlace = { players: PlayerRef[]; streak: number; at: Date; roun
  * unit plays; a loss ends the run. Each unit's best run, top STREAK_PLACES places with ties
  * sharing a place, the earliest to set it first. Units with a guest can't place.
  */
-function topStreaks(roundRobins: HallOfFameRoundRobin[], guestIds: Set<string>, unitsOf: (side: PlayerRef[]) => PlayerRef[][], { separateRuns = false } = {}): StreakPlace[] {
+function topStreaks(roundRobins: HallOfFameRoundRobin[], guestIds: Set<string>, unitsOf: (side: PlayerRef[]) => PlayerRef[][], { separateRuns = false, places = STREAK_PLACES } = {}): StreakPlace[] {
   type Run = Omit<StreakPlace, "ongoing" | "rank">;
   const running = new Map<string, Run>();
   // Best run per unit, or (separateRuns) every finished run, so one unit can place more than once.
@@ -94,7 +95,7 @@ function topStreaks(roundRobins: HallOfFameRoundRobin[], guestIds: Set<string>, 
   const sorted = entries.filter((entry) => entry.streak >= STREAK_MIN).sort((a, b) => b.streak - a.streak || a.at.getTime() - b.at.getTime());
   return sorted
     .map((entry) => ({ ...entry, ongoing: stillGoing.has(entry), rank: 1 + sorted.filter((other) => other.streak > entry.streak).length }))
-    .filter((entry) => entry.rank <= STREAK_PLACES);
+    .filter((entry) => entry.rank <= places);
 }
 
 /** The longest runs of wins by the same two partners, counting only games they play together (a game apart doesn't break it). */
@@ -105,7 +106,7 @@ export function topDuoStreaks(roundRobins: HallOfFameRoundRobin[], guestIds = ne
 /** The longest separate runs of wins by individual players, with any partner; a player can place more than once. */
 export function topWinStreaks(roundRobins: HallOfFameRoundRobin[], guestIds = new Set<string>()): StreakPlace[] {
   // Separate runs, so a player's second-best streak can place too (Rakesh's 13 and his 10).
-  return topStreaks(roundRobins, guestIds, (side) => side.map((player) => [player]), { separateRuns: true });
+  return topStreaks(roundRobins, guestIds, (side) => side.map((player) => [player]), { separateRuns: true, places: WIN_STREAK_PLACES });
 }
 
 export type PickleDuoPlace = { players: PlayerRef[]; pickles: number; at: Date; roundRobin: { id: string; name: string }; rank: number };

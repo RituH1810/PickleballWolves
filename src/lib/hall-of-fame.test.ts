@@ -136,6 +136,7 @@ describe("topWinStreaks with separate runs", () => {
       ["ann", 5, 1, false],
       ["bo", 5, 1, false],
       ["ann", 5, 1, true],
+      ["bo", 4, 4, false], // 4th place makes the 5-place podium
     ]);
   });
 });

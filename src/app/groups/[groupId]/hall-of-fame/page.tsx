@@ -27,6 +27,8 @@ const MEDALS: Record<number, { label: string; color: string; ring: string }> = {
   1: { label: "1st", color: "#f5c542", ring: "border-[#f5c542]" },
   2: { label: "2nd", color: "#c9d1d9", ring: "border-[#c9d1d9]" },
   3: { label: "3rd", color: "#d08a4f", ring: "border-[#d08a4f]" },
+  4: { label: "4th", color: "#93a397", ring: "border-[var(--line)]" },
+  5: { label: "5th", color: "#93a397", ring: "border-[var(--line)]" },
 };
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -228,7 +230,7 @@ export default function HallOfFamePage({ params }: { params: Promise<{ groupId: 
               </section>
             )}
             {data.winners.length > 0 && <WinnersPodium winners={data.winners} />}
-            {(data.winStreaks?.length ?? 0) > 0 && <StreakPodium title="Top win streaks" hint="The longest runs of wins by one player, with any partner -- a player can place more than once." icon={Flame} entries={data.winStreaks!} />}
+            {(data.winStreaks?.length ?? 0) > 0 && <StreakPodium title="Top win streaks" hint="The 5 longest runs of wins by one player, with any partner -- a player can place more than once." icon={Flame} entries={data.winStreaks!} />}
             {(data.duoStreaks?.length ?? 0) > 0 && <StreakPodium title="Top duo win streaks" hint="Most wins in a row by the same two partners, counting only games they play together." icon={Handshake} entries={data.duoStreaks!} />}
             {(data.pickleDuos?.length ?? 0) > 0 && <PickleDuoPodium entries={data.pickleDuos!} />}
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
