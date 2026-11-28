@@ -13,10 +13,16 @@ export function isAdminEmail(email: string | null | undefined, adminEmails: stri
 // No 0/O, 1/I/L, or similar look-alikes: these get read out over the phone or typed from a text.
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-/** A temporary password like "Wolves-K7QM-3XRT": easy to pass on, ~40 bits of randomness. */
+/**
+ * A temporary password like "Wolves-K7QM-3XRT": easy to pass on, ~40 bits of randomness. Always
+ * has a number too, so it meets the password standard (capital, number, special character, 8+).
+ */
 export function generateTempPassword() {
   const block = () => Array.from({ length: 4 }, () => ALPHABET[randomInt(ALPHABET.length)]).join("");
-  return `Wolves-${block()}-${block()}`;
+  for (;;) {
+    const password = `Wolves-${block()}-${block()}`;
+    if (/\d/.test(password)) return password;
+  }
 }
 
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

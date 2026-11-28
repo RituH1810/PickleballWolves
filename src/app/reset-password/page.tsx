@@ -4,8 +4,10 @@ import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { PasswordInput } from "@/components/password-input";
+import { PasswordChecklist } from "@/components/password-checklist";
+import { passwordError } from "@/lib/password-rules";
 
-const MIN_LENGTH = 8;
 
 // Reached two ways: from the password reset email (/auth/callback has already signed the player in
 // with the recovery link), or -- with ?required=1 -- after signing in with a temporary password an
@@ -20,7 +22,8 @@ function ResetPasswordForm() {
 
   async function save() {
     setError("");
-    if (password.length < MIN_LENGTH) { setError(`Use at least ${MIN_LENGTH} characters.`); return; }
+    const weak = passwordError(password);
+    if (weak) { setError(weak); return; }
     if (password !== confirm) { setError("The two passwords don't match."); return; }
     setSaving(true);
     const supabase = createClient();
@@ -46,8 +49,8 @@ function ResetPasswordForm() {
         <p className="mb-2 text-xs font-bold uppercase tracking-[.12em] text-[var(--lime-deep)]">{required ? "Welcome to the pack" : "Reset password"}</p>
         <h1 className="text-3xl font-black tracking-[-.04em] text-[var(--foreground)]">{required ? "Choose your own password." : "Choose a new password."}</h1>
         <p className="mt-3 text-sm leading-6 text-[var(--ink-soft)]">{required ? "You signed in with a temporary password. Pick one only you know -- the temporary one stops working once you do." : "You’ll sign in with it next."}</p>
-        <label className="mt-7 block text-xs font-bold text-[var(--ink-muted)]">New password<input value={password} onChange={(event) => setPassword(event.target.value)} type="password" autoComplete="new-password" placeholder={`At least ${MIN_LENGTH} characters`} className={inputClass} /></label>
-        <label className="mt-4 block text-xs font-bold text-[var(--ink-muted)]">Confirm password<input value={confirm} onChange={(event) => setConfirm(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") save(); }} type="password" autoComplete="new-password" className={inputClass} /></label>
+        <label className="mt-7 block text-xs font-bold text-[var(--ink-muted)]">New password<PasswordInput value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" placeholder="8+ with a capital, number & symbol" className={inputClass} /><PasswordChecklist password={password} className="mt-2" /></label>
+        <label className="mt-4 block text-xs font-bold text-[var(--ink-muted)]">Confirm password<PasswordInput value={confirm} onChange={(event) => setConfirm(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") save(); }} autoComplete="new-password" className={inputClass} /></label>
         {error && <p role="alert" className="mt-4 rounded-xl bg-[var(--danger-bg)] px-4 py-3 text-xs font-semibold text-[var(--danger-ink)]">{error}</p>}
         <button disabled={saving || !password || !confirm} onClick={save} className="mt-6 flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] text-sm font-bold text-[var(--on-lime)] hover:bg-[var(--lime-hover)] disabled:cursor-not-allowed disabled:opacity-50">{saving ? "Saving..." : "Save new password"} <ArrowRight size={16} /></button>
       </section>
