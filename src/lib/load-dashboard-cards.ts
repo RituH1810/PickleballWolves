@@ -7,6 +7,7 @@ import { loadMonthlyStandings } from "@/lib/load-monthly-leaderboard";
 import { loadTopRival } from "@/lib/load-rivalry";
 import { recentMonths } from "@/lib/monthly-leaderboard";
 import { mergePulse, monthlyPosition, ratingNeighbors, recentRatingChange } from "@/lib/dashboard-insights";
+import { liveSnapshot } from "@/lib/live-round-robin";
 
 async function activeGroups(userId: string) {
   return prisma.membership.findMany({ where: { userId, status: MembershipStatus.ACTIVE }, select: { groupId: true, group: { select: { name: true } } } });
@@ -125,3 +126,30 @@ export async function loadGroupPulse(userId: string) {
     items: feed.items.map((item) => ({ ...item, reactions: feed.reactions ? feed.reactions[item.id] ?? [] : null })),
   })));
 }
+
+/**
+ * "Live now": the round robin the player is in tonight -- joined (or already in a match), not
+ * ended, starting within 30 minutes or begun in the last 12 hours -- with their place, record and
+ * next match. Null when there isn't one.
+ */
+export async function loadLiveRoundRobin(userId: string, now = new Date()) {
+  const roundRobin = await prisma.roundRobin.findFirst({
+    where: {
+      status: { not: "COMPLETED" },
+      scheduledAt: { gte: new Date(now.getTime() - 12 * 3_600_000), lte: new Date(now.getTime() + 30 * 60_000) },
+      OR: [{ rsvps: { some: { userId, status: "JOINED" } } }, { matches: { some: { deletedAt: null, players: { some: { userId } } } } }],
+    },
+    orderBy: { scheduledAt: "desc" },
+    select: {
+      id: true, name: true, scheduledAt: true, group: { select: { name: true } },
+      matches: { where: { deletedAt: null }, select: { id: true, courtNumber: true, createdAt: true, round: { select: { roundNumber: true, stage: true } }, players: { select: { userId: true, side: true, user: { select: { name: true } } } }, scores: { select: { gameNumber: true, sideAScore: true, sideBScore: true } } } },
+    },
+  });
+  if (!roundRobin) return null;
+  const snapshot = liveSnapshot(roundRobin.matches.map((match) => ({
+    id: match.id, courtNumber: match.courtNumber, createdAt: match.createdAt, roundNumber: match.round?.roundNumber ?? null, stage: match.round?.stage ?? null,
+    players: match.players.map((player) => ({ userId: player.userId, name: player.user.name, side: player.side })), scores: match.scores,
+  })), userId);
+  return { id: roundRobin.id, name: roundRobin.name, groupName: roundRobin.group?.name ?? null, scheduledAt: roundRobin.scheduledAt, started: Boolean(roundRobin.scheduledAt && roundRobin.scheduledAt <= now) || roundRobin.matches.some((match) => match.scores.length > 0), ...snapshot };
+}
+

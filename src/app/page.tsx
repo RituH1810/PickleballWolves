@@ -7,7 +7,7 @@ import { MyRecaps } from "@/components/my-recaps";
 import { DailyTip } from "@/components/daily-tip";
 import { OnThisDay } from "@/components/on-this-day";
 import { AlmostThere } from "@/components/almost-there";
-import { GroupPulseCard, MyWeekCard, RivalWatchCard, TodoCard } from "@/components/dashboard-cards";
+import { GroupPulseCard, LiveNowCard, MyWeekCard, RivalWatchCard, TodoCard } from "@/components/dashboard-cards";
 import { InstallBanner } from "@/components/install-banner";
 import { Activity, ArrowRight, Award, Bell, CalendarDays, ChevronRight, CircleHelp, Grid2X2, LayoutDashboard, MapPin, Menu, PawPrint, Plus, Repeat, Search, Settings, Trophy, Users, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -209,6 +209,7 @@ export function DashboardPage() {
           ))}
         </section>
         {signedIn && <section className="mt-8 grid gap-3 sm:grid-cols-3"><div className="panel rounded-[20px] p-5"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">My record</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{profileSummary.record}</p><p className="mt-1 text-xs font-semibold text-[var(--lime-deep)]">{profileSummary.winRate} win rate</p></div><div className="panel rounded-[20px] p-5"><p className="text-xs font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Current rank</p><p className="mt-3 flex items-center gap-2 text-3xl font-black tracking-[-.04em]">{typeof profileSummary.rank === "number" ? `#${profileSummary.rank}` : profileSummary.rank} <span className="flex items-center gap-1.5 text-sm font-bold text-[var(--lime-deep)]"><LivePulse />live</span></p><p className="mt-1 text-xs font-semibold text-[var(--ink-soft)]">Across PickleballWolves</p></div><div className="rounded-2xl bg-[var(--ink-dark)] p-5 text-white"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#a9b6a9]">Playing this week</p><p className="mt-3 text-3xl font-black tracking-[-.04em]">{gamesThisWeek} <span className="text-base font-semibold text-[#a9b6a9]">games</span></p><p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[var(--lime)]"><LivePulse />Live from your events</p></div></section>}
+        {signedIn && <LiveNowCard />}
         {signedIn && <MyWeekCard />}
         {/* Two columns on desktop: what needs you on the left, the competition and your groups on the
             right. On phones they stack in that order, so To do comes first. Empty cards render nothing. */}

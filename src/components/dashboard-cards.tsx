@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ComponentType } from "react";
-import { Activity, CalendarDays, CheckCircle2, ClipboardList, Crown, PawPrint, Flame, Gauge, Medal, Star, Swords, TrendingDown, TrendingUp, Trophy, UserPlus, type LucideIcon } from "lucide-react";
+import { Activity, ArrowRight, CalendarDays, CheckCircle2, ClipboardList, Crown, PawPrint, Flame, Gauge, Medal, Star, Swords, TrendingDown, TrendingUp, Trophy, UserPlus, type LucideIcon } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { FormDots, streakText } from "@/components/form-dots";
 import { Reactions } from "@/components/reactions";
@@ -12,6 +12,7 @@ import type { FeedKind } from "@/lib/group-feed";
 import type { ReactionSummary } from "@/lib/reactions";
 import { CardHeading } from "@/components/card-heading";
 import { PickleIcon } from "@/components/pickle-icon";
+import { LivePulse } from "@/components/pickleball-art";
 
 /** Loads one dashboard card's data; null until it arrives (or if it fails). */
 function useCard<T>(path: string, key: string) {
@@ -27,6 +28,36 @@ const heading = (icon: LucideIcon, title: string) => <CardHeading icon={icon} ti
 type Week = { rating: number; weekChange: number; form: FormResult[]; streak: { result: FormResult; length: number } | null; nextGame: { id: string; name: string; scheduledAt: string | null; groupName: string | null; location: string | null } | null };
 
 /** "Your week": rating with its 7-day change, recent form, and a countdown to the next game you've joined. */
+type Live = { id: string; name: string; groupName: string | null; scheduledAt: string | null; started: boolean; place: number | null; of: number; wins: number; losses: number; currentRound: number | null; nextMatch: { label: string; partners: string[]; opponents: string[] } | null };
+
+/** "Live now": the round robin you're in tonight, at the top of the dashboard -- your place, record and next match. */
+export function LiveNowCard() {
+  const live = useCard<Live>("/api/dashboard/live", "live");
+  if (!live) return null;
+  const team = (names: string[]) => names.join(" & ");
+  const status = live.started
+    ? ["Live now", live.currentRound !== null && `Round ${live.currentRound}`].filter(Boolean).join(" · ")
+    : `Starting ${live.scheduledAt ? countdown(new Date(live.scheduledAt), new Date()) : "soon"}`;
+  return (
+    <Link href={`/round-robin/${live.id}`} className="mt-6 block rounded-[20px] border-2 border-[var(--lime)] bg-[var(--panel)] p-5 transition-colors hover:bg-[var(--surface-hover)]">
+      <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[.14em] text-[var(--lime)]">{live.started && <LivePulse />}{status}</p>
+      <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-xl font-black tracking-[-.03em]">{live.name}</p>
+          <p className="text-xs text-[var(--ink-soft)]">{[live.groupName, live.place !== null ? `You're #${live.place} of ${live.of}` : "You're in", live.wins + live.losses > 0 && `${live.wins}-${live.losses} tonight`].filter(Boolean).join(" · ")}</p>
+        </div>
+        <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-[var(--on-lime)]">Open<ArrowRight size={14} /></span>
+      </div>
+      {live.nextMatch && (
+        <div className="mt-4 rounded-xl bg-[var(--surface-2)] px-4 py-3">
+          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[var(--ink-soft)]">Your next match · {live.nextMatch.label}</p>
+          <p className="mt-0.5 text-sm font-bold">{team(["You", ...live.nextMatch.partners])} <span className="font-semibold text-[var(--ink-soft)]">vs</span> {team(live.nextMatch.opponents)}</p>
+        </div>
+      )}
+    </Link>
+  );
+}
+
 export function MyWeekCard() {
   const week = useCard<Week>("/api/dashboard/my-week", "week");
   if (!week) return null;
