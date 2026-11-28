@@ -18,6 +18,7 @@ import { useViewer } from "@/components/guest-shell";
 import { WeatherChip } from "@/components/weather-chip";
 import type { GameWeather } from "@/lib/weather";
 import { InstagramLink } from "@/components/social-links";
+import { LevelCard } from "@/components/player-level";
 
 type DashboardEvent = { id: string; title: string; startsAt: string; dateLabel: string; timeLabel: string; location: string; format: string; spotsLeft: number; totalSpots: number; group: string; accent: "lime" | "coral" | "blue"; attending?: boolean };
 type DashboardGroup = { id: string; name: string; members: number; next: string; mark: string; color?: string };
@@ -215,7 +216,7 @@ export function DashboardPage() {
             right. On phones they stack in that order, so To do comes first. Empty cards render nothing. */}
         {signedIn && (
           <div className="mt-6 grid items-start gap-6 lg:grid-cols-[1.35fr_1fr]">
-            <div className="flex min-w-0 flex-col gap-6 [&>*]:mt-0!"><TodoCard /><AlmostThere /></div>
+            <div className="flex min-w-0 flex-col gap-6 [&>*]:mt-0!"><TodoCard /><AlmostThere /><LevelCard /></div>
             <div className="flex min-w-0 flex-col gap-6 [&>*]:mt-0!"><RivalWatchCard /><GroupPulseCard /></div>
           </div>
         )}

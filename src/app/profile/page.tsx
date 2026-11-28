@@ -19,6 +19,7 @@ import { RatingHistoryPanel } from "@/components/rating-history-panel";
 import { NicknamesCard } from "@/components/nicknames-card";
 import { PlayStyleCard } from "@/components/play-style-card";
 import { AddressInput } from "@/components/address-input";
+import { LevelChip } from "@/components/player-level";
 
 type Profile = { id: string; name: string; skillRating: string; ratingLocked?: boolean; preferredHand: "LEFT" | "RIGHT" | "AMBIDEXTROUS"; homeCourt: string | null; phone: string | null; photoUrl: string | null; record: string; winRate: string; rank: number | null; matchesToQualify: number };
 type RecentResult = { opponent: string; event: string; score: string; result: "W" | "L" | "-" };
@@ -122,7 +123,10 @@ export default function ProfilePage() {
               {editing ? (
                 <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="mt-2 h-11 w-full max-w-sm rounded-xl border border-[var(--line)] px-3 text-2xl font-black outline-none focus:border-[var(--lime-deep)]" />
               ) : (
-                <h1 className="mt-2 text-3xl font-black tracking-[-.04em] text-[var(--foreground)]">{profile.name}</h1>
+                <>
+                  <h1 className="mt-2 text-3xl font-black tracking-[-.04em] text-[var(--foreground)]">{profile.name}</h1>
+                  <div className="mt-2"><LevelChip userId={profile.id} /></div>
+                </>
               )}
               <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[var(--ink-soft)]">
                 <span className="flex items-center gap-2"><MapPin size={15} />{profile.homeCourt || "Add your home court"} &middot; {profile.preferredHand.toLowerCase()}-handed</span>
